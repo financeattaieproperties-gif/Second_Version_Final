@@ -1,4 +1,4 @@
-const DEFAULT_DESKTOP_SERVER = 'https://website.attaieproperties.com';
+const DEFAULT_DESKTOP_SERVER = 'https://attaieproperties.com';
 const SERVER_URL_STORAGE_KEY = 'attaie_admin_server_url';
 const CSRF_STORAGE_KEY = 'admin_csrf_token';
 
@@ -885,7 +885,7 @@ export const DEFAULT_SEO_SETTINGS: SeoSettings = {
   twitter_image: null,
   twitter_card: 'summary_large_image',
   twitter_site: '@AttaieProps',
-  canonical_base_url: 'https://www.attaieproperties.com',
+  canonical_base_url: 'https://attaieproperties.com',
   robots_index: true,
   updated_at: null,
 };

@@ -1,6 +1,6 @@
-# V2 testing website and call-center setup
+# Attaie Properties V2 — Main Domain Deployment Guide (`attaieproperties.com`)
 
-Target: **https://website.attaieproperties.com**. This is a fresh testing installation with a separate database and document root. Nothing has been uploaded or installed on your hosting account by preparing this kit.
+Target: **https://attaieproperties.com** (also accessible via `www.attaieproperties.com`). This is the V2 installation guide for the main domain document root and V2 MySQL database. Nothing is uploaded to your hosting account automatically; upload the prepared files manually.
 
 No cPanel Terminal, Composer, Node, Python, or automatic installer is needed on the server. Use cPanel File Manager, Database Wizard, phpMyAdmin, and Firebase Console. Keep this guide open while you work.
 
@@ -27,16 +27,12 @@ The photo explorer's current calibration/default configuration is unfinished; no
 
 Do not upload the whole release folder. Use only the newly prepared full V2 kit, not repository-root `dist` or earlier release ZIPs.
 
-## 2. Create or verify the testing subdomain
+## 2. Verify the main domain (`attaieproperties.com`)
 
-1. In cPanel open **Domains**, then **Create A New Domain** if the testing subdomain does not already exist.
-2. Enter `website.attaieproperties.com`. Disable **Share document root** with the main domain.
-3. Use a separate folder, for example `/home/CPANEL_USER/website.attaieproperties.com`. Replace `CPANEL_USER` throughout this guide with the actual account name shown by cPanel. Your host's exact path may differ; use the path shown for this subdomain.
-4. If a V2 test site already occupies that folder, download its files and export its database before replacing anything. These SQL files are for a **new empty database**, not an upgrade or reset of existing customer data.
-5. Point the subdomain DNS at this hosting account if necessary. In **SSL/TLS Status / AutoSSL**, issue/verify its HTTPS certificate.
-6. Select PHP **8.2 or newer** for this subdomain. Required extensions: `mysqli` with mysqlnd, `pdo_mysql`, OpenSSL, cURL, fileinfo, JSON, and sessions. PHP must be able to reach Google's HTTPS endpoints with a valid CA certificate store.
-
-Host interfaces vary. If the subdomain shares the main site's directory, correct that before extracting the package. Do not extract over the main domain.
+1. In cPanel open **Domains** and confirm **`attaieproperties.com`** points to your intended document root (usually `/home/CPANEL_USER/public_html`). Replace `CPANEL_USER` throughout this guide with the actual account name shown by cPanel.
+2. Back up any existing files in `public_html` and export any existing database before replacing files or importing fresh SQL. These fresh SQL files are for a **new empty V2 database**.
+3. In **SSL/TLS Status / AutoSSL**, confirm HTTPS is active for both `attaieproperties.com` and `www.attaieproperties.com`.
+4. Select PHP **8.2 or newer** for `attaieproperties.com`. Required extensions: `mysqli` with mysqlnd, `pdo_mysql`, OpenSSL, cURL, fileinfo, JSON, and sessions. PHP must be able to reach Google's HTTPS endpoints with a valid CA certificate store.
 
 ## 3. Create one NEW V2 database
 
@@ -84,7 +80,7 @@ The placeholder `api/db.php` contains no real credentials in the supplied archiv
 1. Open [Firebase Console](https://console.firebase.google.com/) and select project **`roheenahmadi-907a7`**.
 2. Open **Build > Authentication**. If prompted, choose **Get started**.
 3. Under **Sign-in method**, enable **Email/Password** and save. Email/password is the method implemented here; phone/SMS sign-in is not part of this kit.
-4. Under Authentication **Settings > Authorized domains**, add `website.attaieproperties.com` without `https://` or a path. Check the password reset email template's sender/name and allowed action domain.
+4. Under Authentication **Settings > Authorized domains**, add both `attaieproperties.com` and `www.attaieproperties.com` without `https://` or a path. Check the password reset email template's sender/name and allowed action domain.
 5. Under **Users > Add user**, create the CEO's email and strong password. Save the password privately.
 6. Open that user's details and copy the exact **UID** and email. UID matching is case-sensitive. Do not use the Google Cloud project number, project ID, or an email address as the UID.
 7. On your computer, open `database/04-staff-ceo.template.sql` in a plain-text editor. Fill these two values:
@@ -120,7 +116,8 @@ A Firebase user without an active matching MySQL row cannot enter the staff work
    'dsn' => 'mysql:host=localhost;dbname=CPANEL_USER_attaie_v2_test;charset=utf8mb4',
    'database_user' => 'CPANEL_USER_v2_app',
    'database_password' => 'YOUR_V2_DATABASE_PASSWORD',
-   'origin' => 'https://website.attaieproperties.com',
+   'origin' => 'https://attaieproperties.com',
+   'allowed_origins' => ['https://www.attaieproperties.com'],
    'session_directory' => '/home/CPANEL_USER/attaie-v2-private/sessions',
    'allow_local_http' => false,
    ```
@@ -158,7 +155,7 @@ These are separate role-locked login surfaces:
 ### Day-2 Team & CRM Project Setup Order (2-Day Rollout)
 
 1. **Bootstrap CEO first** (step 6): ensure the CEO user is in Firebase Auth and `core_users` (`role='ceo'`), and confirm `core_branches` has `Main Branch (Kabul)` (`id=1`).
-2. Sign in at **`https://website.attaieproperties.com/ceo/`**.
+2. Sign in at **`https://attaieproperties.com/ceo/`**.
 3. Open **Team tasks → Create agent** for each staff member (creating each user's Email/Password in Firebase Auth first and copying their exact UID):
    - Create your **Sales Team Leader(s)** first (`Role = Sales Team Leader`, `Branch = Main Branch (Kabul)`).
    - Next, create each **Sales Agent** (`Role = Sales Agent`, `Branch = Main Branch (Kabul)`, and select their supervising **Sales Team Leader**).
@@ -167,10 +164,10 @@ These are separate role-locked login surfaces:
    - Public website project catalogs stay empty (`/api/get-projects.php` stays `[]`).
    - Add each project's exterior cover photo, Commercial vs. Residential floors, corridors (A–Z), apartment/shop/supermarket units, typical floor copy, and assign the **Sales Team Leader** and **Sales Agents** on Step 4.
 5. **Install Client Apps**:
-   - **Call Center PC `.exe`**: build from `callcenter-desktop/` (`npm install && npm run pack:win`) and install `Attaie Call Center Setup.exe` on call center PCs.
-   - **Website Admin PC `.exe`**: build from `admin-panel/` (`npm install && npm run pack`) and install `Attaie Admin Setup.exe` on admin PCs.
-   - **Sales Agent Android APK**: build from `sales-android/` in Android Studio (`Build APK(s)` or `./gradlew assembleDebug`).
-   - **Sales Agent iOS App**: open `https://website.attaieproperties.com/sales/` in iPhone/iPad Safari → **Share → Add to Home Screen** (instant standalone app), or build a signed `.ipa` via `sales-ios/` in Xcode on macOS.
+   - **Call Center PC `.exe`**: build from `callcenter-desktop/` (`npm install && npm run pack:win`) and install `Attaie Call Center Setup.exe` on call center PCs (connects to `https://attaieproperties.com/callcenter/` by default).
+   - **Website Admin PC `.exe`**: build from `admin-panel/` (`npm install && npm run pack`) and install `Attaie Admin Setup.exe` on admin PCs (connects to `https://attaieproperties.com` by default).
+   - **Sales Agent Android APK**: build from `sales-android/` in Android Studio (`Build APK(s)` or `./gradlew assembleDebug`, connects to `https://attaieproperties.com/staff-api/v1`).
+   - **Sales Agent iOS App**: open `https://attaieproperties.com/sales/` in iPhone/iPad Safari → **Share → Add to Home Screen** (instant standalone app), or build a signed `.ipa` via `sales-ios/` in Xcode on macOS.
 
 ## 10. Test the workflow
 

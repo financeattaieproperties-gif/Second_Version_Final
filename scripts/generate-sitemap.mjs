@@ -23,7 +23,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const SITE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://www.attaieproperties.com').replace(/\/+$/, '');
+const SITE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://attaieproperties.com').replace(/\/+$/, '');
 const API_BASE = (process.env.API_URL || process.env.VITE_API_URL || `${SITE_URL}/api`).replace(/\/+$/, '');
 const TODAY = new Date().toISOString().slice(0, 10);
 const NOW_ISO = new Date().toISOString();

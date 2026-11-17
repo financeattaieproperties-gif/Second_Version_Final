@@ -14,7 +14,7 @@ $defaults = [
     'twitter_image'       => null,
     'twitter_card'        => 'summary_large_image',
     'twitter_site'        => '@AttaieProps',
-    'canonical_base_url'  => 'https://www.attaieproperties.com',
+    'canonical_base_url'  => 'https://attaieproperties.com',
     'robots_index'        => true,
     'updated_at'          => null,
 ];
@@ -38,7 +38,7 @@ try {
     $row['id'] = (int) $row['id'];
     $row['robots_index'] = (bool) $row['robots_index'];
     if (in_array($row['canonical_base_url'] ?? '', ['', 'https://attaieproperties.af', 'https://website.attaieproperties.com'], true)) {
-        $row['canonical_base_url'] = 'https://www.attaieproperties.com';
+        $row['canonical_base_url'] = 'https://attaieproperties.com';
     }
     json_out($row);
 } catch (Throwable $e) {

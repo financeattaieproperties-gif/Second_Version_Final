@@ -6,8 +6,9 @@
   "server": {
     "androidScheme": "https",
     "allowNavigation": [
-      "website.attaieproperties.com",
-      "attaieproperties.af"
+      "attaieproperties.com",
+      "www.attaieproperties.com",
+      "*.attaieproperties.com"
     ]
   },
   "plugins": {

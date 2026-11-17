@@ -52,7 +52,8 @@ final class App {
         if (!$local && (!str_starts_with($this->config['origin'] ?? '', 'https://') || !$isHttps)) throw new HttpError(503, 'Staff access requires HTTPS.');
         $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
         $allowedOrigins = $this->allowedOrigins();
-        $isCrossOrigin = $requestOrigin !== '' && $requestOrigin !== ($this->config['origin'] ?? '') && in_array($requestOrigin, $allowedOrigins, true);
+        $serverOrigin = ($isHttps ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? '');
+        $isCrossOrigin = $requestOrigin !== '' && $requestOrigin !== $serverOrigin && $requestOrigin !== ($this->config['origin'] ?? '') && in_array($requestOrigin, $allowedOrigins, true);
         if ($requestOrigin !== '' && in_array($requestOrigin, $allowedOrigins, true)) {
             header('Vary: Origin');
             header('Access-Control-Allow-Origin: ' . $requestOrigin);
@@ -89,6 +90,8 @@ final class App {
     private function allowedOrigins(): array {
         $defaults = [
             $this->config['origin'] ?? '',
+            'https://attaieproperties.com',
+            'https://www.attaieproperties.com',
             'https://sales.attaieproperties.com',
             'capacitor://localhost',
             'http://localhost',

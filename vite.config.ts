@@ -266,7 +266,7 @@ function createMockPhpApiPlugin(): Plugin {
     twitter_image: null,
     twitter_card: 'summary_large_image',
     twitter_site: '@AttaieProps',
-    canonical_base_url: 'https://www.attaieproperties.com',
+    canonical_base_url: 'https://attaieproperties.com',
     robots_index: true,
     updated_at: new Date().toISOString(),
   };
@@ -424,7 +424,7 @@ function createMockPhpApiPlugin(): Plugin {
     const siteUrl = (
       overrideBaseUrl ||
       seoSettings?.canonical_base_url ||
-      'https://www.attaieproperties.com'
+      'https://attaieproperties.com'
     )
       .trim()
       .replace(/\/+$/, '');
@@ -1474,7 +1474,39 @@ export default defineConfig(({ mode }) => {
     },
     clearScreen: false,
     resolve: {
+      dedupe: ['react', 'react-dom', 'react-router', 'react-router-dom'],
       alias: { '@': path.resolve(import.meta.dirname, './src') },
+    },
+    optimizeDeps: {
+      entries: ['index.html', 'src/main.tsx'],
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'react-router-dom',
+        'react-helmet-async',
+        'react-i18next',
+        'i18next',
+        'lucide-react',
+        'framer-motion',
+        'motion/react',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+        'clsx',
+        'tailwind-merge',
+        'react-hook-form',
+        '@hookform/resolvers/zod',
+        'zod',
+        'swiper/react',
+        'swiper/modules',
+        'gsap',
+        'gsap/ScrollTrigger',
+        'recharts',
+        '@vis.gl/react-google-maps',
+      ],
     },
     build: {
       outDir: 'dist',

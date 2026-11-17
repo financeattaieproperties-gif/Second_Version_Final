@@ -58,11 +58,11 @@ test("resolveStaffApiEndpoint, getMobilePrimaryTabs, and formatMobileContactLink
 
   const androidEndpoint = resolveStaffApiEndpoint(
     "/auth/login",
-    "https://website.attaieproperties.com/staff-api/v1/",
+    "https://attaieproperties.com/staff-api/v1/",
   );
   assert.equal(
     androidEndpoint.url,
-    "https://website.attaieproperties.com/staff-api/v1/auth/login",
+    "https://attaieproperties.com/staff-api/v1/auth/login",
   );
   assert.equal(androidEndpoint.credentials, "include");
   assert.equal(androidEndpoint.isCrossOrigin, true);

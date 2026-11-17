@@ -34,13 +34,13 @@ const run = (command,args) => {const result=spawnSync(command,args,{cwd:root,enc
 for (const config of ['tsconfig.json','admin-panel/tsconfig.json','apps/staff/tsconfig.json']) run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','-p',config]);
 fs.mkdirSync(dist,{recursive:true});
 process.env.VITE_API_URL='/api';
-process.env.VITE_SITE_URL='https://website.attaieproperties.com';
+process.env.VITE_SITE_URL='https://attaieproperties.com';
 const firebaseConfigured=Boolean(process.env.VITE_STAFF_FIREBASE_API_KEY);
 const common={configFile:false,envDir:false,publicDir:false,logLevel:'warn',build:{emptyOutDir:false}};
 // Do not load repository vite.config.ts: it explicitly loads private .env.local.
 await build({...common,root,plugins:[react(),tailwindcss()],resolve:{alias:{'@':path.join(root,'src')}},define:{'process.env.GOOGLE_MAPS_PLATFORM_KEY':JSON.stringify(process.env.VITE_GOOGLE_MAPS_API_KEY||'')},build:{...common.build,outDir:dist}});
 const websiteHtml=path.join(dist,'index.html');
-fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replace(/(<meta name="robots" content=")[^"]+/, '$1noindex, nofollow, noarchive').replaceAll('https://www.attaieproperties.com','https://website.attaieproperties.com'));
+fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replaceAll('https://www.attaieproperties.com','https://attaieproperties.com'));
 await build({...common,root:path.join(root,'admin-panel'),plugins:[react()],base:'/admin/',build:{...common.build,outDir:path.join(dist,'admin')}});
 const adminHtml=path.join(dist,'admin/index.html');
 fs.writeFileSync(adminHtml,fs.readFileSync(adminHtml,'utf8').replace('<head>','<head>\n<meta name="robots" content="noindex, nofollow, noarchive">'));
@@ -93,8 +93,8 @@ let websiteConfig=read('public/api/db.example.php').replace("define('ADMIN_USER'
 websiteConfig=websiteConfig.replace('<?php',"<?php\ndefine('ATTAIE_MANUAL_SCHEMA', true);\n// Separate THIRD submission database. Never use website or internal CRM credentials.\ndefine('SUBMISSION_DB_HOST','localhost');\ndefine('SUBMISSION_DB_USER','YOUR_SUBMISSION_USER');\ndefine('SUBMISSION_DB_PASS','');\ndefine('SUBMISSION_DB_NAME','YOUR_SUBMISSION_DATABASE');");
 write('private/website-db.example.php',websiteConfig);
 write('private/sessions/.gitkeep','');
-const header=name=>`-- ${name}. V2 TESTING ONLY. Verify DATABASE() in phpMyAdmin before import.\n-- Fresh install requires a NEW EMPTY database. Never import fresh SQL over existing data.\n`;
-write('database/fresh/01-website.sql',header('WEBSITE database')+read('public/api/schema.sql')+"\n"+read('staff-service/database/102-website-submission-map.sql')+"\nUPDATE seo_settings SET canonical_base_url='https://website.attaieproperties.com',robots_index=0 WHERE id=1;\n");
+const header=name=>`-- ${name}. V2 DEPLOYMENT. Verify DATABASE() in phpMyAdmin before import.\n-- Fresh install requires a NEW EMPTY database. Never import fresh SQL over existing data.\n`;
+write('database/fresh/01-website.sql',header('WEBSITE database')+read('public/api/schema.sql')+"\n"+read('staff-service/database/102-website-submission-map.sql')+"\nUPDATE seo_settings SET canonical_base_url='https://attaieproperties.com',robots_index=1 WHERE id=1;\n");
 write('database/fresh/02-internal-crm.sql',header('SEPARATE INTERNAL OFFICE CRM database')+freshInternal.map(name=>`\n-- SOURCE ${name}\n`+read(`staff-service/database/${name}`)).join('\n'));
 write('database/fresh/03-submissions.sql',header('SEPARATE THIRD SUBMISSION database')+read('staff-service/database/055-submissions-db.sql'));
 for(const name of ['090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql'])copy(`staff-service/database/${name}`,`database/upgrade/internal-crm/${name}`);
@@ -104,7 +104,7 @@ write('database/upgrade/README.md','Existing V2 only: back up all three database
 write('database/04-firebase-owner.template.sql',"-- INTERNAL CRM only, after fresh schema or verified upgrade. No password belongs here.\n-- Provision Email/Password users in V2 Firebase first. Replace exact UID/email.\nSET @uid=''; SET @email=''; SET @name='Admin (CEO)';\nINSERT INTO core_users(firebase_uid,username,name,role) SELECT @uid,@email,@name,'ceo' WHERE @uid<>'' AND @email<>'';\n-- Manager is a separate role. Map an authorized Manager explicitly so inventory/user creation is available.\nSET @manager_uid=''; SET @manager_email=''; SET @manager_name='';\nINSERT INTO core_users(firebase_uid,username,name,role) SELECT @manager_uid,@manager_email,@manager_name,'manager' WHERE @manager_uid<>'' AND @manager_email<>'' AND @manager_name<>'';\n");
 write('database/05-website-admin.template.sql',"-- WEBSITE database only. Generate a strong password hash privately; never put password text here.\n-- After replacing both placeholders, remove the leading comment from the statement.\n-- INSERT INTO admin_users(username,password_hash) VALUES ('YOUR_ADMIN_USERNAME','YOUR_PASSWORD_HASH');\n");
 copy('docs/staff/dashboard-completion-delivery.md','START-HERE.md');
-write('BUILD-STATUS.json',JSON.stringify({builtAt:new Date().toISOString(),target:'https://website.attaieproperties.com',firebasePublicKeyConfigured:firebaseConfigured,serverUploaded:false,databaseImported:false,serverVerified:false},null,2));
+write('BUILD-STATUS.json',JSON.stringify({builtAt:new Date().toISOString(),target:'https://attaieproperties.com',firebasePublicKeyConfigured:firebaseConfigured,serverUploaded:false,databaseImported:false,serverVerified:false},null,2));
 
 // Fail the release before archive creation when private/setup material is public.
 for(const file of walk(dist)) {

@@ -17,5 +17,5 @@ SELECT @owner_firebase_uid,@owner_email,@owner_name,'ceo'
 WHERE @owner_firebase_uid <> '' AND @owner_email <> '';
 SQL;
 file_put_contents($directory.'/020-owner.template.sql',$sql."\n");
-file_put_contents($directory.'/FIREBASE-SETUP.txt',"Keep outside webroot.\nCreate the CEO in your V2 Firebase Authentication console (Email/Password).\nCopy its UID and email into 020-owner.template.sql, then import into V2 only.\nEnable Email/Password sign-in and authorize website.attaieproperties.com.\nSet matching Firebase project ID/Web API key in private PHP config, and VITE_STAFF_FIREBASE_API_KEY before building.\nNo default login or local password is generated.\nCEO: /management/; agents: /callcenter/.\n");
+file_put_contents($directory.'/FIREBASE-SETUP.txt',"Keep outside webroot.\nCreate the CEO in your V2 Firebase Authentication console (Email/Password).\nCopy its UID and email into 020-owner.template.sql, then import into V2 only.\nEnable Email/Password sign-in and authorize attaieproperties.com and www.attaieproperties.com.\nSet matching Firebase project ID/Web API key in private PHP config, and VITE_STAFF_FIREBASE_API_KEY before building.\nNo default login or local password is generated.\nCEO: /ceo/; Manager: /management/; Call Center: /callcenter/.\n");
 echo "Owner provisioning template and Firebase setup instructions prepared. No credentials generated.\n";

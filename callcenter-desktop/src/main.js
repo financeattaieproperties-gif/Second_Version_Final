@@ -10,7 +10,7 @@ const {
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_URL = 'https://website.attaieproperties.com/callcenter/';
+const DEFAULT_URL = 'https://attaieproperties.com/callcenter/';
 const userDataDir = app.getPath('userData');
 const stateFile = path.join(userDataDir, 'window-state.json');
 const configFile = path.join(userDataDir, 'config.json');

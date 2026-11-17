@@ -17,7 +17,7 @@ const androidAssetsWwwDir = path.join(
 
 const backendBaseUrl =
   process.env.VITE_STAFF_API_BASE_URL ||
-  "https://website.attaieproperties.com/staff-api/v1";
+  "https://attaieproperties.com/staff-api/v1";
 
 process.env.STAFF_ROLE = "sales";
 process.env.STAFF_MOBILE_APP = "1";

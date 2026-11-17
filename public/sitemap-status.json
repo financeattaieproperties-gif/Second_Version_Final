@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-17T05:52:22.315Z",
-  "canonical_base_url": "https://www.attaieproperties.com",
-  "sitemap_url": "https://www.attaieproperties.com/sitemap.xml",
+  "generated_at": "2026-11-17T20:03:29.378Z",
+  "canonical_base_url": "https://attaieproperties.com",
+  "sitemap_url": "https://attaieproperties.com/sitemap.xml",
   "counts": {
     "static": 7,
     "properties": 6,
@@ -12,7 +12,7 @@
   },
   "urls": [
     {
-      "loc": "https://www.attaieproperties.com/",
+      "loc": "https://attaieproperties.com/",
       "lastmod": "2026-11-17",
       "changefreq": "daily",
       "priority": "1.0",
@@ -21,7 +21,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/properties",
+      "loc": "https://attaieproperties.com/properties",
       "lastmod": "2026-11-17",
       "changefreq": "daily",
       "priority": "0.9",
@@ -30,7 +30,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/projects",
+      "loc": "https://attaieproperties.com/projects",
       "lastmod": "2026-11-17",
       "changefreq": "weekly",
       "priority": "0.8",
@@ -39,7 +39,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/careers",
+      "loc": "https://attaieproperties.com/careers",
       "lastmod": "2026-11-17",
       "changefreq": "daily",
       "priority": "0.8",
@@ -48,7 +48,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/agents",
+      "loc": "https://attaieproperties.com/agents",
       "lastmod": "2026-11-17",
       "changefreq": "weekly",
       "priority": "0.7",
@@ -57,7 +57,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/about",
+      "loc": "https://attaieproperties.com/about",
       "lastmod": "2026-11-17",
       "changefreq": "monthly",
       "priority": "0.6",
@@ -66,7 +66,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/contact",
+      "loc": "https://attaieproperties.com/contact",
       "lastmod": "2026-11-17",
       "changefreq": "monthly",
       "priority": "0.7",
@@ -75,7 +75,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/1",
+      "loc": "https://attaieproperties.com/properties/1",
       "lastmod": "2026-01-15",
       "changefreq": "daily",
       "priority": "0.85",
@@ -84,7 +84,7 @@
       "image_count": 3
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/2",
+      "loc": "https://attaieproperties.com/properties/2",
       "lastmod": "2026-02-01",
       "changefreq": "daily",
       "priority": "0.85",
@@ -93,7 +93,7 @@
       "image_count": 2
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/3",
+      "loc": "https://attaieproperties.com/properties/3",
       "lastmod": "2026-02-10",
       "changefreq": "daily",
       "priority": "0.85",
@@ -102,7 +102,7 @@
       "image_count": 2
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/4",
+      "loc": "https://attaieproperties.com/properties/4",
       "lastmod": "2026-02-15",
       "changefreq": "daily",
       "priority": "0.85",
@@ -111,7 +111,7 @@
       "image_count": 1
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/5",
+      "loc": "https://attaieproperties.com/properties/5",
       "lastmod": "2026-02-20",
       "changefreq": "daily",
       "priority": "0.85",
@@ -120,7 +120,7 @@
       "image_count": 1
     },
     {
-      "loc": "https://www.attaieproperties.com/properties/6",
+      "loc": "https://attaieproperties.com/properties/6",
       "lastmod": "2026-03-01",
       "changefreq": "daily",
       "priority": "0.85",
@@ -129,7 +129,7 @@
       "image_count": 1
     },
     {
-      "loc": "https://www.attaieproperties.com/careers/1",
+      "loc": "https://attaieproperties.com/careers/1",
       "lastmod": "2026-10-15",
       "changefreq": "daily",
       "priority": "0.75",
@@ -138,7 +138,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/careers/2",
+      "loc": "https://attaieproperties.com/careers/2",
       "lastmod": "2026-10-20",
       "changefreq": "daily",
       "priority": "0.75",
@@ -147,7 +147,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/careers/3",
+      "loc": "https://attaieproperties.com/careers/3",
       "lastmod": "2026-10-26",
       "changefreq": "weekly",
       "priority": "0.55",
@@ -156,7 +156,7 @@
       "image_count": 0
     },
     {
-      "loc": "https://www.attaieproperties.com/agents/1",
+      "loc": "https://attaieproperties.com/agents/1",
       "lastmod": "2026-01-01",
       "changefreq": "monthly",
       "priority": "0.65",
@@ -165,7 +165,7 @@
       "image_count": 1
     },
     {
-      "loc": "https://www.attaieproperties.com/agents/2",
+      "loc": "https://attaieproperties.com/agents/2",
       "lastmod": "2026-01-05",
       "changefreq": "monthly",
       "priority": "0.65",
@@ -174,7 +174,7 @@
       "image_count": 1
     },
     {
-      "loc": "https://www.attaieproperties.com/agents/3",
+      "loc": "https://attaieproperties.com/agents/3",
       "lastmod": "2026-01-10",
       "changefreq": "monthly",
       "priority": "0.65",

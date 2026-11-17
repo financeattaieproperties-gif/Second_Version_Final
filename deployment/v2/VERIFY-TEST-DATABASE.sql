@@ -9,7 +9,7 @@ SELECT id,name FROM projects ORDER BY id;
 SELECT project_id,COUNT(*) AS sample_layouts FROM project_units GROUP BY project_id ORDER BY project_id;
 -- Fresh packages contain no public project-unit records.
 SELECT canonical_base_url,robots_index FROM seo_settings WHERE id=1;
--- Expected: https://website.attaieproperties.com and 0.
+-- Expected: https://attaieproperties.com and 1.
 SELECT username,LEFT(password_hash,4) AS hash_prefix FROM admin_users;
 -- Website owner hash prefix: $2y$.
 SELECT code,name FROM core_departments ORDER BY code;

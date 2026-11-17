@@ -301,7 +301,7 @@ function attaie_ensure_schema(): void {
           twitter_image       VARCHAR(500)  DEFAULT NULL,
           twitter_card        ENUM('summary_large_image','summary') NOT NULL DEFAULT 'summary_large_image',
           twitter_site        VARCHAR(100)  DEFAULT NULL,
-          canonical_base_url  VARCHAR(255)  DEFAULT 'https://www.attaieproperties.com',
+          canonical_base_url  VARCHAR(255)  DEFAULT 'https://attaieproperties.com',
           robots_index        TINYINT(1)    NOT NULL DEFAULT 1,
           updated_at          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
@@ -373,7 +373,7 @@ function attaie_ensure_schema(): void {
         "ALTER TABLE projects ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         "ALTER TABLE projects MODIFY COLUMN status ENUM('Coming Soon','In Progress','Sold Out','Under Construction','Ready') NOT NULL DEFAULT 'Coming Soon'",
         "ALTER TABLE visit_requests ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL AFTER phone",
-        "UPDATE seo_settings SET canonical_base_url = 'https://www.attaieproperties.com' WHERE canonical_base_url IN ('https://attaieproperties.af', 'https://website.attaieproperties.com')",
+        "UPDATE seo_settings SET canonical_base_url = 'https://attaieproperties.com' WHERE canonical_base_url IN ('https://attaieproperties.af', 'https://website.attaieproperties.com')",
     ];
 
     foreach ($alterStatements as $sql) {

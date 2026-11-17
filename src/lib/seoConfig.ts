@@ -44,7 +44,7 @@ function getBaseSiteUrl(): string {
   if (overrides?.canonical_base_url?.trim()) {
     const cleaned = overrides.canonical_base_url.trim().replace(/\/+$/, '');
     if (cleaned === 'https://attaieproperties.af' || cleaned === 'https://website.attaieproperties.com') {
-      return 'https://www.attaieproperties.com';
+      return 'https://attaieproperties.com';
     }
     return cleaned;
   }
@@ -53,7 +53,7 @@ function getBaseSiteUrl(): string {
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin;
   }
-  return 'https://www.attaieproperties.com';
+  return 'https://attaieproperties.com';
 }
 
 export const SEO_CONFIG = {

@@ -401,13 +401,13 @@ export default function Login() {
                   type="url"
                   value={serverDraft}
                   onChange={e => setServerDraft(e.target.value)}
-                  placeholder="https://website.attaieproperties.com"
+                  placeholder="https://attaieproperties.com"
                   style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 11, boxSizing: 'border-box' }}
                 />
                 <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button type="button" onClick={() => setServerDraft('https://website.attaieproperties.com')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>V2 Test</button>
-                    <button type="button" onClick={() => setServerDraft('https://attaieproperties.af')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>Live</button>
+                    <button type="button" onClick={() => setServerDraft('https://attaieproperties.com')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>Main</button>
+                    <button type="button" onClick={() => setServerDraft('https://www.attaieproperties.com')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>WWW</button>
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button type="button" onClick={() => setEditingServer(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 11, cursor: 'pointer' }}>Cancel</button>

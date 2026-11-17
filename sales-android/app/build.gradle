@@ -18,7 +18,7 @@ android {
         buildConfigField(
             'String',
             'STAFF_API_BASE_URL',
-            '"https://website.attaieproperties.com/staff-api/v1"'
+            '"https://attaieproperties.com/staff-api/v1"'
         )
     }
 

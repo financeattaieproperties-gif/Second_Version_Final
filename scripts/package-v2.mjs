@@ -14,7 +14,7 @@ for(const dir of [dist,database,path.join(privateDir,'app'),path.join(privateDir
 const write=(relative,text)=>{const target=path.join(output,relative);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,text);};
 const copy=(source,relative)=>{const target=path.join(output,relative);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,source),target);};
 function run(command,args){const result=spawnSync(command,args,{cwd:root,encoding:'utf8',maxBuffer:8*1024*1024});if(result.status!==0)throw new Error(result.stderr||result.stdout||`Command failed: ${command}`);if(result.stdout)process.stdout.write(result.stdout);}
-process.env.VITE_API_URL='/api';process.env.VITE_SITE_URL='https://website.attaieproperties.com';
+process.env.VITE_API_URL='/api';process.env.VITE_SITE_URL='https://attaieproperties.com';
 run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit']);
 run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','-p','admin-panel/tsconfig.json']);
 run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','-p','apps/staff/tsconfig.json']);
@@ -68,9 +68,9 @@ for(const file of ['seo.php','sitemap.php','.user.ini'])copy('public/'+file,'dis
 let rules=fs.readFileSync(path.join(root,'public/.htaccess'),'utf8');
 rules=rules.replace('# Admin CRM SPA fallback',`# Staff module deep links (existing files/assets already served above)\nAddType application/manifest+json .webmanifest\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\nRewriteRule ^ceo(?:/.*)?$ /ceo/index.html [L]\nRewriteRule ^sales-leader(?:/.*)?$ /sales-leader/index.html [L]\nRewriteRule ^sales(?:/.*)?$ /sales/index.html [L]\nRewriteRule ^finance(?:/.*)?$ /finance/index.html [L]\nRewriteRule ^marketing(?:/.*)?$ /marketing/index.html [L]\nRewriteRule ^engineering(?:/.*)?$ /engineering/index.html [L]\n\n# Admin CRM SPA fallback`);
 if(!rules.includes('^staff-api/v1'))throw new Error('Review changed root routing before packaging.');
-write('dist/.htaccess',`# V2 TESTING ONLY. Never upload into the main domain document root.\nRewriteEngine On\nRewriteRule ^(?:ai-chat(?:/|$)|chat-service\\.php$) - [F,L]\n${rules}\n<IfModule mod_headers.c>\n Header always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>\n<Files "initiate-call.php">\n Require all denied\n</Files>\n`);
-write('dist/robots.txt','User-agent: *\nDisallow: /\n');
-write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9"><url><loc>https://website.attaieproperties.com/</loc></url></urlset>\n');
+write('dist/.htaccess',`# Attaie Properties V2 — Main Domain (attaieproperties.com)\nAddType application/manifest+json .webmanifest\n${rules}\n`);
+copy('public/robots.txt','dist/robots.txt');
+write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">\n  <url><loc>https://attaieproperties.com/</loc></url>\n  <url><loc>https://attaieproperties.com/properties</loc></url>\n  <url><loc>https://attaieproperties.com/careers</loc></url>\n  <url><loc>https://attaieproperties.com/agents</loc></url>\n  <url><loc>https://attaieproperties.com/about</loc></url>\n  <url><loc>https://attaieproperties.com/contact</loc></url>\n</urlset>\n');
 write('dist/visual-config/data/.htaccess','Require all denied\n');
 write('dist/visual-config/.htaccess','Options -Indexes\n<FilesMatch "^(?:.*\\.json|.*\\.tmp.*)$">\n Require all denied\n</FilesMatch>\n');
 write('dist/uploads/.htaccess','Options -Indexes\n<FilesMatch "\\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh|shtml)$">\n Require all denied\n</FilesMatch>\n');
@@ -103,7 +103,7 @@ const insert=(table,columns,rows)=>rows.length ? `INSERT INTO ${table} (${column
 for(const record of [...catalog.projects,...catalog.units])for(const url of [record.image_url,record.masterplan_image,...(record.gallery_images||[])].filter(Boolean))if(!url.startsWith('/assets/')||!fs.existsSync(path.join(dist,url.slice(1))))throw new Error('Missing showcase artwork '+url);
 const projects=['id','name','location','delivery_date','status','available_units','total_units','image_url','gallery_images','video_url','masterplan_image','description','created_at'];
 const units=['id','project_id','unit_number','title','beds','baths','area','floor','price','currency','status','image_url','description'];
-write('database/02-five-project-showcase.sql','-- NEW EMPTY V2 DATABASE ONLY. No bundled projects, units, or project artwork.\nSET NAMES utf8mb4;\nSTART TRANSACTION;\n'+insert('projects',projects,catalog.projects)+insert('project_units',units,catalog.units)+"UPDATE seo_settings SET canonical_base_url='https://website.attaieproperties.com',robots_index=0 WHERE id=1;\nCOMMIT;\n");
+write('database/02-five-project-showcase.sql','-- NEW EMPTY V2 DATABASE ONLY. No bundled projects, units, or project artwork.\nSET NAMES utf8mb4;\nSTART TRANSACTION;\n'+insert('projects',projects,catalog.projects)+insert('project_units',units,catalog.units)+"UPDATE seo_settings SET canonical_base_url='https://attaieproperties.com',robots_index=1 WHERE id=1;\nCOMMIT;\n");
 run(php,['-n','scripts/prepare-v2-admin.php',path.join(output,'private-setup')]);
 fs.copyFileSync(path.join(output,'private-setup/03-website-admin.sql'),path.join(database,'03-website-admin.sql'));
 run(php,['-n','staff-service/bin/bootstrap-admin.php','--out',path.join(output,'private-setup/staff-owner')]);
@@ -117,4 +117,4 @@ const manifest=walk(output).map(file=>({path:path.relative(output,file).replaceA
 write('manifest.json',JSON.stringify(manifest,null,2));
 run(process.execPath,['tests/staff/packaging/v2-kit.mjs',output]);
 run(process.platform==='win32'?'python':'python3',['scripts/zip-v2-release.py',output]);
-console.log('Prepared V2 testing kit: '+output+'\nNo server upload, live import, or production change occurred.');
+console.log('Prepared V2 kit for attaieproperties.com: '+output+'\nNo server upload or live database change occurred.');

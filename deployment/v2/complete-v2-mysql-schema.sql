@@ -235,8 +235,8 @@ CREATE TABLE IF NOT EXISTS seo_settings (
   twitter_image       VARCHAR(500)  DEFAULT NULL,
   twitter_card        ENUM('summary_large_image','summary') NOT NULL DEFAULT 'summary_large_image',
   twitter_site        VARCHAR(100)  DEFAULT '@AttaieProps',
-  canonical_base_url  VARCHAR(255)  DEFAULT 'https://website.attaieproperties.com',
-  robots_index        TINYINT(1)    NOT NULL DEFAULT 0,
+  canonical_base_url  VARCHAR(255)  DEFAULT 'https://attaieproperties.com',
+  robots_index        TINYINT(1)    NOT NULL DEFAULT 1,
   created_at          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   updated_at          TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_seo_settings_site_name (site_name)
@@ -259,8 +259,8 @@ INSERT IGNORE INTO seo_settings (
   NULL,
   'summary_large_image',
   '@AttaieProps',
-  'https://website.attaieproperties.com',
-  0
+  'https://attaieproperties.com',
+  1
 );
 
 -- 14. Career Job Postings

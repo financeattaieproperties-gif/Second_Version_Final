@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Etisalat CPaaS Click-to-Call Pingback Receiver
- * URL: https://website.attaieproperties.com/api/ctc/callback.php
+ * URL: https://attaieproperties.com/api/ctc/callback.php
  */
 
 header('Content-Type: application/json; charset=UTF-8');

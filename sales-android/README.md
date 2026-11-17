@@ -53,7 +53,7 @@ sales-android/
    - `panelSpec.allowedRoles` strictly enforces `["sales"]` — accounts from other roles cannot switch into or use the Sales Agent Android app.
 2. **Configurable API Endpoint (`resolveStaffApiEndpoint`)**:
    - On the Web (`/sales/`), requests use `/staff-api/v1/*` with `credentials: "same-origin"`.
-   - In the Android App (`sales-android`), `VITE_STAFF_API_BASE_URL` and `MainActivity.kt` set `window.__ATTAIE_STAFF_API_BASE_URL__ = "https://website.attaieproperties.com/staff-api/v1"`, automatically switching `fetch()` to full HTTPS URLs with `credentials: "include"` and persistent `CookieManager` cookies.
+   - In the Android App (`sales-android`), `VITE_STAFF_API_BASE_URL` and `MainActivity.kt` set `window.__ATTAIE_STAFF_API_BASE_URL__ = "https://attaieproperties.com/staff-api/v1"`, automatically switching `fetch()` to full HTTPS URLs with `credentials: "include"` and persistent `CookieManager` cookies.
 
 ---
 
@@ -77,13 +77,13 @@ The compiled Sales Agent bundle is already copied into `sales-android/app/src/ma
 npm run build:sales-android
 ```
 
-To point the APK to the live domain instead of the testing subdomain:
+To point the APK to a custom host (for example `www.attaieproperties.com`):
 
 ```bash
-VITE_STAFF_API_BASE_URL="https://attaieproperties.af/staff-api/v1" npm run build:sales-android
+VITE_STAFF_API_BASE_URL="https://www.attaieproperties.com/staff-api/v1" npm run build:sales-android
 ```
 
-And update `STAFF_API_BASE_URL` in `sales-android/app/build.gradle` if building directly for production.
+And update `STAFF_API_BASE_URL` in `sales-android/app/build.gradle` if overriding the default `https://attaieproperties.com/staff-api/v1`.
 
 ### Step 2: Open `sales-android/` in Android Studio & Build APK
 1. Copy or select **only the `sales-android/` folder** and open it in **Android Studio** (**File → Open → `sales-android`**).

@@ -11,8 +11,9 @@
   "server": {
     "iosScheme": "capacitor",
     "allowNavigation": [
-      "website.attaieproperties.com",
-      "attaieproperties.af",
+      "attaieproperties.com",
+      "www.attaieproperties.com",
+      "*.attaieproperties.com",
       "*.firebaseapp.com",
       "accounts.google.com"
     ]

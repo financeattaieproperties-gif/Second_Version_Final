@@ -7,7 +7,10 @@ const exists=p=>fs.existsSync(path.join(root,p));
 assert.ok(exists('dist/index.html'));
 for(const file of ['admin/index.html','callcenter/index.html','management/index.html','ceo/index.html','sales-leader/index.html','sales/index.html','finance/index.html','marketing/index.html','engineering/index.html','staff-api/paths.php','api/db.php','.htaccess','.user.ini'])assert.ok(exists('dist/'+file),file);
 const rules=fs.readFileSync(path.join(root,'dist/.htaccess'),'utf8');
-assert.ok(rules.includes('staff-api/v1'));assert.ok(rules.includes('callcenter'));assert.ok(rules.includes('sales-leader'));assert.ok(rules.includes('ceo'));assert.ok(rules.includes('noindex'));
+assert.ok(rules.includes('staff-api/v1'));assert.ok(rules.includes('callcenter'));assert.ok(rules.includes('sales-leader'));assert.ok(rules.includes('ceo'));
+assert.ok(fs.readFileSync(path.join(root,'dist/admin/.htaccess'),'utf8').includes('noindex'));
+assert.ok(fs.readFileSync(path.join(root,'dist/ceo/.htaccess'),'utf8').includes('noindex'));
+assert.ok(fs.readFileSync(path.join(root,'dist/sales/.htaccess'),'utf8').includes('noindex'));
 assert.ok(fs.readFileSync(path.join(root,'dist/api/db.php'),'utf8').includes("define('ATTAIE_MANUAL_SCHEMA', true)"));
 const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)]);
 for(const file of walk(path.join(root,'dist'))){

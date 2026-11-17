@@ -9,7 +9,7 @@ The Sales Agent workspace (`af.attaieproperties.sales`) supports **two iPhone/iP
 No Mac, Xcode, or Apple Developer approval wait required:
 
 1. Open **Safari** on the sales agent's iPhone or iPad.
-2. Navigate to **`https://website.attaieproperties.com/sales/`** (or `https://attaieproperties.af/sales/` when live).
+2. Navigate to **`https://attaieproperties.com/sales/`** (or `https://www.attaieproperties.com/sales/`).
 3. Tap the **Share** icon → **Add to Home Screen** → **Add**.
 4. Launch **Attaie Sales** from the Home Screen:
    - Opens full-screen without browser bars (`display: standalone`, Alabaster `#F7F8FA` / `#FFFFFF`).
@@ -35,7 +35,7 @@ No Mac, Xcode, or Apple Developer approval wait required:
    ```bash
    npm run build:sales-android
    ```
-   *(Or point directly to production: `VITE_STAFF_API_BASE_URL="https://attaieproperties.af/staff-api/v1" npm run build:sales-android`)*
+   *(Already targets `https://attaieproperties.com/staff-api/v1` by default; override with `VITE_STAFF_API_BASE_URL` if needed.)*
 2. Generate the native Xcode workspace inside `sales-ios/`:
    ```bash
    cd sales-ios
