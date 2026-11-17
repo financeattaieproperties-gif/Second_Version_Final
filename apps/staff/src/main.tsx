@@ -1,0 +1,4192 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  LayoutDashboard,
+  CalendarClock,
+  Users,
+  ClipboardList,
+  PhoneIncoming,
+  Plus,
+  Search,
+  ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
+  X,
+  Menu,
+  LogOut,
+  Check,
+  ChevronDown,
+  Clock3,
+  AlertCircle,
+  RefreshCw,
+  SlidersHorizontal,
+  ShieldCheck,
+  UserRound,
+  Headphones,
+  Building2,
+  Globe,
+  CheckCheck,
+  FileText,
+  DollarSign,
+  Film,
+  Send,
+  Compass,
+  Download,
+  LayoutGrid,
+  Briefcase,
+  Layers,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Eye,
+  EyeOff,
+  Fingerprint,
+  WifiOff,
+  Smartphone,
+  BatteryCharging,
+  BatteryFull,
+  BatteryLow,
+  BatteryMedium,
+  BatteryWarning,
+  Table2,
+  Calendar,
+} from "lucide-react";
+import type {
+  DashboardData,
+  Followup,
+  InventoryProject,
+  Lead,
+  ManagementTask,
+  Role,
+  Session,
+  StaffUser,
+  Feedback,
+} from "../../../packages/staff-contracts/types";
+import {
+  canAccessDatabase,
+  feedbackDeadline,
+  followupState,
+  formatLeadsToCsv,
+  generateLeadsPdfDocument,
+  isManagerRole,
+  summarizeLeadsPipeline,
+  taskState,
+} from "../../../packages/staff-contracts/workflow.mjs";
+import {
+  getMobilePrimaryTabs,
+  getPasswordVisibilityProps,
+  resolvePageForRole,
+  resolvePanelSpec,
+  resolveWorkspaceRoleOnSignIn,
+  shouldAutoPromptBiometric,
+  writePreferredWorkspaceRole,
+} from "../../../packages/staff-contracts/role-preference.mjs";
+import {
+  clearOfflineSnapshot,
+  enqueueOfflineEntry,
+  flushOfflineOutbox,
+  getOfflineOutboxCounts,
+  isNetworkOfflineError,
+  readOfflineSnapshot,
+  readOfflineViewData,
+  retryFailedOfflineOutboxItems,
+  writeOfflineSessionUser,
+  writeOfflineViewData,
+} from "../../../packages/staff-contracts/offline-cache.mjs";
+import { api } from "./api";
+import {
+  authenticateWithBiometric,
+  clearBiometricEnrollment,
+  enrollBiometric,
+  getBiometricStatus,
+  setQuickSignInPreference,
+} from "./auth/biometric";
+import { useOnlineStatus } from "./hooks/useOnlineStatus";
+import { usePWAInstall } from "./hooks/usePWAInstall";
+import { useLowBatteryWarning } from "./hooks/useLowBatteryWarning";
+import { registerSalesServiceWorker } from "./pwa/register";
+import { AttaieLogoEntrance } from "./components/AttaieLogoEntrance";
+import { ProjectInventoryWizard } from "./components/ProjectInventoryWizard";
+import { HrContractsWorkspace } from "./components/HrContractsWorkspace";
+import { AgreementVerification } from "./components/AgreementVerification";
+import { FinanceWorkspace } from "./components/FinanceWorkspace";
+import {
+  MarketingWorkspace,
+  SubmissionsStatusView,
+} from "./components/MarketingWorkspace";
+import { EngineeringWorkspace } from "./components/EngineeringWorkspace";
+import {
+  MobileFollowupCardList,
+  MobileLeadCardList,
+} from "./components/SalesMobileCards";
+import {
+  StaffCalendarSyncConfirmModal,
+  StaffDriveDocumentsPanel,
+  StaffSheetsExportModal,
+  type PendingStaffCalendarSync,
+} from "./components/GoogleWorkspaceIntegration";
+import { extractAgentEmail } from "../../../shared/googleCalendarSyncService";
+import "./styles.css";
+import "./callcenter-theme.css";
+
+type Client = typeof api;
+type Page =
+  | "overview"
+  | "followups"
+  | "customers"
+  | "leads"
+  | "tasks"
+  | "team"
+  | "projects"
+  | "contracts"
+  | "finance"
+  | "marketing"
+  | "submissions"
+  | "deliverables"
+  | "profile";
+
+const searchParams = new URLSearchParams(location.search);
+const panelSpec = resolvePanelSpec(
+  location.pathname,
+  location.hostname,
+  __STAFF_ROLE__,
+);
+const isDashboardPath = panelSpec.panelId === "dashboard";
+const isPreview =
+  (__STAFF_PREVIEW_ALLOWED__ && searchParams.get("preview") === "1") ||
+  (__STAFF_PREVIEW_ALLOWED__ && isDashboardPath);
+const management = panelSpec.panelId !== "callcenter";
+
+const initialRoleParam = searchParams.get("role") as Role | null;
+const initialPreferredRole = (
+  initialRoleParam ||
+  (panelSpec.panelId !== "dashboard"
+    ? panelSpec.defaultRole
+    : resolveWorkspaceRoleOnSignIn({
+        urlRoleParam: initialRoleParam,
+        management,
+      }))
+) as Role;
+
+document.documentElement.dataset.staffRole =
+  panelSpec.panelId === "callcenter"
+    ? "callcenter"
+    : panelSpec.panelId === "management" || panelSpec.panelId === "ceo"
+      ? "management"
+      : "dashboard";
+
+const base = panelSpec.basePath;
+registerSalesServiceWorker(panelSpec.panelId);
+
+const client: Client = isPreview
+  ? await import("./preview").then((m) =>
+      m.previewClient(management, initialPreferredRole || undefined),
+    )
+  : api;
+
+const labels: Record<string, string> = {
+  upcoming: "Upcoming",
+  due: "Due now",
+  overtime: "Overtime",
+  completed: "Completed",
+  completed_late: "Completed late",
+  todo: "To do",
+  in_progress: "In progress",
+  overdue: "Overdue",
+  cancelled: "Cancelled",
+  draft: "Needs details",
+  active: "Active",
+  closed: "Deal closed",
+  lost: "Deal lost",
+  low: "Low",
+  normal: "Normal",
+  high: "High",
+  urgent: "Urgent",
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  manager: "Manager",
+  ceo: "CEO",
+  sales_leader: "Sales Team Leader",
+  sales: "Sales Agent",
+  callcenter: "Call Center Agent",
+  marketing_manager: "Marketing Manager",
+  editor: "Editor",
+  videographer: "Videographer",
+  finance_manager: "Finance Manager",
+  architect: "Architect",
+  graphic_designer: "Graphic Designer",
+  visual_designer_3d: "3D Visualization Engineer",
+};
+
+const SWITCHABLE_ROLES: { role: Role; label: string }[] = [
+  { role: "ceo", label: "CEO (Global Internal CRM Authority)" },
+  { role: "manager", label: "Manager (Branch Contracts & Operations)" },
+  { role: "sales_leader", label: "Sales Team Leader" },
+  { role: "sales", label: "Sales Agent (Pipeline & Deal Closure)" },
+  { role: "callcenter", label: "Call Center Agent" },
+  { role: "marketing_manager", label: "Marketing Manager (Filming Schedule)" },
+  { role: "videographer", label: "Videographer (Filming Completion)" },
+  { role: "editor", label: "Editor (Editing & Mark Posted -> Submissions DB)" },
+  { role: "finance_manager", label: "Finance Manager (Approve/Post/Reverse)" },
+  { role: "architect", label: "Architect (2D Floor Plans)" },
+  { role: "graphic_designer", label: "Graphic Designer (Brochures & Print)" },
+  { role: "visual_designer_3d", label: "3D Visualization Engineer (3D Renders)" },
+];
+
+const fa: Record<string, string> = management
+  ? (await import("./i18n/fa.json")).default
+  : {};
+
+const STAFF_SIDEBAR_COMPACT_KEY = "attaie_staff_sidebar_compact";
+
+function readStaffSidebarCompact(): boolean {
+  try {
+    return typeof window !== "undefined" && window.localStorage?.getItem(STAFF_SIDEBAR_COMPACT_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function App() {
+  const [language, setLanguage] = useState<"en" | "fa">(() =>
+    management && localStorage.getItem("staff-language") === "fa" ? "fa" : "en",
+  );
+  const t = useCallback(
+    (s: string) => (language === "fa" ? fa[s] || s : s),
+    [language],
+  );
+  const [session, setSession] = useState<Session | null>(null);
+  const [playingEntrance, setPlayingEntrance] = useState(false);
+  const [starting, setStarting] = useState(true);
+  const [page, setPage] = useState<Page>(() => pageFromPath());
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [number, setNumber] = useState(0);
+  const [menu, setMenu] = useState(false);
+  const [isCompact, setIsCompact] = useState<boolean>(() => readStaffSidebarCompact());
+  const [filter, setFilter] = useState("today");
+  const [notice, setNotice] = useState("");
+  const [justSignedOut, setJustSignedOut] = useState(false);
+  const isOnline = useOnlineStatus();
+  const {
+    battery,
+    showWarning: showLowBatteryWarning,
+    thresholdPercent: lowBatteryThreshold,
+    dismissWarning: dismissLowBatteryWarning,
+  } = useLowBatteryWarning(panelSpec.panelId === "sales");
+  const {
+    canInstall: canInstallPwa,
+    isInstalled: isPwaInstalled,
+    promptInstall,
+  } = usePWAInstall();
+  const [offlineSavedAt, setOfflineSavedAt] = useState<string | null>(null);
+  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
+  const [failedSyncCount, setFailedSyncCount] = useState<number>(0);
+  const [syncingPending, setSyncingPending] = useState<boolean>(false);
+  const syncInFlightRef = useRef<boolean>(false);
+
+  const refreshOutboxCounts = useCallback((userId?: number | string) => {
+    const counts = getOfflineOutboxCounts(panelSpec.panelId, userId);
+    setPendingSyncCount(counts.pending + counts.syncing);
+    setFailedSyncCount(counts.failed);
+    return counts;
+  }, []);
+
+  const handleToggleCompact = () => {
+    setIsCompact((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage?.setItem(STAFF_SIDEBAR_COMPACT_KEY, next ? "true" : "false");
+      } catch {
+        // Ignore storage write errors
+      }
+      return next;
+    });
+  };
+  const [modal, setModal] = useState<{
+    kind:
+      | "entry"
+      | "feedback"
+      | "task"
+      | "detail"
+      | "assign"
+      | "staff"
+      | "department";
+    item?: Lead | Followup | ManagementTask;
+  } | null>(null);
+  const [sheetsExportMode, setSheetsExportMode] = useState<"leads" | "inventory" | null>(null);
+  const [pendingCalendarSync, setPendingCalendarSync] = useState<PendingStaffCalendarSync | null>(null);
+  const generation = useRef(0);
+
+  const activeRole: Role = session?.user?.role || (management ? "ceo" : "callcenter");
+  const isCallCenterOnly = activeRole === "callcenter" && !isDashboardPath && !management;
+
+  useEffect(() => {
+    const effectiveLang = isCallCenterOnly ? "en" : language;
+    document.documentElement.lang = effectiveLang;
+    document.documentElement.dir = effectiveLang === "fa" ? "rtl" : "ltr";
+    if (!isCallCenterOnly) localStorage.setItem("staff-language", effectiveLang);
+  }, [language, isCallCenterOnly]);
+
+  useEffect(() => {
+    const restoreOfflineSession = () => {
+      const snapshot = readOfflineSnapshot(panelSpec.panelId);
+      const cachedUser = snapshot?.user as StaffUser | undefined;
+      if (
+        !cachedUser ||
+        (!isPreview &&
+          !(panelSpec.allowedRoles as readonly string[]).includes(cachedUser.role))
+      ) {
+        return false;
+      }
+      setSession({
+        user: cachedUser,
+        csrfToken: "",
+        serverTime: snapshot?.savedAt || new Date().toISOString(),
+      });
+      refreshOutboxCounts(cachedUser.id);
+      setOfflineSavedAt(snapshot?.savedAt || new Date().toISOString());
+      const pathTail = location.pathname.replace(/\/$/, "").split("/").pop() || "";
+      const isRootPath = [
+        "ceo",
+        "management",
+        "sales-leader",
+        "sales",
+        "callcenter",
+        "finance",
+        "marketing",
+        "engineering",
+        "dashboard",
+        "",
+      ].includes(pathTail);
+      setPage((current) => {
+        const resolvedPage = resolvePageForRole(
+          cachedUser.role,
+          current,
+          isRootPath,
+        ) as Page;
+        const cachedView = readOfflineViewData(
+          panelSpec.panelId,
+          resolvedPage === "profile" ? "overview" : resolvedPage,
+        );
+        if (cachedView?.data) {
+          setData(cachedView.data as DashboardData);
+          setOfflineSavedAt(cachedView.savedAt);
+        }
+        return resolvedPage;
+      });
+      return true;
+    };
+
+    const bootSession = async () => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        if (restoreOfflineSession()) return;
+      }
+      try {
+        const s = await client.session();
+        if (!s.user) {
+          clearOfflineSnapshot(panelSpec.panelId);
+          setSession(null);
+          return;
+        }
+        let resolvedUser = s.user;
+        if (isPreview) {
+          const previewRole = (
+            initialRoleParam ||
+            (panelSpec.panelId !== "dashboard"
+              ? panelSpec.defaultRole
+              : resolveWorkspaceRoleOnSignIn({
+                  urlRoleParam: initialRoleParam,
+                  sessionRole: s.user.role,
+                  management,
+                }))
+          ) as Role;
+          if (previewRole && previewRole !== s.user.role) {
+            resolvedUser =
+              client.setActiveRole(previewRole) || {
+                ...s.user,
+                role: previewRole,
+              };
+          }
+        }
+        writePreferredWorkspaceRole(resolvedUser.role);
+        writeOfflineSessionUser(panelSpec.panelId, resolvedUser);
+        refreshOutboxCounts(resolvedUser.id);
+        setOfflineSavedAt(null);
+        setSession({ ...s, user: resolvedUser });
+        const pathTail = location.pathname.replace(/\/$/, "").split("/").pop() || "";
+        const isRootPath = [
+          "ceo",
+          "management",
+          "sales-leader",
+          "sales",
+          "callcenter",
+          "finance",
+          "marketing",
+          "engineering",
+          "dashboard",
+          "",
+        ].includes(pathTail);
+        setPage((current) => resolvePageForRole(resolvedUser.role, current, isRootPath) as Page);
+      } catch (err) {
+        if (!(isNetworkOfflineError(err) && restoreOfflineSession())) {
+          setSession(null);
+        }
+      }
+    };
+
+    void bootSession().finally(() => setStarting(false));
+    const expire = () => {
+      clearOfflineSnapshot(panelSpec.panelId);
+      setOfflineSavedAt(null);
+      setSession(null);
+      setData(null);
+      setJustSignedOut(false);
+      setError("Your session ended. Please sign in again.");
+    };
+    window.addEventListener("staff-session-expired", expire);
+    return () => window.removeEventListener("staff-session-expired", expire);
+  }, []);
+
+  const syncQueuedOfflineEntries = useCallback(async () => {
+    if (!session || syncInFlightRef.current) return null;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      refreshOutboxCounts(session.user.id);
+      return null;
+    }
+    const before = refreshOutboxCounts(session.user.id);
+    if (before.pending === 0 && before.syncing === 0) {
+      return null;
+    }
+    syncInFlightRef.current = true;
+    setSyncingPending(true);
+    try {
+      const outcome = await flushOfflineOutbox({
+        panelId: panelSpec.panelId,
+        userId: session.user.id,
+        executor: async (item, updateItem) => {
+          if (item.kind === "lead_entry") {
+            const {
+              existingLeadId,
+              existingLeadVersion,
+              draft,
+              entry,
+              draftKey,
+              entryKey,
+            } = item.payload || {};
+            let leadId = existingLeadId;
+            let version = existingLeadVersion;
+            if (!leadId) {
+              const created = await client.draft(draft, draftKey);
+              leadId = created.id;
+              version = created.version;
+              updateItem({
+                payload: {
+                  ...item.payload,
+                  existingLeadId: leadId,
+                  existingLeadVersion: version,
+                },
+              });
+            }
+            await client.entry(
+              leadId,
+              { ...entry, version },
+              entryKey || item.idempotencyKey,
+            );
+          } else if (item.kind === "followup_feedback") {
+            await client.feedback(
+              item.payload.taskId,
+              item.payload.body,
+              item.idempotencyKey,
+            );
+          } else if (item.kind === "task_create") {
+            await client.createTask(item.payload.body, item.idempotencyKey);
+          } else if (item.kind === "task_status") {
+            await client.taskStatus(
+              item.payload.taskId,
+              item.payload.status,
+              item.payload.version,
+              item.idempotencyKey,
+            );
+          }
+        },
+      });
+      refreshOutboxCounts(session.user.id);
+      if (outcome.syncedCount > 0) {
+        setNotice(
+          `${t("Synced offline entries")}: ${outcome.syncedCount}`,
+        );
+      }
+      return outcome;
+    } finally {
+      syncInFlightRef.current = false;
+      setSyncingPending(false);
+    }
+  }, [session, refreshOutboxCounts, t]);
+
+  const refresh = useCallback(async () => {
+    if (!session) return;
+    const current = ++generation.current;
+    const targetView = page === "profile" ? "overview" : page;
+    setLoading(true);
+    try {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        refreshOutboxCounts(session.user.id);
+        const cached = readOfflineViewData(panelSpec.panelId, targetView, query);
+        if (cached?.data && current === generation.current) {
+          setData(cached.data as DashboardData);
+          setOfflineSavedAt(cached.savedAt);
+          setError("");
+          return;
+        }
+      }
+      const syncResult = await syncQueuedOfflineEntries();
+      if (syncResult?.authExpired) {
+        return;
+      }
+      const result = await client.load(
+        targetView,
+        query,
+        number,
+        page === "followups" ? filter : "all",
+      );
+      if (current === generation.current) {
+        setData(result);
+        setOfflineSavedAt(null);
+        setError("");
+        writeOfflineViewData(panelSpec.panelId, targetView, result, {
+          query,
+          page: number,
+        });
+      }
+    } catch (e) {
+      if (isNetworkOfflineError(e)) {
+        refreshOutboxCounts(session.user.id);
+        const cached = readOfflineViewData(panelSpec.panelId, targetView, query);
+        if (cached?.data && current === generation.current) {
+          setData(cached.data as DashboardData);
+          setOfflineSavedAt(cached.savedAt);
+          setError("");
+          return;
+        }
+      }
+      if (current === generation.current) setError((e as Error).message);
+    } finally {
+      if (current === generation.current) setLoading(false);
+    }
+  }, [session, page, query, number, filter, refreshOutboxCounts, syncQueuedOfflineEntries]);
+
+  useEffect(() => {
+    if (isOnline && session && (offlineSavedAt || pendingSyncCount > 0)) {
+      void refresh();
+    }
+  }, [isOnline, offlineSavedAt, pendingSyncCount, session, refresh]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(refresh, 180);
+    return () => {
+      clearTimeout(timer);
+      generation.current++;
+    };
+  }, [refresh]);
+
+  useEffect(() => {
+    const syncIntervalMs = pendingSyncCount > 0 ? 15000 : 60000;
+    const timer = setInterval(() => {
+      if (!document.hidden && (typeof navigator === "undefined" || navigator.onLine)) {
+        void refresh();
+      }
+    }, syncIntervalMs);
+    const focus = () => {
+      if (typeof navigator === "undefined" || navigator.onLine) {
+        void refresh();
+      }
+    };
+    window.addEventListener("focus", focus);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, [refresh, pendingSyncCount]);
+
+  useEffect(() => {
+    const pop = () => {
+      setPage(pageFromPath());
+      setQuery("");
+      setNumber(0);
+    };
+    window.addEventListener("popstate", pop);
+    return () => window.removeEventListener("popstate", pop);
+  }, []);
+
+  const navigate = (next: Page) => {
+    history.pushState(
+      {},
+      "",
+      `${base}/${next === "overview" ? "" : next}${isPreview ? "?preview=1" : ""}`,
+    );
+    setPage(next);
+    setQuery("");
+    setNumber(0);
+    setMenu(false);
+  };
+
+  const format = (value: string) =>
+    new Intl.DateTimeFormat(language === "fa" && !isCallCenterOnly ? "fa-AF" : "en-GB", {
+      timeZone: "Asia/Kabul",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(value));
+
+  const badge = (value: string) => (
+    <span className={`badge ${value}`}>{t(labels[value] || value)}</span>
+  );
+
+  const manager = !!session && isManagerRole(session.user.role);
+
+  const canAssignTasks =
+    !!session &&
+    [
+      "manager",
+      "ceo",
+      "sales_leader",
+      "marketing_manager",
+      "finance_manager",
+    ].includes(session.user.role);
+
+  const complete = async () => {
+    setModal(null);
+    setNotice(t("Saved successfully."));
+    await refresh();
+  };
+
+  const completeOffline = (queuedMessage?: string) => {
+    setModal(null);
+    if (session) {
+      refreshOutboxCounts(session.user.id);
+    }
+    setNotice(
+      queuedMessage ||
+        t("Saved locally while offline. Will sync automatically when online."),
+    );
+  };
+
+  const hasSalesOrCallAccess = [
+    "callcenter",
+    "sales",
+    "sales_leader",
+    "manager",
+    "ceo",
+  ].includes(activeRole);
+  const hasProjectsAccess = [
+    "manager",
+    "ceo",
+    "manager",
+    "sales_leader",
+    "sales",
+    "callcenter",
+    "finance_manager",
+    "architect",
+    "graphic_designer",
+    "visual_designer_3d",
+  ].includes(activeRole);
+  const hasContractsAccess = [
+    "manager",
+    "ceo",
+    "finance_manager",
+  ].includes(activeRole);
+  const hasFinanceAccess = [
+    "finance_manager",
+    "manager",
+    "ceo",
+  ].includes(activeRole);
+  const hasMarketingAccess = [
+    "marketing_manager",
+    "production_manager",
+    "editor",
+    "videographer",
+    "photographer",
+    "sales",
+    "sales_leader",
+    "callcenter",
+    "manager",
+    "ceo",
+  ].includes(activeRole);
+  const hasEngineeringAccess = [
+    "architect",
+    "graphic_designer",
+    "visual_designer_3d",
+    "manager",
+    "ceo",
+  ].includes(activeRole);
+  const hasSubmissionsReadAccess =
+    canAccessDatabase(activeRole, "submissions") !== false;
+
+  const isExecOrBranchManager = activeRole === "ceo" || activeRole === "manager";
+
+  const tabs: { id: Page; label: string; icon: React.ElementType }[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    ...(hasSalesOrCallAccess && !isExecOrBranchManager
+      ? [
+          { id: "followups" as Page, label: "Follow-ups", icon: CalendarClock },
+          { id: "customers" as Page, label: "Customers", icon: Users },
+          { id: "leads" as Page, label: "Leads", icon: PhoneIncoming },
+        ]
+      : []),
+    ...(isExecOrBranchManager
+      ? [
+          { id: "customers" as Page, label: "Customers", icon: Users },
+          { id: "leads" as Page, label: "Leads", icon: PhoneIncoming },
+        ]
+      : []),
+    ...(hasProjectsAccess
+      ? [{ id: "projects" as Page, label: "Pre-Sale Projects", icon: Building2 }]
+      : []),
+    ...(hasContractsAccess
+      ? [{ id: "contracts" as Page, label: "HR Contracts", icon: FileText }]
+      : []),
+    ...(hasFinanceAccess
+      ? [{ id: "finance" as Page, label: "Finance Ledger", icon: DollarSign }]
+      : []),
+    ...(hasMarketingAccess
+      ? [{ id: "marketing" as Page, label: "Marketing & Media", icon: Film }]
+      : []),
+    ...(hasEngineeringAccess
+      ? [
+          {
+            id: "deliverables" as Page,
+            label: "Engineering",
+            icon: Compass,
+          },
+        ]
+      : []),
+    ...(hasSubmissionsReadAccess
+      ? [{ id: "submissions" as Page, label: "Submissions", icon: Send }]
+      : []),
+    { id: "tasks", label: "My Tasks", icon: ClipboardList },
+    ...(canAssignTasks
+      ? [{ id: "team" as Page, label: "Team tasks", icon: Users }]
+      : []),
+  ];
+
+  const headings: Record<Page, [string, string]> = {
+    overview: ["Overview", "Your day, clearly organized."],
+    followups: ["Follow-ups", "Focus on the next conversation."],
+    customers: ["Customers", "Customer requirements, in one place."],
+    leads: ["Leads", "Every inquiry has a next step."],
+    tasks: ["My Tasks", "A clear view of your assigned work."],
+    team: ["Team tasks", "Give your team a clear next step."],
+    projects: [
+      "Pre-Sale Projects",
+      "Manager project inventory, multiple sellers, construction company, and floor apartments.",
+    ],
+    contracts: [
+      "HR Contracts",
+      "4-step bilingual apartment contract issuance and Two-Page A4 legal printout.",
+    ],
+    finance: [
+      "Finance Ledger",
+      "Contract installment schedules, draft customer deposits, and Finance Manager approvals.",
+    ],
+    marketing: [
+      "Marketing & Media",
+      "Filming, editing, and social media post workflow connected to the Submission DB.",
+    ],
+    submissions: [
+      "Submissions",
+      "Read-only status of property posts sent to the isolated Submission Database.",
+    ],
+    deliverables: [
+      "Engineering",
+      "Project-linked architectural plans, graphic brochures, and 3D renders with version history.",
+    ],
+    profile: ["Profile", "Your workspace preferences and security."],
+  };
+
+  const [leadStatusFilter, setLeadStatusFilter] = useState<string>("all");
+
+  const leadsPipelineSummary = summarizeLeadsPipeline(data?.leads || []);
+
+  const visibleLeads = (data?.leads || []).filter(
+    (l) => leadStatusFilter === "all" || l.status === leadStatusFilter,
+  );
+
+  const triggerBlobDownload = (
+    content: string,
+    mimeType: string,
+    filename: string,
+  ) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const handleExportLeadsCsv = () => {
+    const csvContent = formatLeadsToCsv(visibleLeads);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    triggerBlobDownload(
+      csvContent,
+      "text/csv;charset=utf-8;",
+      `attaie-leads-${leadStatusFilter}-${dateStamp}.csv`,
+    );
+    setNotice(
+      `${t("Exported current leads view to CSV.")} (${visibleLeads.length})`,
+    );
+  };
+
+  const handleExportLeadsPdf = () => {
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const pdfContent = generateLeadsPdfDocument(visibleLeads, {
+      title: "Attaie Properties — Internal CRM Leads Export",
+      subtitle: `Role: ${ROLE_LABELS[activeRole] || activeRole} · Filter: ${leadStatusFilter.toUpperCase()} · Search: "${query || "All"}" · Records: ${visibleLeads.length}`,
+    });
+    triggerBlobDownload(
+      pdfContent,
+      "application/pdf",
+      `attaie-leads-${leadStatusFilter}-${dateStamp}.pdf`,
+    );
+    setNotice(
+      `${t("Exported current leads view to PDF.")} (${visibleLeads.length})`,
+    );
+  };
+
+  const followups = (data?.followups || []).filter((f) => {
+    const state = followupState(f, data?.serverTime);
+    return (
+      filter === "all" ||
+      (filter === "today"
+        ? !f.completedAt &&
+          new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kabul" }).format(
+            new Date(f.scheduledAt),
+          ) ===
+            new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kabul" }).format(
+              new Date(data?.serverTime || Date.now()),
+            )
+        : filter === "completed"
+          ? !!f.completedAt
+          : state === filter)
+    );
+  });
+
+  const followupTable = (items: Followup[]) =>
+    items.length ? (
+      <>
+        <div className="table-scroll desktop-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>{t("Customer")}</th>
+                <th>{t("Scheduled")}</th>
+                <th>{t("Deadline")}</th>
+                <th>{t("Status")}</th>
+                <th>
+                  <span className="sr-only">{t("Action")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <button
+                      className="person-link"
+                      onClick={() =>
+                        setModal({
+                          kind: "detail",
+                          item: { id: item.leadId } as Lead,
+                        })
+                      }
+                    >
+                      <span className="avatar">
+                        {initials(item.customerName)}
+                      </span>
+                      <span>
+                        <strong>{item.customerName}</strong>
+                        <small className="serial">{item.serial}</small>
+                      </span>
+                    </button>
+                  </td>
+                  <td>{format(item.scheduledAt)}</td>
+                  <td className="muted">
+                    {format(feedbackDeadline(item.scheduledAt))}
+                  </td>
+                  <td>{badge(followupState(item, data?.serverTime))}</td>
+                  <td>
+                    <button
+                      className="text-button"
+                      onClick={() =>
+                        setModal({
+                          kind: item.completedAt ? "detail" : "feedback",
+                          item: item.completedAt
+                            ? ({ id: item.leadId } as Lead)
+                            : item,
+                        })
+                      }
+                    >
+                      {t(item.completedAt ? "Open" : "Feedback")}
+                      <ArrowUpRight size={15} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <MobileFollowupCardList
+          followups={items}
+          serverTime={data?.serverTime}
+          t={t}
+          format={format}
+          statusLabel={(s) => labels[s] || s}
+          onSelectFollowup={(item, kind) =>
+            setModal({
+              kind,
+              item: kind === "detail" ? ({ id: item.leadId } as Lead) : item,
+            })
+          }
+        />
+      </>
+    ) : (
+      <Empty
+        title={t("No records to show")}
+        text={t("Try another filter or check back when new work is assigned.")}
+      />
+    );
+
+  const verificationToken = searchParams.get("verify");
+  if (verificationToken) return <AgreementVerification token={verificationToken} verify={client.verifyContract} lang={language} />;
+
+  if (starting)
+    return (
+      <div className="center-screen">
+        <div className="spinner" />
+        <p>{t("Loading your workspace…")}</p>
+      </div>
+    );
+
+  if (!session)
+    return (
+      <Login
+        t={t}
+        error={error}
+        justSignedOut={justSignedOut}
+        onLogin={(s) => {
+          writePreferredWorkspaceRole(s.user.role);
+          writeOfflineSessionUser(panelSpec.panelId, s.user);
+          setOfflineSavedAt(null);
+          setJustSignedOut(false);
+          setPlayingEntrance(true);
+          setSession(s);
+          setPage((current) =>
+            resolvePageForRole(
+              s.user.role,
+              current,
+              current === "overview",
+            ) as Page,
+          );
+          setError("");
+        }}
+        management={management}
+      />
+    );
+
+  if (playingEntrance) {
+    return (
+      <AttaieLogoEntrance
+        mode="login-transition"
+        variant="navy"
+        onComplete={() => setPlayingEntrance(false)}
+      />
+    );
+  }
+
+  if (
+    !isDashboardPath &&
+    !isPreview &&
+    !(panelSpec.allowedRoles as readonly string[]).includes(session.user.role)
+  )
+    return (
+      <div className="center-screen">
+        <ShieldCheck size={36} />
+        <h1>{t("This account does not have access to this workspace.")}</h1>
+        <button
+          className="button"
+          onClick={() =>
+            client
+              .logout()
+              .then(() => {
+                clearOfflineSnapshot(panelSpec.panelId);
+                setOfflineSavedAt(null);
+                setJustSignedOut(true);
+                setSession(null);
+                setData(null);
+              })
+              .catch((e) => setError(e.message))
+          }
+        >
+          {t("Sign out")}
+        </button>
+      </div>
+    );
+
+  const roleLabel =
+    ROLE_LABELS[session.user.role] ||
+    (manager ? "Management" : "Call Center");
+
+  const pillarDefinitions: {
+    id: "command" | "sales" | "operations" | "tasks";
+    label: string;
+    shortTag: string;
+    icon: React.ElementType;
+    pages: Page[];
+  }[] = [
+    {
+      id: "command",
+      label: "Command",
+      shortTag: "Core",
+      icon: LayoutGrid,
+      pages: ["overview", "projects"],
+    },
+    {
+      id: "sales",
+      label: "Sales & Client CRM",
+      shortTag: "CRM",
+      icon: Briefcase,
+      pages: ["followups", "customers", "leads"],
+    },
+    {
+      id: "operations",
+      label: "Operations & Finance",
+      shortTag: "Ops",
+      icon: Layers,
+      pages: ["contracts", "finance", "marketing", "deliverables", "submissions"],
+    },
+    {
+      id: "tasks",
+      label: "Tasks & Account",
+      shortTag: "Work",
+      icon: ClipboardList,
+      pages: ["tasks", "team", "profile"],
+    },
+  ];
+
+  const tabById = new Map(tabs.map((tab) => [tab.id, tab]));
+  const profileTab: { id: Page; label: string; icon: React.ElementType } = {
+    id: "profile",
+    label: "Profile",
+    icon: UserRound,
+  };
+
+  const pillars = pillarDefinitions
+    .map((pillar) => {
+      const items = pillar.pages
+        .map((id) => (id === "profile" ? profileTab : tabById.get(id)))
+        .filter((item): item is { id: Page; label: string; icon: React.ElementType } => Boolean(item));
+      return { ...pillar, items };
+    })
+    .filter((pillar) => pillar.items.length > 0);
+
+  const activePillar =
+    pillars.find((pillar) => pillar.items.some((item) => item.id === page)) ||
+    pillars[0];
+
+  const shortTagForPage = (id: Page) =>
+    pillars.find((p) => p.items.some((i) => i.id === id))?.shortTag || "Core";
+
+  const mobileTabs = getMobilePrimaryTabs(tabs);
+
+  return (
+    <div
+      className={`staff-shell ${isCompact ? "is-compact" : ""}`}
+      data-sidebar-mode={isCompact ? "compact" : "expanded"}
+      data-panel-id={panelSpec.panelId}
+    >
+      {menu && (
+        <button
+          className="nav-shade"
+          aria-label={t("Close")}
+          onClick={() => setMenu(false)}
+        />
+      )}
+      <aside className={`sidebar ${menu ? "is-open" : ""}`}>
+        <div className="pillar-rail" aria-label={t("Workspace")}>
+          <a
+            className="pillar-brand"
+            href={`${base}/${isPreview ? "?preview=1" : ""}`}
+            title={t("Attaie Properties")}
+            aria-label={t("Attaie Properties")}
+          >
+            <Building2 size={18} />
+          </a>
+          <div className="pillar-rail-nav">
+            {pillars.map((pillar) => {
+              const PillarIcon = pillar.icon;
+              const isActive = activePillar?.id === pillar.id;
+              return (
+                <button
+                  key={pillar.id}
+                  type="button"
+                  title={t(pillar.label)}
+                  aria-label={t(pillar.label)}
+                  className={`pillar-btn ${isActive ? "active" : ""}`}
+                  onClick={() => {
+                    const firstItem = pillar.items[0];
+                    if (firstItem && !pillar.items.some((item) => item.id === page)) {
+                      navigate(firstItem.id);
+                    }
+                  }}
+                >
+                  <PillarIcon size={18} />
+                </button>
+              );
+            })}
+          </div>
+          <div className="pillar-rail-foot">
+            <button
+              type="button"
+              data-testid="staff-sidebar-compact-toggle"
+              aria-pressed={isCompact}
+              aria-expanded={!isCompact}
+              title={t(isCompact ? "Expand full sidebar" : "Compact icon-only sidebar")}
+              aria-label={t(isCompact ? "Expand full sidebar" : "Compact icon-only sidebar")}
+              className={`pillar-btn pillar-collapse-btn ${isCompact ? "active" : ""}`}
+              onClick={handleToggleCompact}
+            >
+              {isCompact ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            </button>
+            <button
+              type="button"
+              title={t("Profile")}
+              aria-label={t("Profile")}
+              className={`pillar-btn ${page === "profile" ? "active" : ""}`}
+              onClick={() => navigate("profile")}
+            >
+              <UserRound size={17} />
+            </button>
+          </div>
+        </div>
+
+        <div className="sub-drawer">
+          <div className="sub-drawer-head">
+            <div>
+              <div className="sub-drawer-kicker">{t("Attaie Properties")}</div>
+              <div className="sub-drawer-title">
+                {t(activePillar?.label || "Workspace")}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="mobile-drawer-close"
+              aria-label={t("Close")}
+              onClick={() => setMenu(false)}
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="sub-drawer-scroll">
+            <nav aria-label={t(activePillar?.label || "Workspace")}>
+              {(activePillar?.items || []).map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`nav-item ${page === id ? "selected" : ""}`}
+                  onClick={() => navigate(id)}
+                >
+                  <Icon size={16} />
+                  <span>{t(label)}</span>
+                  {id === "followups" && (data?.counts.overtime || 0) > 0 && (
+                    <span className="nav-count">{data!.counts.overtime}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+
+            <div className="sub-drawer-all">
+              <p className="nav-caption">{t("All Modules")}</p>
+              <nav aria-label={t("All Modules")}>
+                {tabs.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={`quick-${id}`}
+                    type="button"
+                    data-testid={`nav-tab-${id}`}
+                    className={`nav-item quick-jump-item ${page === id ? "selected" : ""}`}
+                    onClick={() => navigate(id)}
+                  >
+                    <Icon size={14} />
+                    <span>{t(label)}</span>
+                    {id === "followups" && (data?.counts.overtime || 0) > 0 ? (
+                      <span className="nav-count">{data!.counts.overtime}</span>
+                    ) : (
+                      <span className="quick-jump-tag">
+                        {shortTagForPage(id)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          <div className="sidebar-bottom">
+            <button
+              type="button"
+              className="account"
+              onClick={() => navigate("profile")}
+            >
+              <span className="avatar gold">{initials(session.user.name)}</span>
+              <span>
+                <strong>{session.user.name}</strong>
+                <small>{t(roleLabel)}</small>
+              </span>
+              <ChevronDown size={15} />
+            </button>
+          </div>
+        </div>
+      </aside>
+      <div className="workspace-main">
+        <header className="topbar">
+          <div className="breadcrumbs">
+            <button
+              className="icon-button mobile-menu"
+              aria-label="Open navigation"
+              onClick={() => setMenu(true)}
+            >
+              <Menu size={20} />
+            </button>
+            <span>{t(activePillar?.label || (!isDashboardPath ? (manager ? "Management" : "Call Center") : roleLabel))}</span>
+            <span className="crumb-divider">/</span>
+            <strong>{t(headings[page][0])}</strong>
+          </div>
+          <div className="topbar-actions">
+            {panelSpec.panelId === "sales" && battery.visible && (
+              <span
+                className={`header-battery-indicator tone-${battery.tone}`}
+                data-testid="header-battery-indicator"
+                data-battery-tone={battery.tone}
+                role="status"
+                aria-label={`${t("Device battery")} ${battery.text}${battery.charging ? ` · ${t("Charging")}` : ""}`}
+                title={`${t("Device battery")}: ${battery.text}${battery.charging ? ` (${t("Charging")})` : !isOnline ? ` · ${t("Offline")}` : ""}`}
+              >
+                {battery.charging ? (
+                  <BatteryCharging size={14} aria-hidden="true" />
+                ) : battery.percent <= 15 ? (
+                  <BatteryWarning size={14} aria-hidden="true" />
+                ) : battery.percent <= 35 ? (
+                  <BatteryLow size={14} aria-hidden="true" />
+                ) : battery.percent <= 75 ? (
+                  <BatteryMedium size={14} aria-hidden="true" />
+                ) : (
+                  <BatteryFull size={14} aria-hidden="true" />
+                )}
+                <span className="header-battery-percent">{battery.text}</span>
+              </span>
+            )}
+            {panelSpec.panelId === "sales" && canInstallPwa && !isPwaInstalled && (
+              <button
+                type="button"
+                className="button secondary pwa-install-topbar-btn"
+                data-testid="pwa-install-btn"
+                onClick={() => void promptInstall()}
+              >
+                <Download size={15} />
+                {t("Install App")}
+              </button>
+            )}
+            <span className="timezone">Kabul · UTC+04:30</span>
+            <button
+              type="button"
+              className="icon-button mobile-refresh-btn"
+              onClick={refresh}
+              disabled={loading}
+              aria-label={t("Refresh")}
+              title={t("Refresh")}
+            >
+              <RefreshCw className={loading ? "spinning" : ""} size={16} />
+            </button>
+            {!isCallCenterOnly && (
+              <button
+                className="language-toggle"
+                data-testid="staff-language-toggle"
+                onClick={() => setLanguage(language === "en" ? "fa" : "en")}
+              >
+                <Globe size={15} />
+                {language === "en" ? "دری" : "English"}
+              </button>
+            )}
+            <span className="avatar small gold">
+              {initials(session.user.name)}
+            </span>
+          </div>
+        </header>
+        <main className="content">
+          <div className="page-heading">
+            <div>
+              <div className="eyebrow">{t("ATTAIE WORKSPACE")}</div>
+              <h1>{t(headings[page][0])}</h1>
+              <p>{t(headings[page][1])}</p>
+            </div>
+            <div className="heading-actions">
+              <button
+                className="icon-button"
+                onClick={refresh}
+                disabled={loading}
+                aria-label={t("Refresh")}
+              >
+                <RefreshCw className={loading ? "spinning" : ""} size={18} />
+              </button>
+              {canAssignTasks && (
+                <button
+                  className="button secondary"
+                  data-testid="assign-task-btn"
+                  onClick={() => setModal({ kind: "assign" })}
+                >
+                  <Plus size={17} />
+                  {t("Assign task")}
+                </button>
+              )}
+              {(activeRole === "callcenter" || activeRole === "sales") && (
+                <button
+                  className="button"
+                  data-testid="new-entry-btn"
+                  onClick={() => setModal({ kind: "entry" })}
+                >
+                  <Plus size={17} />
+                  {t("New entry")}
+                </button>
+              )}
+            </div>
+          </div>
+          {showLowBatteryWarning && (
+            <div
+              className="low-battery-warning-banner"
+              role="alert"
+              data-testid="low-battery-warning-banner"
+            >
+              <div className="low-battery-warning-copy">
+                <span className="low-battery-warning-icon" aria-hidden="true">
+                  <BatteryWarning size={17} />
+                </span>
+                <div>
+                  <strong>
+                    {t("Low battery")} · {battery.text}
+                  </strong>
+                  <small>
+                    {t(
+                      "Battery dropped below {{threshold}}%. Connect a charger soon to keep working smoothly in the field.",
+                    ).replace("{{threshold}}", String(lowBatteryThreshold))}
+                  </small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="low-battery-dismiss-btn"
+                data-testid="dismiss-low-battery-btn"
+                aria-label={t("Dismiss")}
+                onClick={dismissLowBatteryWarning}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+          {(!isOnline || offlineSavedAt || pendingSyncCount > 0 || failedSyncCount > 0) && (
+            <div
+              className="offline-indicator-banner"
+              role="status"
+              data-testid="offline-indicator-banner"
+            >
+              <div className="offline-indicator-copy">
+                <span className="offline-indicator-icon">
+                  {isOnline && (pendingSyncCount > 0 || syncingPending) ? (
+                    <RefreshCw size={16} className={syncingPending ? "spinning" : ""} />
+                  ) : (
+                    <WifiOff size={16} />
+                  )}
+                </span>
+                <div>
+                  <strong>
+                    {!isOnline
+                      ? t("Offline mode · Showing saved leads")
+                      : syncingPending
+                        ? t("Syncing locally stored offline entries…")
+                        : pendingSyncCount > 0
+                          ? `${pendingSyncCount} ${t("offline entries pending sync")}`
+                          : failedSyncCount > 0
+                            ? `${failedSyncCount} ${t("offline entries need attention")}`
+                            : t("Offline mode · Showing saved leads")}
+                  </strong>
+                  <small>
+                    {!isOnline && pendingSyncCount > 0
+                      ? `${pendingSyncCount} ${t("entries saved locally and will sync automatically when reconnected.")}`
+                      : offlineSavedAt
+                        ? `${t("Last synced")} ${format(offlineSavedAt)}`
+                        : failedSyncCount > 0
+                          ? t("Some queued entries could not be confirmed by the server.")
+                          : t("Reconnect to sync updates and save new entries.")}
+                  </small>
+                </div>
+              </div>
+              {isOnline && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {failedSyncCount > 0 && (
+                    <button
+                      type="button"
+                      className="offline-retry-btn"
+                      data-testid="offline-retry-failed-btn"
+                      onClick={() => {
+                        retryFailedOfflineOutboxItems(panelSpec.panelId, session.user.id);
+                        refreshOutboxCounts(session.user.id);
+                        void refresh();
+                      }}
+                      disabled={loading || syncingPending}
+                    >
+                      <RefreshCw size={14} className={loading || syncingPending ? "spinning" : ""} />
+                      {t("Retry failed")}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="offline-retry-btn"
+                    data-testid="offline-sync-now-btn"
+                    onClick={refresh}
+                    disabled={loading || syncingPending}
+                  >
+                    <RefreshCw size={14} className={loading || syncingPending ? "spinning" : ""} />
+                    {t("Sync now")}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+          {error && (
+            <div className="alert error" role="alert">
+              <AlertCircle size={18} />
+              <span>{error}</span>
+              <button onClick={refresh}>{t("Refresh")}</button>
+            </div>
+          )}
+          {notice && (
+            <div className="alert success" role="status">
+              <Check size={17} />
+              {notice}
+              <button aria-label={t("Close")} onClick={() => setNotice("")}>
+                <X size={15} />
+              </button>
+            </div>
+          )}
+
+          {page === "overview" && (
+            <>
+              <div className="stats-grid">
+                {[
+                  {
+                    label: "New inquiries",
+                    value:
+                      data?.counts.newLeads ??
+                      data?.leads.filter((l) => l.status === "draft").length ??
+                      0,
+                    note: "Needs a first response",
+                    icon: PhoneIncoming,
+                    color: "gold",
+                    target: (hasSalesOrCallAccess ? "leads" : "tasks") as Page,
+                  },
+                  {
+                    label: "Due now",
+                    value:
+                      data?.counts.due ??
+                      data?.followups.filter((f) => followupState(f) === "due")
+                        .length ??
+                      0,
+                    note: "Within the feedback window",
+                    icon: CalendarClock,
+                    color: "blue",
+                    target: (hasSalesOrCallAccess ? "followups" : "tasks") as Page,
+                  },
+                  {
+                    label: "Overtime",
+                    value:
+                      data?.counts.overtime ??
+                      data?.followups.filter(
+                        (f) => followupState(f) === "overtime",
+                      ).length ??
+                      0,
+                    note: "Past the 24-hour deadline",
+                    icon: Clock3,
+                    color: "red",
+                    target: (hasSalesOrCallAccess ? "followups" : "tasks") as Page,
+                  },
+                  {
+                    label: "My Tasks",
+                    value:
+                      data?.counts.tasks ??
+                      data?.tasks.filter((task) => task.status !== "completed")
+                        .length ??
+                      0,
+                    note: "Assigned by management",
+                    icon: ClipboardList,
+                    color: "purple",
+                    target: "tasks" as Page,
+                  },
+                ].map(({ label, value, note, icon: Icon, color, target }) => (
+                  <button
+                    className="stat-card"
+                    key={label}
+                    onClick={() => {
+                      setFilter(label === "Overtime" ? "overtime" : "due");
+                      navigate(target);
+                    }}
+                  >
+                    <div className="stat-top">
+                      <span>{t(label)}</span>
+                      <span className={`stat-icon ${color}`}>
+                        <Icon size={18} />
+                      </span>
+                    </div>
+                    <strong className="stat-number">{value}</strong>
+                    <span className="stat-note">
+                      {t(note)}
+                      <ArrowUpRight size={14} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="overview-grid">
+                <section className="panel">
+                  <div className="panel-heading">
+                    <div>
+                      <h2>{t("Your follow-ups")}</h2>
+                      <p>{t("All times in Kabul · UTC+04:30")}</p>
+                    </div>
+                    {hasSalesOrCallAccess && (
+                      <button
+                        className="text-button"
+                        onClick={() => {
+                          setFilter("all");
+                          navigate("followups");
+                        }}
+                      >
+                        {t("View all")}
+                        <ArrowRight size={15} />
+                      </button>
+                    )}
+                  </div>
+                  {followupTable(
+                    (data?.followups || [])
+                      .filter((f) => !f.completedAt)
+                      .slice(0, 5),
+                  )}
+                </section>
+                <section className="panel task-preview">
+                  <div className="panel-heading">
+                    <div>
+                      <h2>{t("Next on your list")}</h2>
+                      <p>{t("Assigned by management")}</p>
+                    </div>
+                    <ClipboardList size={19} />
+                  </div>
+                  {data?.tasks.slice(0, 3).map((task) => (
+                    <button
+                      className="task-mini"
+                      key={task.id}
+                      onClick={() => setModal({ kind: "task", item: task })}
+                    >
+                      <span className="task-check">
+                        <Check size={14} />
+                      </span>
+                      <span>
+                        <strong>{task.title}</strong>
+                        <small>{format(task.deadlineAt)}</small>
+                      </span>
+                      {badge(task.priority)}
+                    </button>
+                  ))}
+                  {!data?.tasks.length && (
+                    <Empty
+                      title={t("No records to show")}
+                      text={t("Tasks from management will appear here.")}
+                    />
+                  )}
+                  <button
+                    className="task-footer"
+                    onClick={() => navigate("tasks")}
+                  >
+                    {t("My Tasks")}
+                    <ArrowRight size={15} />
+                  </button>
+                </section>
+              </div>
+              <div className="integration-note">
+                <AlertCircle size={15} />
+                <span>
+                  <strong>{t("Etisalat not connected")}</strong> ·{" "}
+                  {t(
+                    "Call time is entered manually; this is not a verified provider event.",
+                  )}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Phase 2: Pre-Sale Projects & Apartments Wizard */}
+          {page === "projects" && (
+            <>
+              <ProjectInventoryWizard
+                projects={data?.projects || []}
+                staffUsers={data?.assignees || []}
+                language={language}
+                onUpload={client.upload}
+                actorRole={activeRole}
+                onExportSheets={() => setSheetsExportMode("inventory")}
+                onSaveProject={async (proj) => {
+                  await client.saveProject(proj);
+                  await refresh();
+                }}
+                onNotice={setNotice}
+                onError={setError}
+              />
+              <StaffDriveDocumentsPanel
+                projects={data?.projects || []}
+                onNotice={setNotice}
+                onError={setError}
+              />
+            </>
+          )}
+
+          {/* Phase 4: HR Deal Contracts & Two-Page A4 Legal Printout */}
+          {page === "contracts" && (
+            <HrContractsWorkspace
+              lang={language}
+              onUpload={client.upload}
+              onSavePreparation={async (projectId, body) => { const result = await client.saveProjectPreparation(projectId, body); await refresh(); return result; }}
+              contracts={data?.hrContracts || []}
+              projects={data?.projects || []}
+              closedDeals={(data?.leads || []).filter(
+                (l) => l.status === "closed",
+              )}
+              actorRole={activeRole}
+              onAmendContract={async (id, body) => { const updated = await client.amendContract(id, body); await refresh(); return updated; }}
+              onIssueContract={async (payload) => {
+                const created = await client.issueContract(payload);
+                await refresh();
+                return created;
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
+          )}
+
+          {/* Phase 4: Finance Installment Schedule & Customer Deposits */}
+          {page === "finance" && (
+            <FinanceWorkspace
+              lang={language}
+              contracts={data?.hrContracts || []}
+              deposits={data?.financeDeposits || []}
+              actorRole={activeRole}
+              onManageDeposit={async (payload) => {
+                await client.manageDeposit(payload);
+                await refresh();
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
+          )}
+
+          {/* Phase 5: Marketing & Media Production Pipeline */}
+          {page === "marketing" && (
+            <MarketingWorkspace
+              onUpload={client.upload}
+              entries={data?.marketingEntries || []}
+              submissions={data?.submissions || []}
+              staffUsers={data?.assignees || []}
+              actorRole={activeRole}
+              onCreateEntry={async (payload) => {
+                await client.createMarketingEntry(payload);
+                await refresh();
+              }}
+              onAdvanceEntry={async (id, action, payload) => {
+                await client.advanceMarketing(id, action, payload);
+                await refresh();
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
+          )}
+
+          {/* Phase 5: Read-Only Submissions Status View */}
+          {page === "submissions" && (
+            <SubmissionsStatusView submissions={data?.submissions || []} />
+          )}
+
+          {/* Phase 6: Engineering Project Tasks & Versioned Deliverables */}
+          {page === "deliverables" && (
+            <EngineeringWorkspace
+              onUpload={client.upload}
+              deliverables={data?.engineeringDeliverables || []}
+              projects={data?.projects || []}
+              actorRole={activeRole}
+              onUploadVersion={async (id, payload) => {
+                await client.uploadDeliverableVersion(id, payload);
+                await refresh();
+              }}
+              onReviewVersion={async (id, payload) => {
+                await client.reviewDeliverable(id, payload);
+                await refresh();
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
+          )}
+
+          {["followups", "customers", "leads", "tasks", "team"].includes(page) && (
+            <>
+              {/* Manager Customer Duplicate Review Queue */}
+              {page === "customers" &&
+                isExecOrBranchManager &&
+                (data?.customerReviewRequests || []).filter(
+                  (r) => r.status === "pending_review",
+                ).length > 0 && (
+                  <section
+                    className="panel"
+                    style={{ marginBottom: 16 }}
+                    data-testid="manager-customer-review-queue"
+                  >
+                    <div className="panel-heading">
+                      <div>
+                        <p className="eyebrow">
+                          Phase 3 Deduplication · Redacted Conflict Queue
+                        </p>
+                        <h2>Pending Customer Duplicate Review Requests</h2>
+                      </div>
+                    </div>
+                    <div className="table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Phone</th>
+                            <th>Requesting Agent</th>
+                            <th>Submitted Name & Requirements</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(data?.customerReviewRequests || [])
+                            .filter((r) => r.status === "pending_review")
+                            .map((req) => (
+                              <tr key={req.id}>
+                                <td dir="ltr">
+                                  <strong>{req.phone}</strong>
+                                </td>
+                                <td>{req.requestingAgentName}</td>
+                                <td>
+                                  <strong>{req.submittedName}</strong>
+                                  <small>{req.submittedRequirements}</small>
+                                </td>
+                                <td>
+                                  <div style={{ display: "flex", gap: 8 }}>
+                                    <button
+                                      type="button"
+                                      className="button"
+                                      data-testid={`approve-customer-review-${req.id}`}
+                                      onClick={async () => {
+                                        await client.resolveCustomerReview(
+                                          req.id,
+                                          "approved_shared",
+                                        );
+                                        setNotice(
+                                          `Granted shared customer access to ${req.requestingAgentName}.`,
+                                        );
+                                        await refresh();
+                                      }}
+                                    >
+                                      Approve Shared Access
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="button secondary"
+                                      onClick={async () => {
+                                        await client.resolveCustomerReview(
+                                          req.id,
+                                          "rejected",
+                                        );
+                                        setNotice("Rejected duplicate request.");
+                                        await refresh();
+                                      }}
+                                    >
+                                      Reject
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                )}
+
+              {page === "leads" && (
+                <section
+                  className="panel pipeline-health-panel"
+                  style={{ marginBottom: 16 }}
+                  data-testid="leads-pipeline-summary-card"
+                >
+                  <div className="panel-heading" style={{ marginBottom: 12 }}>
+                    <div>
+                      <p className="eyebrow">{t("ATTAIE WORKSPACE")}</p>
+                      <h2>{t("Pipeline Health Summary")}</h2>
+                      <p>{t("Quick glance at lead pipeline distribution by status.")}</p>
+                    </div>
+                    <span className="crm-status-inline">
+                      {t("Total Leads")}: <strong>{leadsPipelineSummary.total}</strong>
+                    </span>
+                  </div>
+
+                  <div className="pipeline-health-body" style={{ padding: "14px 16px 18px" }}>
+                    {/* Proportional Pipeline Health Bar */}
+                    <div
+                      style={{
+                        display: "flex",
+                        height: 6,
+                        borderRadius: 6,
+                        overflow: "hidden",
+                        background: "#F1F5F9",
+                        border: "1px solid #E2E8F0",
+                        marginBottom: 12,
+                      }}
+                      aria-label="Pipeline status distribution bar"
+                    >
+                      {leadsPipelineSummary.active > 0 && (
+                        <div
+                          style={{
+                            width: `${Math.max(4, leadsPipelineSummary.percentages.activePct)}%`,
+                            background: "#0F172A",
+                          }}
+                          title={`Active: ${leadsPipelineSummary.active} (${leadsPipelineSummary.percentages.activePct}%)`}
+                        />
+                      )}
+                      {leadsPipelineSummary.draft > 0 && (
+                        <div
+                          style={{
+                            width: `${Math.max(4, leadsPipelineSummary.percentages.draftPct)}%`,
+                            background: "#D97706",
+                          }}
+                          title={`Draft: ${leadsPipelineSummary.draft} (${leadsPipelineSummary.percentages.draftPct}%)`}
+                        />
+                      )}
+                      {leadsPipelineSummary.closed > 0 && (
+                        <div
+                          style={{
+                            width: `${Math.max(4, leadsPipelineSummary.percentages.closedPct)}%`,
+                            background: "#059669",
+                          }}
+                          title={`Closed: ${leadsPipelineSummary.closed} (${leadsPipelineSummary.percentages.closedPct}%)`}
+                        />
+                      )}
+                      {leadsPipelineSummary.lost > 0 && (
+                        <div
+                          style={{
+                            width: `${Math.max(4, leadsPipelineSummary.percentages.lostPct)}%`,
+                            background: "#DC2626",
+                          }}
+                          title={`Lost: ${leadsPipelineSummary.lost} (${leadsPipelineSummary.percentages.lostPct}%)`}
+                        />
+                      )}
+                    </div>
+
+                    <div className="pipeline-stat-grid">
+                      {[
+                        {
+                          key: "all",
+                          label: t("Total Leads"),
+                          count: leadsPipelineSummary.total,
+                          pct: 100,
+                          testId: "pipeline-stat-total",
+                        },
+                        {
+                          key: "active",
+                          label: t("Active"),
+                          count: leadsPipelineSummary.active,
+                          pct: leadsPipelineSummary.percentages.activePct,
+                          testId: "pipeline-stat-active",
+                        },
+                        {
+                          key: "draft",
+                          label: t("Draft"),
+                          count: leadsPipelineSummary.draft,
+                          pct: leadsPipelineSummary.percentages.draftPct,
+                          testId: "pipeline-stat-draft",
+                        },
+                        {
+                          key: "closed",
+                          label: t("Closed"),
+                          count: leadsPipelineSummary.closed,
+                          pct: leadsPipelineSummary.percentages.closedPct,
+                          testId: "pipeline-stat-closed",
+                        },
+                        {
+                          key: "lost",
+                          label: t("Lost"),
+                          count: leadsPipelineSummary.lost,
+                          pct: leadsPipelineSummary.percentages.lostPct,
+                          testId: "pipeline-stat-lost",
+                        },
+                      ].map((stat) => {
+                        const isSelected = leadStatusFilter === stat.key;
+                        return (
+                          <button
+                            key={stat.key}
+                            type="button"
+                            data-testid={stat.testId}
+                            onClick={() => setLeadStatusFilter(stat.key)}
+                            className={`pipeline-stat-chip ${isSelected ? "selected" : ""}`}
+                          >
+                            <div className="pipeline-stat-chip-top">
+                              <span>{stat.label}</span>
+                              <small>
+                                {stat.key === "all" ? "100%" : `${stat.pct}%`}
+                              </small>
+                            </div>
+                            <strong>{stat.count}</strong>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              <section className="panel">
+                <div className="list-toolbar">
+                  <div className="search-field">
+                    <Search size={17} />
+                    <input
+                      value={query}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setNumber(0);
+                      }}
+                      placeholder={`${t("Search")}…`}
+                      aria-label={t("Search")}
+                    />
+                    {query && (
+                      <button
+                        className="icon-button"
+                        onClick={() => setQuery("")}
+                        aria-label="Clear search"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    {page === "leads" && (
+                      <>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          data-testid="export-leads-csv-btn"
+                          onClick={handleExportLeadsCsv}
+                          disabled={!visibleLeads.length}
+                        >
+                          <Download size={15} />
+                          {t("Export CSV")} ({visibleLeads.length})
+                        </button>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          data-testid="export-leads-pdf-btn"
+                          onClick={handleExportLeadsPdf}
+                          disabled={!visibleLeads.length}
+                        >
+                          <FileText size={15} />
+                          {t("Export PDF")} ({visibleLeads.length})
+                        </button>
+                        <button
+                          type="button"
+                          className="button secondary"
+                          data-testid="export-leads-sheets-btn"
+                          onClick={() => setSheetsExportMode("leads")}
+                          disabled={!visibleLeads.length}
+                        >
+                          <Table2 size={15} />
+                          {t("Export Google Sheets")} ({visibleLeads.length})
+                        </button>
+                      </>
+                    )}
+                    <span className="list-note">
+                      <SlidersHorizontal size={15} />
+                      {t("Your permitted records")}
+                    </span>
+                  </div>
+                </div>
+                {page === "followups" && (
+                  <div className="filter-bar">
+                    {[
+                      ["today", "Today"],
+                      ["due", "All due"],
+                      ["upcoming", "Upcoming"],
+                      ["overtime", "Overtime"],
+                      ["completed", "Completed"],
+                      ["all", "All"],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        onClick={() => setFilter(id)}
+                        className={filter === id ? "active" : ""}
+                      >
+                        {t(label)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {page === "leads" && (
+                  <div className="filter-bar" data-testid="leads-status-filter-bar">
+                    {[
+                      ["all", "All"],
+                      ["active", "Active"],
+                      ["draft", "Needs details"],
+                      ["closed", "Deal closed"],
+                      ["lost", "Deal lost"],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => setLeadStatusFilter(id)}
+                        className={leadStatusFilter === id ? "active" : ""}
+                      >
+                        {t(label)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {page === "followups" && followupTable(followups)}
+                {page === "customers" &&
+                  (data?.customers.length ? (
+                    <div className="customer-grid">
+                      {data.customers.map((customer) => (
+                        <button
+                          className="customer-card"
+                          key={customer.id}
+                          onClick={() => {
+                            setQuery(customer.phone);
+                            navigate("leads");
+                            setQuery(customer.phone);
+                          }}
+                        >
+                          <div className="customer-top">
+                            <span className="avatar">
+                              {initials(customer.name)}
+                            </span>
+                            <ArrowUpRight size={17} />
+                          </div>
+                          <h3>{customer.name}</h3>
+                          {customer.serial && (
+                            <small className="serial">{customer.serial}</small>
+                          )}
+                          <p className="phone" dir="ltr">
+                            {customer.phone}
+                          </p>
+                          <div className="customer-requirements">
+                            <small>{t("Requirements")}</small>
+                            <p>{customer.requirements}</p>
+                          </div>
+                          <span className="customer-footer">
+                            {t("Linked inquiries")}
+                            <strong>{customer.leadCount}</strong>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty
+                      title={t("No records to show")}
+                      text={t(
+                        "Submitting a lead automatically adds its customer here.",
+                      )}
+                    />
+                  ))}
+                {page === "leads" &&
+                  (visibleLeads.length ? (
+                    <>
+                      <div className="table-scroll desktop-table-wrap">
+                        <table data-testid="staff-leads-table">
+                          <thead>
+                            <tr>
+                              <th>{t("Customer")}</th>
+                              <th>{t("Requirements")}</th>
+                              <th>{t("Call date and time")}</th>
+                              <th>{t("Status")}</th>
+                              <th>{t("Action")}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {visibleLeads.map((lead) => (
+                              <tr key={lead.id}>
+                                <td>
+                                  <strong>
+                                    {lead.customerName || t("New inquiry")}
+                                  </strong>
+                                  <small className="serial">{lead.serial}</small>
+                                  <small dir="ltr">
+                                    <a
+                                      href={`tel:${lead.phone}`}
+                                      className="phone-call-link"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {lead.phone}
+                                    </a>
+                                  </small>
+                                  {lead.projectName && (
+                                    <small>
+                                      Project: {lead.projectName}{" "}
+                                      {lead.apartmentNumber || ""}
+                                    </small>
+                                  )}
+                                </td>
+                                <td>
+                                  <p className="truncate-text">
+                                    {lead.requirements || "—"}
+                                  </p>
+                                </td>
+                                <td>
+                                  {format(lead.callAt)}
+                                  <small>
+                                    {t(
+                                      lead.source === "provider"
+                                        ? "Provider event"
+                                        : "Manual entry",
+                                    )}
+                                  </small>
+                                </td>
+                                <td>{badge(lead.status)}</td>
+                                <td>
+                                  <button
+                                    className="text-button"
+                                    onClick={() =>
+                                      setModal({
+                                        kind:
+                                          lead.status === "draft"
+                                            ? "entry"
+                                            : "detail",
+                                        item: lead,
+                                      })
+                                    }
+                                  >
+                                    {t(
+                                      lead.status === "draft"
+                                        ? "Complete entry"
+                                        : "Open",
+                                    )}
+                                    <ArrowUpRight size={14} />
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <MobileLeadCardList
+                        leads={visibleLeads}
+                        t={t}
+                        format={format}
+                        statusLabel={(s) => labels[s] || s}
+                        onSelectLead={(lead, kind) =>
+                          setModal({ kind, item: lead })
+                        }
+                      />
+                    </>
+                  ) : (
+                    <Empty
+                      title={t("No records to show")}
+                      text={t("Record your first call to create a lead.")}
+                    />
+                  ))}
+                {(page === "tasks" || page === "team") &&
+                  (data?.tasks.length ? (
+                    <div className="task-list">
+                      {data.tasks.map((task) => (
+                        <button
+                          className="task-row"
+                          key={task.id}
+                          onClick={() => setModal({ kind: "task", item: task })}
+                        >
+                          <span className="task-check">
+                            <ClipboardList size={17} />
+                          </span>
+                          <span className="task-row-title">
+                            <strong>{task.title}</strong>
+                            <small>
+                              {task.assignedBy} · {format(task.deadlineAt)}
+                              {task.projectName ? ` · ${task.projectName}` : ""}
+                            </small>
+                          </span>
+                          {badge(task.priority)}
+                          {badge(taskState(task, data.serverTime))}
+                          <ArrowUpRight size={17} />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Empty
+                      title={t("No records to show")}
+                      text={t(
+                        "Assigned tasks appear here with a priority and deadline.",
+                      )}
+                    />
+                  ))}
+                <div className="pagination">
+                  <span>
+                    {t("Page")} {number + 1} · {t("Up to 25 records")}
+                  </span>
+                  <div>
+                    <button
+                      className="icon-button"
+                      disabled={!number || loading}
+                      onClick={() => setNumber((n) => n - 1)}
+                      aria-label={t("Previous")}
+                    >
+                      <ArrowLeft size={16} />
+                    </button>
+                    <button
+                      className="icon-button"
+                      disabled={
+                        loading ||
+                        Math.max(
+                          data?.leads.length || 0,
+                          data?.followups.length || 0,
+                          data?.customers.length || 0,
+                          data?.tasks.length || 0,
+                        ) < 25
+                      }
+                      onClick={() => setNumber((n) => n + 1)}
+                      aria-label={t("Next")}
+                    >
+                      <ArrowRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </section>
+              {page === "followups" && (
+                <p className="below-note">
+                  <Clock3 size={15} />
+                  {t(
+                    "Feedback is due within 24 hours of the scheduled time.",
+                  )}{" "}
+                  {t("Late feedback remains in the activity history.")}
+                </p>
+              )}
+              {page === "team" && manager && (
+                <div className="team-action" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button
+                    className="button secondary"
+                    data-testid="create-department-btn"
+                    onClick={() => setModal({ kind: "department" })}
+                  >
+                    <Building2 size={17} />
+                    {t("Create department")}
+                  </button>
+                  <button
+                    className="button secondary"
+                    data-testid="create-agent-btn"
+                    onClick={() => setModal({ kind: "staff" })}
+                  >
+                    <UserRound size={17} />
+                    {t("Create agent")}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+          {page === "profile" && (
+            <div className="profile-grid">
+              <section className="panel profile-card">
+                <span className="avatar large gold">
+                  {initials(session.user.name)}
+                </span>
+                <h2>{session.user.name}</h2>
+                <p>{t(roleLabel)}</p>
+                <p>{t("All times in Kabul · UTC+04:30")}</p>
+                <button
+                  className="button secondary"
+                  data-testid="profile-signout-btn"
+                  onClick={() =>
+                    client
+                      .logout()
+                      .then(() => {
+                        clearOfflineSnapshot(panelSpec.panelId);
+                        setOfflineSavedAt(null);
+                        setJustSignedOut(true);
+                        setSession(null);
+                        setData(null);
+                      })
+                      .catch((e) => setError(e.message))
+                  }
+                >
+                  <LogOut size={16} />
+                  {t("Sign out")}
+                </button>
+              </section>
+              <PasswordForm
+                t={t}
+                done={() => {
+                  clearOfflineSnapshot(panelSpec.panelId);
+                  setOfflineSavedAt(null);
+                  setJustSignedOut(true);
+                  setSession(null);
+                  setData(null);
+                }}
+              />
+              {panelSpec.panelId === "sales" && canInstallPwa && !isPwaInstalled && (
+                <section
+                  className="panel biometric-profile-card"
+                  data-testid="profile-install-app-card"
+                >
+                  <div className="biometric-profile-head">
+                    <div className="biometric-profile-identity">
+                      <span className="biometric-quick-icon">
+                        <Smartphone size={20} />
+                      </span>
+                      <div>
+                        <h3>{t("Install Sales App on Phone")}</h3>
+                        <p>
+                          {t(
+                            "Add Attaie Sales to your home screen for quick launch and offline lead viewing.",
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="button"
+                      data-testid="profile-install-app-btn"
+                      onClick={() => void promptInstall()}
+                    >
+                      <Download size={16} />
+                      {t("Install App")}
+                    </button>
+                  </div>
+                </section>
+              )}
+              <BiometricSecurityCard
+                t={t}
+                session={session}
+                onNotify={(m) => {
+                  setError("");
+                  setNotice(m);
+                }}
+                onError={(m) => setError(m)}
+              />
+            </div>
+          )}
+          <footer className="page-footer">
+            <span>© {new Date().getFullYear()} Attaie Properties</span>
+            <span>
+              <ShieldCheck size={13} />
+              {t("Private staff workspace")}
+            </span>
+          </footer>
+        </main>
+        {(activeRole === "sales" || activeRole === "callcenter") &&
+          !modal &&
+          ["overview", "leads", "followups", "customers"].includes(page) && (
+            <button
+              type="button"
+              className="mobile-fab"
+              data-testid="mobile-fab-new-entry"
+              onClick={() => setModal({ kind: "entry" })}
+              aria-label={t("New entry")}
+            >
+              <Plus size={18} />
+              <span>{t("New entry")}</span>
+            </button>
+          )}
+        <nav
+          className="mobile-bottom-nav"
+          aria-label={t("Workspace")}
+          data-testid="mobile-bottom-nav"
+        >
+          {mobileTabs.map((item) => {
+            const Icon = item.icon as React.ElementType;
+            const isActive = page === item.id;
+            const overdueCount =
+              item.id === "followups" ? data?.counts.overtime || 0 : 0;
+            return (
+              <button
+                key={`mobile-nav-${item.id}`}
+                type="button"
+                data-testid={`mobile-nav-${item.id}`}
+                className={`mobile-bottom-nav-btn ${isActive ? "active" : ""}`}
+                onClick={() => navigate(item.id as Page)}
+              >
+                <span className="mobile-bottom-nav-icon">
+                  <Icon size={18} />
+                  {overdueCount > 0 && (
+                    <span className="mobile-bottom-nav-badge">
+                      {overdueCount}
+                    </span>
+                  )}
+                </span>
+                <span className="mobile-bottom-nav-label">
+                  {t(item.mobileLabel || item.label)}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+      {modal && (
+        <Modal
+          title={t(
+            {
+              entry: "New entry",
+              feedback: "Feedback",
+              task: "Task details",
+              detail: "Activity history",
+              assign: "Assign task",
+              staff: "Create agent",
+              department: "Create department",
+            }[modal.kind],
+          )}
+          close={() => setModal(null)}
+          t={t}
+        >
+          {modal.kind === "entry" ? (
+            <EntryForm
+              t={t}
+              item={modal.item as Lead | undefined}
+              users={data?.assignees || []}
+              projects={data?.projects || []}
+              self={session.user}
+              done={complete}
+              onQueueOffline={() => completeOffline()}
+              onRequestCalendarSync={(pending) => setPendingCalendarSync(pending)}
+            />
+          ) : modal.kind === "feedback" ? (
+            <FeedbackForm
+              t={t}
+              task={modal.item as Followup}
+              users={data?.assignees || []}
+              projects={data?.projects || []}
+              self={session.user}
+              done={complete}
+              onQueueOffline={() => completeOffline()}
+              format={format}
+              onRequestCalendarSync={(pending) => setPendingCalendarSync(pending)}
+            />
+          ) : modal.kind === "assign" ? (
+            <AssignForm
+              t={t}
+              users={data?.assignees || []}
+              projects={data?.projects || []}
+              self={session.user}
+              done={complete}
+              onQueueOffline={() => completeOffline()}
+            />
+          ) : modal.kind === "staff" ? (
+            <StaffForm
+              t={t}
+              departments={data?.departments || []}
+              done={complete}
+            />
+          ) : modal.kind === "department" ? (
+            <DepartmentForm t={t} done={complete} />
+          ) : modal.kind === "task" ? (
+            <TaskDetail
+              t={t}
+              task={modal.item as ManagementTask}
+              self={session.user}
+              done={complete}
+              onQueueOffline={() => completeOffline()}
+              format={format}
+            />
+          ) : (
+            <LeadDetail
+              t={t}
+              id={modal.item!.id}
+              fallbackLead={
+                data?.leads.find((l) => l.id === modal.item!.id) ||
+                (modal.item as Lead)
+              }
+              format={format}
+            />
+          )}
+        </Modal>
+      )}
+      {sheetsExportMode && (
+        <StaffSheetsExportModal
+          mode={sheetsExportMode}
+          leads={visibleLeads}
+          projects={data?.projects || []}
+          staffUsers={data?.assignees || []}
+          onClose={() => setSheetsExportMode(null)}
+          onSuccess={(msg) => {
+            setError("");
+            setNotice(msg);
+          }}
+          onError={(err) => setError(err)}
+        />
+      )}
+      {pendingCalendarSync && (
+        <StaffCalendarSyncConfirmModal
+          pending={pendingCalendarSync}
+          onClose={() => setPendingCalendarSync(null)}
+          onSynced={(msg) => {
+            setError("");
+            setNotice(msg);
+          }}
+          onError={(err) => setError(err)}
+        />
+      )}
+    </div>
+  );
+}
+
+function pageFromPath(): Page {
+  const part = location.pathname.replace(/\/$/, "").split("/").pop();
+  return [
+    "followups",
+    "customers",
+    "leads",
+    "tasks",
+    "team",
+    "projects",
+    "contracts",
+    "finance",
+    "marketing",
+    "submissions",
+    "deliverables",
+    "profile",
+  ].includes(part || "")
+    ? (part as Page)
+    : "overview";
+}
+function initials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+}
+type Translate = (s: string) => string;
+function Empty({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="empty">
+      <span>
+        <ClipboardList size={23} />
+      </span>
+      <h3>{title}</h3>
+      <p>{text}</p>
+    </div>
+  );
+}
+function Modal({
+  title,
+  children,
+  close,
+  t,
+}: {
+  title: string;
+  children: React.ReactNode;
+  close: () => void;
+  t: Translate;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const opener = useRef(document.activeElement as HTMLElement);
+  useEffect(() => {
+    ref.current?.showModal();
+    return () => {
+      ref.current?.close();
+      opener.current?.focus();
+    };
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      className="modal"
+      onCancel={(e) => {
+        e.preventDefault();
+        close();
+      }}
+      onClick={(e) => {
+        if (e.target === ref.current) close();
+      }}
+    >
+      <div className="modal-heading">
+        <h2>{title}</h2>
+        <button className="icon-button" aria-label={t("Close")} onClick={close}>
+          <X size={20} />
+        </button>
+      </div>
+      <div className="modal-body">{children}</div>
+    </dialog>
+  );
+}
+function useSubmission(
+  done: () => Promise<void> | void,
+  onOfflineFallback?: (err: unknown, key: string) => boolean,
+) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const key = useRef({ body: "", key: crypto.randomUUID() });
+  const submit = async (
+    body: unknown,
+    operation: (key: string) => Promise<unknown>,
+  ) => {
+    if (busy) return;
+    const serialized = JSON.stringify(body);
+    if (key.current.body !== serialized)
+      key.current = { body: serialized, key: crypto.randomUUID() };
+    setBusy(true);
+    setError("");
+    try {
+      if (typeof navigator !== "undefined" && navigator.onLine === false && onOfflineFallback) {
+        if (onOfflineFallback(new Error("You are offline."), key.current.key)) {
+          return;
+        }
+      }
+      await operation(key.current.key);
+      await done();
+    } catch (e) {
+      if (isNetworkOfflineError(e) && onOfflineFallback) {
+        if (onOfflineFallback(e, key.current.key)) {
+          return;
+        }
+      }
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return { busy, error, submit };
+}
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  const id = React.useId();
+  return (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      {React.isValidElement(children)
+        ? React.cloneElement(children as React.ReactElement<{ id: string }>, {
+            id,
+          })
+        : children}
+    </div>
+  );
+}
+function FormError({ message }: { message: string }) {
+  return message ? (
+    <p className="form-error" role="alert">
+      <AlertCircle size={16} />
+      {message}
+    </p>
+  ) : null;
+}
+function Agents({
+  users,
+  self,
+  t,
+}: {
+  users: StaffUser[];
+  self: StaffUser;
+  t: Translate;
+}) {
+  return (
+    <Field label={t("Next agent")}>
+      <select name="nextAssigneeId" defaultValue={self.id} required>
+        {[self, ...users.filter((u) => u.id !== self.id)]
+          .filter(
+            (u) =>
+              u.id === self.id ||
+              (self.role === "callcenter"
+                ? u.role === "sales"
+                : u.role === "callcenter" || u.role === "sales"),
+          )
+          .map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.id === self.id ? t("Follow up myself") : u.name}
+            </option>
+          ))}
+      </select>
+    </Field>
+  );
+}
+function toUtc(value: FormDataEntryValue | null) {
+  if (!value) throw new Error("Choose a date and time.");
+  return new Date(`${value}:00+04:30`).toISOString();
+}
+function localInputNow() {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Kabul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  })
+    .format(new Date())
+    .replace(" ", "T");
+}
+function EntryForm({
+  t,
+  item,
+  users,
+  projects,
+  self,
+  done,
+  onQueueOffline,
+  onRequestCalendarSync,
+}: {
+  t: Translate;
+  item?: Lead;
+  users: StaffUser[];
+  projects: InventoryProject[];
+  self: StaffUser;
+  done: () => Promise<void>;
+  onQueueOffline?: () => void;
+  onRequestCalendarSync?: (pending: PendingStaffCalendarSync) => void;
+}) {
+  const draft = useRef<Lead | undefined>(item);
+  const draftKey = useRef(crypto.randomUUID());
+  const [syncCalendar, setSyncCalendar] = useState(true);
+  const pendingCalendarRef = useRef<PendingStaffCalendarSync | null>(null);
+  const pendingOfflineEntryRef = useRef<{
+    draft: { phone: FormDataEntryValue | null; callAt: string; source: FormDataEntryValue | null; projectId?: number };
+    entry: Record<string, unknown>;
+  } | null>(null);
+  const { busy, error, submit } = useSubmission(
+    async () => {
+      const pending = pendingCalendarRef.current;
+      pendingCalendarRef.current = null;
+      await done();
+      if (pending && onRequestCalendarSync) {
+        onRequestCalendarSync(pending);
+      }
+    },
+    (_err, key) => {
+      if (!pendingOfflineEntryRef.current) return false;
+      enqueueOfflineEntry(panelSpec.panelId, self.id, {
+        kind: "lead_entry",
+        idempotencyKey: key,
+        payload: {
+          existingLeadId: draft.current?.id,
+          existingLeadVersion: draft.current?.version,
+          draft: pendingOfflineEntryRef.current.draft,
+          entry: pendingOfflineEntryRef.current.entry,
+          draftKey: draftKey.current,
+          entryKey: key,
+        },
+      });
+      pendingCalendarRef.current = null;
+      onQueueOffline?.();
+      return true;
+    },
+  );
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const body = {
+          customerName: String(f.get("customerName")),
+          requirements: String(f.get("requirements")),
+          nextScheduledAt: toUtc(f.get("nextScheduledAt")),
+          nextAssigneeId: Number(f.get("nextAssigneeId")),
+          projectId: f.get("projectId") ? Number(f.get("projectId")) : undefined,
+        };
+        pendingOfflineEntryRef.current = {
+          draft: {
+            phone: f.get("phone"),
+            callAt: draft.current ? draft.current.callAt : toUtc(f.get("callAt")),
+            source: f.get("source") || "manual",
+            projectId: body.projectId,
+          },
+          entry: body,
+        };
+        if (syncCalendar && onRequestCalendarSync) {
+          const allUsers = [self, ...users.filter((u) => u.id !== self.id)];
+          const assignedAgent = allUsers.find((u) => u.id === body.nextAssigneeId) || self;
+          const proj = projects.find((p) => p.id === body.projectId);
+          pendingCalendarRef.current = {
+            scheduleType: "followup",
+            customerName: body.customerName,
+            customerPhone: String(f.get("phone") || item?.phone || ""),
+            propertyOrProject: proj ? `${proj.code} — ${proj.name}` : undefined,
+            serial: item?.serial,
+            scheduledAtIso: body.nextScheduledAt,
+            notes: body.requirements,
+            assignedAgentName: assignedAgent.name,
+            assignedAgentEmail: extractAgentEmail(assignedAgent),
+          };
+        } else {
+          pendingCalendarRef.current = null;
+        }
+        void submit(body, async (key) => {
+          if (!draft.current)
+            draft.current = await client.draft(
+              {
+                phone: f.get("phone"),
+                callAt: toUtc(f.get("callAt")),
+                source: f.get("source") || "manual",
+                projectId: body.projectId,
+              },
+              draftKey.current,
+            );
+          return client.entry(
+            draft.current.id,
+            { ...body, version: draft.current.version },
+            key,
+          );
+        });
+      }}
+    >
+      <p className="form-description">
+        {t("This entry creates a customer and schedules the next follow-up.")}
+      </p>
+      {item && <p className="serial form-serial">{item.serial}</p>}
+      <div className="form-grid">
+        <Field label={t("Customer name")}>
+          <input
+            name="customerName"
+            required
+            maxLength={160}
+            autoComplete="name"
+          />
+        </Field>
+        <Field label={t("Phone")}>
+          <input
+            name="phone"
+            required
+            defaultValue={item?.phone}
+            readOnly={!!draft.current}
+            placeholder="07…"
+            dir="ltr"
+            inputMode="tel"
+          />
+        </Field>
+      </div>
+      {!item && (
+        <div className="form-grid">
+          <Field label={`${t("Call date and time")} · Kabul`}>
+            <input
+              type="datetime-local"
+              name="callAt"
+              required
+              defaultValue={localInputNow()}
+              readOnly={!!draft.current}
+            />
+          </Field>
+          <Field label={t("Pre-Sale Project (Optional)")}>
+            <select name="projectId" defaultValue="">
+              <option value="">General Inquiry</option>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code} — {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+      )}
+      {self.role === "sales" && (
+        <Field label={t("Lead Source")}>
+          <select name="source" defaultValue="walk_in">
+            <option value="walk_in">Walk-in</option>
+            <option value="direct_call">Direct Call</option>
+            <option value="company_referral">Company Referral</option>
+            <option value="callcenter">Call Center Handoff</option>
+            <option value="social_media">Social Media</option>
+          </select>
+        </Field>
+      )}
+      <Field label={t("Requirements")}>
+        <textarea
+          name="requirements"
+          required
+          rows={4}
+          maxLength={4000}
+          placeholder={t(
+            "Describe the property, budget, location, and customer’s priorities.",
+          )}
+        />
+      </Field>
+      <div className="form-grid">
+        <Field label={`${t("Next follow-up")} · Kabul`}>
+          <input
+            type="datetime-local"
+            name="nextScheduledAt"
+            required
+            min={localInputNow()}
+          />
+        </Field>
+        <Agents users={users} self={self} t={t} />
+      </div>
+      <p className="form-note">
+        <AlertCircle size={14} />
+        {t(
+          "Call time is entered manually; this is not a verified provider event.",
+        )}
+      </p>
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 13,
+          color: "#475569",
+          marginBottom: 10,
+          cursor: "pointer",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={syncCalendar}
+          onChange={(e) => setSyncCalendar(e.target.checked)}
+        />
+        <Calendar size={14} />
+        <span>{t("Sync scheduled follow-up to assigned agent's Google Calendar")}</span>
+      </label>
+      <FormError message={error} />
+      <button className="button full" disabled={busy}>
+        {busy ? t("Saving…") : t("Save entry")}
+        <ArrowRight size={16} />
+      </button>
+    </form>
+  );
+}
+function FeedbackForm({
+  t,
+  task,
+  users,
+  projects,
+  self,
+  done,
+  onQueueOffline,
+  format,
+  onRequestCalendarSync,
+}: {
+  t: Translate;
+  task: Followup;
+  users: StaffUser[];
+  projects: InventoryProject[];
+  self: StaffUser;
+  done: () => Promise<void>;
+  onQueueOffline?: () => void;
+  format: (s: string) => string;
+  onRequestCalendarSync?: (pending: PendingStaffCalendarSync) => void;
+}) {
+  const [outcome, setOutcome] = useState<
+    "followup" | "visit" | "closed" | "lost"
+  >("followup");
+  const [selectedProjId, setSelectedProjId] = useState<number>(
+    projects[0]?.id || 1,
+  );
+  const [syncCalendar, setSyncCalendar] = useState(true);
+  const pendingCalendarRef = useRef<PendingStaffCalendarSync | null>(null);
+  const pendingFeedbackBodyRef = useRef<Feedback | null>(null);
+  const selectedProj =
+    projects.find((p) => p.id === selectedProjId) || projects[0];
+  const { busy, error, submit } = useSubmission(
+    async () => {
+      const pending = pendingCalendarRef.current;
+      pendingCalendarRef.current = null;
+      await done();
+      if (pending && onRequestCalendarSync) {
+        onRequestCalendarSync(pending);
+      }
+    },
+    (_err, key) => {
+      if (!pendingFeedbackBodyRef.current) return false;
+      enqueueOfflineEntry(panelSpec.panelId, self.id, {
+        kind: "followup_feedback",
+        idempotencyKey: key,
+        payload: {
+          taskId: task.id,
+          body: pendingFeedbackBodyRef.current,
+        },
+      });
+      pendingCalendarRef.current = null;
+      onQueueOffline?.();
+      return true;
+    },
+  );
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const body: Feedback = {
+          outcome,
+          version: task.version,
+          ...(outcome === "lost"
+            ? { reason: String(f.get("notes")) }
+            : outcome === "closed"
+              ? {
+                  amount: String(f.get("amount")),
+                  currency: String(f.get("currency")) as "AFN" | "USD",
+                  projectId: Number(f.get("projectId")),
+                  apartmentId: Number(f.get("apartmentId")),
+                  buyerPhotoUrl: String(f.get("buyerPhotoUrl")),
+                  tazkiraPhotoUrl: String(f.get("tazkiraPhotoUrl")),
+                }
+              : {
+                  notes: String(f.get("notes")),
+                  nextScheduledAt: toUtc(f.get("nextScheduledAt")),
+                  nextAssigneeId: Number(f.get("nextAssigneeId")),
+                }),
+        };
+        pendingFeedbackBodyRef.current = body;
+        if ((outcome === "followup" || outcome === "visit") && syncCalendar && onRequestCalendarSync) {
+          const allUsers = [self, ...users.filter((u) => u.id !== self.id)];
+          const assignedAgent = allUsers.find((u) => u.id === Number(f.get("nextAssigneeId"))) || self;
+          pendingCalendarRef.current = {
+            scheduleType: outcome === "visit" ? "visit" : "followup",
+            customerName: task.customerName,
+            serial: task.serial,
+            scheduledAtIso: toUtc(f.get("nextScheduledAt")),
+            notes: String(f.get("notes") || ""),
+            assignedAgentName: assignedAgent.name,
+            assignedAgentEmail: extractAgentEmail(assignedAgent),
+          };
+        } else {
+          pendingCalendarRef.current = null;
+        }
+        void submit(body, (key) => client.feedback(task.id, body, key));
+      }}
+    >
+      <div className="form-customer">
+        <span className="avatar">{initials(task.customerName)}</span>
+        <div>
+          <strong>{task.customerName}</strong>
+          <small className="serial">{task.serial}</small>
+        </div>
+        <span className="badge normal">{format(task.scheduledAt)}</span>
+      </div>
+      <Field label={t("Outcome")}>
+        <select
+          value={outcome}
+          onChange={(e) => setOutcome(e.target.value as typeof outcome)}
+        >
+          <option value="followup">{t("Follow up")}</option>
+          <option value="visit">{t("Visit")}</option>
+          {self.role === "sales" && (
+            <option value="closed">{t("Deal closed")}</option>
+          )}
+          <option value="lost">{t("Deal lost")}</option>
+        </select>
+      </Field>
+
+      {outcome === "closed" ? (
+        <div className="form-grid">
+          <Field label={t("Select Pre-Sale Project")}>
+            <select
+              name="projectId"
+              value={selectedProjId}
+              onChange={(e) => setSelectedProjId(Number(e.target.value))}
+            >
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.code} — {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t("Select Apartment Unit")}>
+            <select name="apartmentId">
+              {(selectedProj?.apartments || []).map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.unitNumber} ({a.areaSqm} m² • ${a.totalPrice.toLocaleString()})
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t("Agreed Total Amount")}>
+            <input
+              name="amount"
+              type="number"
+              step="0.01"
+              defaultValue={selectedProj?.apartments[0]?.totalPrice || 120000}
+              required
+            />
+          </Field>
+          <Field label={t("Currency")}>
+            <select name="currency" defaultValue="USD">
+              <option value="USD">USD</option>
+              <option value="AFN">AFN</option>
+            </select>
+          </Field>
+          <Field label={t("Buyer 3×4 Portrait Photo URL")}>
+            <input name="buyerPhotoUrl" defaultValue="/logo.png" required />
+          </Field>
+          <Field label={t("Buyer Tazkira Photo URL")}>
+            <input name="tazkiraPhotoUrl" defaultValue="/logo.png" required />
+          </Field>
+        </div>
+      ) : (
+        <>
+          <Field label={t(outcome === "lost" ? "Reason for loss" : "Feedback")}>
+            <textarea name="notes" required rows={4} maxLength={4000} />
+          </Field>
+          {outcome !== "lost" && (
+            <div className="form-grid">
+              <Field label={`${t("Next follow-up")} · Kabul`}>
+                <input
+                  type="datetime-local"
+                  name="nextScheduledAt"
+                  min={localInputNow()}
+                  required
+                />
+              </Field>
+              <Agents users={users} self={self} t={t} />
+            </div>
+          )}
+        </>
+      )}
+
+      <p className="form-note">
+        {t(
+          outcome === "lost"
+            ? "This lead will be completed. No next follow-up is required."
+            : outcome === "closed"
+              ? "Generates Deal Closed serial (SA01PRC-Project-Apt-DDMMYY) and sends handoff to HR Contracts."
+              : "Feedback is due within 24 hours of the scheduled time.",
+        )}
+      </p>
+      {(outcome === "followup" || outcome === "visit") && (
+        <label
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 13,
+            color: "#475569",
+            marginBottom: 10,
+            cursor: "pointer",
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={syncCalendar}
+            onChange={(e) => setSyncCalendar(e.target.checked)}
+          />
+          <Calendar size={14} />
+          <span>
+            {outcome === "visit"
+              ? t("Sync property visit to assigned agent's Google Calendar")
+              : t("Sync next follow-up to assigned agent's Google Calendar")}
+          </span>
+        </label>
+      )}
+      <FormError message={error} />
+      <button className="button full" disabled={busy}>
+        {busy ? t("Saving…") : t("Submit feedback")}
+        <Check size={17} />
+      </button>
+    </form>
+  );
+}
+function AssignForm({
+  t,
+  users,
+  projects,
+  self,
+  done,
+  onQueueOffline,
+}: {
+  t: Translate;
+  users: StaffUser[];
+  projects: InventoryProject[];
+  self: StaffUser;
+  done: () => Promise<void>;
+  onQueueOffline?: () => void;
+}) {
+  const pendingTaskBodyRef = useRef<Record<string, unknown> | null>(null);
+  const { busy, error, submit } = useSubmission(done, (_err, key) => {
+    if (!pendingTaskBodyRef.current) return false;
+    enqueueOfflineEntry(panelSpec.panelId, self.id, {
+      kind: "task_create",
+      idempotencyKey: key,
+      payload: { body: pendingTaskBodyRef.current },
+    });
+    onQueueOffline?.();
+    return true;
+  });
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const body = {
+          title: String(f.get("title")),
+          instructions: String(f.get("instructions")),
+          priority: String(f.get("priority")),
+          assigneeId: Number(f.get("assigneeId")),
+          projectId: f.get("projectId") ? Number(f.get("projectId")) : undefined,
+          deadlineAt: toUtc(f.get("deadlineAt")),
+        };
+        pendingTaskBodyRef.current = body;
+        void submit(body, (key) => client.createTask(body, key));
+      }}
+    >
+      <Field label={t("Task title")}>
+        <input name="title" required maxLength={200} />
+      </Field>
+      <Field label={t("Instructions")}>
+        <textarea name="instructions" rows={4} required maxLength={4000} />
+      </Field>
+      <div className="form-grid">
+        <Field label={t("Assign to")}>
+          <select name="assigneeId" required>
+            <option value="">{t("Select an agent")}</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name} ({ROLE_LABELS[u.role] || u.role})
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label={t("Priority")}>
+          <select name="priority" defaultValue="normal">
+            {["low", "normal", "high", "urgent"].map((p) => (
+              <option value={p} key={p}>
+                {t(labels[p])}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <div className="form-grid">
+        <Field label={`${t("Deadline")} · Kabul`}>
+          <input
+            type="datetime-local"
+            name="deadlineAt"
+            required
+            min={localInputNow()}
+          />
+        </Field>
+        <Field label={t("Linked Pre-Sale Project (Optional)")}>
+          <select name="projectId" defaultValue="">
+            <option value="">General Office Task</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.code} — {p.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <p className="form-note">
+        {t(
+          "This task has an explicit deadline, without a 24-hour grace period.",
+        )}
+      </p>
+      <FormError message={error} />
+      <button className="button full" disabled={busy}>
+        {busy ? t("Saving…") : t("Assign task")}
+        <ArrowRight size={16} />
+      </button>
+    </form>
+  );
+}
+function TaskDetail({
+  t,
+  task,
+  self,
+  done,
+  onQueueOffline,
+  format,
+}: {
+  t: Translate;
+  task: ManagementTask;
+  self: StaffUser;
+  done: () => Promise<void>;
+  onQueueOffline?: () => void;
+  format: (s: string) => string;
+}) {
+  const pendingStatusRef = useRef<string | null>(null);
+  const { busy, error, submit } = useSubmission(done, (_err, key) => {
+    if (!pendingStatusRef.current) return false;
+    enqueueOfflineEntry(panelSpec.panelId, self.id, {
+      kind: "task_status",
+      idempotencyKey: key,
+      payload: {
+        taskId: task.id,
+        status: pendingStatusRef.current,
+        version: task.version,
+      },
+    });
+    onQueueOffline?.();
+    return true;
+  });
+  const own = task.assigneeId === self.id;
+  const active = !["completed", "cancelled"].includes(task.status);
+  return (
+    <div className="detail">
+      <h3>{task.title}</h3>
+      <p className="preserve-lines">{task.instructions}</p>
+      <dl>
+        <div>
+          <dt>{t("Assigned by")}</dt>
+          <dd>{task.assignedBy}</dd>
+        </div>
+        <div>
+          <dt>{t("Priority")}</dt>
+          <dd>{t(labels[task.priority])}</dd>
+        </div>
+        <div>
+          <dt>{t("Deadline")}</dt>
+          <dd>{format(task.deadlineAt)}</dd>
+        </div>
+        <div>
+          <dt>{t("Status")}</dt>
+          <dd>{t(labels[taskState(task)])}</dd>
+        </div>
+      </dl>
+      <p className="form-note">
+        {t(
+          "This task has an explicit deadline, without a 24-hour grace period.",
+        )}
+      </p>
+      <FormError message={error} />
+      {own && active && (
+        <div className="form-grid">
+          {task.status === "todo" && (
+            <button
+              className="button secondary"
+              disabled={busy}
+              onClick={() => {
+                pendingStatusRef.current = "in_progress";
+                void submit({ status: "in_progress" }, (key) =>
+                  client.taskStatus(task.id, "in_progress", task.version, key),
+                );
+              }}
+            >
+              {t("Start task")}
+            </button>
+          )}
+          <button
+            className="button"
+            disabled={busy}
+            onClick={() => {
+              pendingStatusRef.current = "completed";
+              void submit({ status: "completed" }, (key) =>
+                client.taskStatus(task.id, "completed", task.version, key),
+              );
+            }}
+          >
+            <CheckCheck size={16} />
+            {t("Mark complete")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+function LeadDetail({
+  t,
+  id,
+  fallbackLead,
+  format,
+}: {
+  t: Translate;
+  id: number;
+  fallbackLead?: Lead;
+  format: (s: string) => string;
+}) {
+  const [lead, setLead] = useState<Lead | null>(fallbackLead || null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    if (typeof navigator !== "undefined" && navigator.onLine === false && fallbackLead) {
+      setLead(fallbackLead);
+      setError("");
+      return;
+    }
+    client
+      .lead(id)
+      .then((l) => {
+        if (active) {
+          setLead(l);
+          setError("");
+        }
+      })
+      .catch((e) => {
+        if (active) {
+          if (fallbackLead && isNetworkOfflineError(e)) {
+            setLead(fallbackLead);
+            setError("");
+          } else {
+            setError(e.message);
+          }
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, fallbackLead]);
+  return (
+    <div className="detail">
+      <FormError message={error} />
+      {!lead && !error ? (
+        <p>{t("Loading your workspace…")}</p>
+      ) : (
+        lead && (
+          <>
+            <div className="form-customer">
+              <span className="avatar">
+                {initials(lead.customerName || "New inquiry")}
+              </span>
+              <div>
+                <h3>{lead.customerName || t("New inquiry")}</h3>
+                <small className="serial">{lead.serial}</small>
+              </div>
+            </div>
+            <p dir="ltr">{lead.phone}</p>
+            <h4>{t("Requirements")}</h4>
+            <p className="preserve-lines">{lead.requirements}</p>
+            {lead.deal && (
+              <>
+                <h4>{t("Deal closed")}</h4>
+                <dl>
+                  {lead.deal.dealSerial && (
+                    <div>
+                      <dt>Deal Serial</dt>
+                      <dd>{lead.deal.dealSerial}</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt>{t("Deal amount")}</dt>
+                    <dd>
+                      {lead.deal.currency} {lead.deal.amount}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t("Sales agent")}</dt>
+                    <dd>{lead.deal.salesAgent}</dd>
+                  </div>
+                  <div>
+                    <dt>{t("Completed")}</dt>
+                    <dd>{format(lead.deal.closedAt)}</dd>
+                  </div>
+                </dl>
+              </>
+            )}
+            <h4>{t("Activity history")}</h4>
+            <div className="timeline">
+              {lead.activities?.map((a) => (
+                <div key={a.id}>
+                  <span className="timeline-dot" />
+                  <strong>{a.actorName}</strong>
+                  <small>
+                    {format(a.at)} · {t(a.type.replaceAll("_", " "))}
+                  </small>
+                  <p className="preserve-lines">{a.notes}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )
+      )}
+    </div>
+  );
+}
+function DepartmentForm({
+  t,
+  done,
+}: {
+  t: Translate;
+  done: () => Promise<void>;
+}) {
+  const { busy, error, submit } = useSubmission(done);
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const body = {
+          code: String(f.get("code")),
+          name: String(f.get("name")),
+        };
+        void submit(body, () => client.createDepartment(body));
+      }}
+    >
+      <Field label={t("Department Code")}>
+        <input name="code" required maxLength={60} placeholder="legal_affairs" />
+      </Field>
+      <Field label={t("Department Name")}>
+        <input name="name" required maxLength={120} placeholder="Legal & Compliance" />
+      </Field>
+      <FormError message={error} />
+      <button className="button full" disabled={busy}>
+        {t("Save Department")}
+      </button>
+    </form>
+  );
+}
+function StaffForm({
+  t,
+  departments,
+  done,
+}: {
+  t: Translate;
+  departments: Array<{ code: string; name: string }>;
+  done: () => Promise<void>;
+}) {
+  const { busy, error, submit } = useSubmission(done);
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const f = new FormData(e.currentTarget);
+        const body = Object.fromEntries(f);
+        void submit(body, (key) => client.createStaff(body, key));
+      }}
+    >
+      <Field label={t("Name")}>
+        <input name="name" required maxLength={120} />
+      </Field>
+      <p>
+        {t(
+          "Create the account in Firebase first, then enter its exact UID and email here.",
+        )}
+      </p>
+      <Field label={t("Email")}>
+        <input
+          name="username"
+          type="email"
+          autoComplete="off"
+          required
+          maxLength={254}
+        />
+      </Field>
+      <Field label={t("Firebase UID")}>
+        <input
+          name="firebaseUid"
+          autoComplete="off"
+          required
+          maxLength={128}
+        />
+      </Field>
+      <div className="form-grid">
+        <Field label={t("Department")}>
+          <select name="departmentCode" defaultValue="sales">
+            {departments.map((d) => (
+              <option key={d.code} value={d.code}>
+                {d.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label={t("Role")}>
+          <select name="role" defaultValue="callcenter">
+            {SWITCHABLE_ROLES.map((r) => (
+              <option key={r.role} value={r.role}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </div>
+      <FormError message={error} />
+      <button className="button full" disabled={busy}>
+        {t("Create agent")}
+      </button>
+    </form>
+  );
+}
+function PasswordForm({ t }: { t: Translate; done: () => void }) {
+  const [sent, setSent] = useState(false);
+  const { busy, error, submit } = useSubmission(async () => {
+    setSent(true);
+  });
+  return (
+    <form
+      className="panel profile-card"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const form = new FormData(e.currentTarget);
+        void submit({}, () => client.resetPassword(String(form.get("email"))));
+      }}
+    >
+      <h2>{t("Security")}</h2>
+      <p>{t("Reset your password by email.")}</p>
+      <Field label={t("Email")}>
+        <input name="email" type="email" autoComplete="email" required />
+      </Field>
+      <FormError message={error} />
+      {sent && (
+        <p role="status">
+          {t("If the account exists, a password reset email has been sent.")}
+        </p>
+      )}
+      <button className="button" disabled={busy}>
+        {t("Send reset email")}
+      </button>
+    </form>
+  );
+}
+function BiometricSecurityCard({
+  t,
+  session,
+  onNotify,
+  onError,
+}: {
+  t: Translate;
+  session: Session;
+  onNotify: (message: string) => void;
+  onError: (message: string) => void;
+}) {
+  const [status, setStatus] = useState(() => getBiometricStatus());
+  const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const pwdProps = getPasswordVisibilityProps(showPassword);
+  const pwdId = React.useId();
+
+  if (!status.available) return null;
+
+  const defaultEmail = session.user.username?.includes("@")
+    ? session.user.username
+    : "";
+
+  return (
+    <section
+      className="panel biometric-profile-card"
+      data-testid="profile-biometric-card"
+    >
+      <div className="biometric-profile-head">
+        <div className="biometric-profile-identity">
+          <span className="biometric-quick-icon">
+            <Fingerprint size={20} />
+          </span>
+          <div>
+            <h3>{t("Fingerprint & Face Unlock")}</h3>
+            <p>
+              {t(
+                "Use device biometrics on this phone instead of re-entering your password.",
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {status.enrolled ? (
+        <>
+          <div className="biometric-status-row">
+            <span>
+              {t("Enabled for")} <strong>{status.email}</strong>
+            </span>
+            <button
+              type="button"
+              className="button secondary"
+              data-testid="profile-biometric-disable"
+              onClick={() => {
+                clearBiometricEnrollment();
+                setStatus(getBiometricStatus());
+                onNotify(t("Biometric unlock disabled on this device."));
+              }}
+            >
+              {t("Disable biometric unlock")}
+            </button>
+          </div>
+          <div className="biometric-toggle-row" style={{ marginTop: 12 }}>
+            <div className="biometric-toggle-copy">
+              <strong>{t("Quick Sign-in")}</strong>
+              <small>
+                {t("Prompt fingerprint or face immediately on app launch")}
+              </small>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={status.quickSignInEnabled}
+              aria-label={t("Quick Sign-in")}
+              data-testid="profile-quick-signin-toggle"
+              className="alabaster-switch"
+              onClick={() => {
+                const next = !status.quickSignInEnabled;
+                setQuickSignInPreference(next);
+                setStatus(getBiometricStatus());
+              }}
+            >
+              <span className="alabaster-switch-thumb" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <form
+          className="biometric-enable-form"
+          data-testid="profile-biometric-enable-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            const email = String(f.get("email") || "").trim();
+            const password = String(f.get("password") || "");
+            if (!email || !password) return;
+            setBusy(true);
+            onError("");
+            try {
+              await client.login(email, password);
+              const res = await enrollBiometric(email, password, {
+                title: t("Attaie Sales CRM"),
+                subtitle: t(
+                  "Confirm your fingerprint or face to enable quick sign-in",
+                ),
+                cancelLabel: t("Cancel"),
+              });
+              if (res.ok) {
+                setStatus(getBiometricStatus());
+                onNotify(t("Biometric unlock enabled on this device."));
+                e.currentTarget.reset();
+              } else if (!res.cancelled && res.message) {
+                onError(t(res.message));
+              }
+            } catch (err) {
+              onError((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <p style={{ width: "100%", fontSize: 12, color: "#64748B", margin: 0 }}>
+            {t("Confirm your password once to lock biometric unlock on this device.")}
+          </p>
+          <Field label={t("Email")}>
+            <input
+              name="email"
+              type="email"
+              defaultValue={defaultEmail}
+              autoComplete="username"
+              required
+            />
+          </Field>
+          <div className="field">
+            <label htmlFor={pwdId}>{t("Password")}</label>
+            <div className="password-input-wrap">
+              <input
+                id={pwdId}
+                name="password"
+                type={pwdProps.inputType}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={t(pwdProps.buttonLabel)}
+                aria-pressed={pwdProps.ariaPressed}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          <button
+            type="submit"
+            className="button"
+            disabled={busy}
+            data-testid="profile-biometric-enable-btn"
+          >
+            <Fingerprint size={16} />
+            {t("Enable biometric unlock")}
+          </button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+function Login({
+  t,
+  error,
+  justSignedOut = false,
+  onLogin,
+}: {
+  t: Translate;
+  error: string;
+  justSignedOut?: boolean;
+  onLogin: (s: Session) => void;
+  management: boolean;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [bioBusy, setBioBusy] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [failure, setFailure] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [bioStatus, setBioStatus] = useState(() => getBiometricStatus());
+  const [enableBiometric, setEnableBiometric] = useState(true);
+  const autoPromptTriggeredRef = useRef(false);
+  const passwordId = React.useId();
+  const pwdProps = getPasswordVisibilityProps(showPassword);
+
+  const handleGoogleSignIn = useCallback(async () => {
+    setGoogleBusy(true);
+    setFailure("");
+    try {
+      const loggedIn = await client.loginWithGoogle();
+      if (
+        !isPreview &&
+        !(panelSpec.allowedRoles as readonly string[]).includes(
+          loggedIn.user.role,
+        )
+      ) {
+        await client.logout().catch(() => {});
+        setFailure(t("This account does not have access to this workspace."));
+        return;
+      }
+      onLogin(loggedIn);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Sign-in service is unavailable. Please try again.";
+      setFailure(
+        msg.includes("popup-closed-by-user")
+          ? t("Google sign-in popup was closed before completing.")
+          : t(msg),
+      );
+    } finally {
+      setGoogleBusy(false);
+    }
+  }, [onLogin, t]);
+
+  const handleBiometricSignIn = useCallback(async () => {
+    if (!bioStatus.available || !bioStatus.enrolled) return;
+    setBioBusy(true);
+    setFailure("");
+    try {
+      const bioResult = await authenticateWithBiometric({
+        title: t(panelSpec.loginTitle),
+        subtitle: t("Verify your fingerprint or face to sign in"),
+        cancelLabel: t("Use password"),
+      });
+      if (!bioResult.ok) {
+        if (!bioResult.cancelled && bioResult.message) {
+          setFailure(t(bioResult.message));
+        }
+        return;
+      }
+      const email = bioResult.email || "";
+      const password = bioResult.password || "";
+      const loggedIn = await client.login(email, password);
+      if (
+        !isPreview &&
+        !(panelSpec.allowedRoles as readonly string[]).includes(
+          loggedIn.user.role,
+        )
+      ) {
+        clearBiometricEnrollment();
+        setBioStatus(getBiometricStatus());
+        setFailure(t("This account does not have access to this workspace."));
+        return;
+      }
+      onLogin(loggedIn);
+    } catch {
+      setFailure(
+        t(
+          "Saved biometric credentials are no longer valid. Please sign in with your password.",
+        ),
+      );
+    } finally {
+      setBioBusy(false);
+    }
+  }, [bioStatus.available, bioStatus.enrolled, onLogin, t]);
+
+  useEffect(() => {
+    if (
+      !autoPromptTriggeredRef.current &&
+      shouldAutoPromptBiometric({
+        available: bioStatus.available,
+        enrolled: bioStatus.enrolled,
+        quickSignInEnabled: bioStatus.quickSignInEnabled,
+        justSignedOut,
+        attemptFailed: Boolean(error || failure),
+      })
+    ) {
+      autoPromptTriggeredRef.current = true;
+      void handleBiometricSignIn();
+    }
+  }, [
+    bioStatus.available,
+    bioStatus.enrolled,
+    bioStatus.quickSignInEnabled,
+    error,
+    failure,
+    handleBiometricSignIn,
+    justSignedOut,
+  ]);
+
+  const PanelIcon =
+    panelSpec.panelId === "ceo" || panelSpec.panelId === "management"
+      ? ShieldCheck
+      : panelSpec.panelId === "sales" || panelSpec.panelId === "sales-leader"
+        ? Briefcase
+        : panelSpec.panelId === "finance"
+          ? DollarSign
+          : panelSpec.panelId === "marketing"
+            ? Film
+            : panelSpec.panelId === "engineering"
+              ? Compass
+              : Headphones;
+
+  return (
+    <div className="login-screen" data-panel-id={panelSpec.panelId}>
+      <div className="login-brand">
+        <AttaieLogoEntrance mode="header" variant="navy" />
+        <span>{t(panelSpec.loginTitle)}</span>
+      </div>
+      <main className="login-card">
+        <span className="login-icon">
+          <PanelIcon size={24} />
+        </span>
+        <div className="eyebrow">{t(panelSpec.loginEyebrow)}</div>
+        <h1>{t(panelSpec.loginTitle)}</h1>
+        <p>{t(panelSpec.loginSubtitle)}</p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            padding: "8px 12px",
+            marginBottom: 20,
+            borderRadius: 6,
+            background: "#F8FAFC",
+            border: "1px solid #E2E8F0",
+            fontSize: 11,
+            color: "#334155",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          <span>
+            <strong>{t("Role")}:</strong> {t(panelSpec.fixedRoleLabel)}
+          </span>
+          <code
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: "#0F172A",
+              background: "#FFFFFF",
+              padding: "2px 6px",
+              borderRadius: 4,
+              border: "1px solid #E2E8F0",
+            }}
+          >
+            {panelSpec.basePath}
+          </code>
+        </div>
+        {bioStatus.available && bioStatus.enrolled && (
+          <>
+            <div
+              className="biometric-quick-card"
+              data-testid="biometric-quick-card"
+            >
+              <div className="biometric-quick-meta">
+                <span className="biometric-quick-icon">
+                  <Fingerprint size={19} />
+                </span>
+                <div className="biometric-quick-text">
+                  <strong>{t("Quick biometric sign-in")}</strong>
+                  <span dir="ltr">{bioStatus.email}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="button full"
+                data-testid="biometric-signin-btn"
+                disabled={busy || bioBusy || googleBusy}
+                onClick={handleBiometricSignIn}
+              >
+                <Fingerprint size={17} />
+                {t(
+                  bioBusy
+                    ? "Verifying fingerprint or face…"
+                    : "Sign in with Fingerprint / Face",
+                )}
+              </button>
+              <div className="biometric-toggle-row">
+                <div className="biometric-toggle-copy">
+                  <strong>{t("Quick Sign-in")}</strong>
+                  <small>
+                    {t("Prompt fingerprint or face immediately on app launch")}
+                  </small>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={bioStatus.quickSignInEnabled}
+                  aria-label={t("Quick Sign-in")}
+                  data-testid="biometric-quick-signin-toggle"
+                  className="alabaster-switch"
+                  disabled={busy || bioBusy || googleBusy}
+                  onClick={() => {
+                    const next = !bioStatus.quickSignInEnabled;
+                    setQuickSignInPreference(next);
+                    setBioStatus((prev) => ({
+                      ...prev,
+                      quickSignInEnabled: next,
+                    }));
+                  }}
+                >
+                  <span className="alabaster-switch-thumb" />
+                </button>
+              </div>
+              <button
+                type="button"
+                className="biometric-clear-link"
+                data-testid="biometric-clear-btn"
+                disabled={busy || bioBusy || googleBusy}
+                onClick={() => {
+                  clearBiometricEnrollment();
+                  setBioStatus(getBiometricStatus());
+                  setFailure("");
+                }}
+              >
+                {t("Remove saved biometric")}
+              </button>
+            </div>
+            <div className="biometric-divider">
+              <span>{t("Or sign in with email & password")}</span>
+            </div>
+          </>
+        )}
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            const email = String(f.get("username") || "").trim();
+            const password = String(f.get("password") || "");
+            setBusy(true);
+            setFailure("");
+            try {
+              const loggedIn = await client.login(email, password);
+              if (
+                bioStatus.available &&
+                enableBiometric &&
+                (isPreview ||
+                  (panelSpec.allowedRoles as readonly string[]).includes(
+                    loggedIn.user.role,
+                  ))
+              ) {
+                try {
+                  await enrollBiometric(email, password, {
+                    title: t(panelSpec.loginTitle),
+                    subtitle: t(
+                      "Confirm your fingerprint or face to enable quick sign-in",
+                    ),
+                    cancelLabel: t("Cancel"),
+                  });
+                } catch {
+                  // Never block a verified login if biometric confirmation fails
+                }
+              }
+              onLogin(loggedIn);
+            } catch (err) {
+              setFailure((err as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Field label={t("Email")}>
+            <input
+              name="username"
+              type="email"
+              autoComplete="username"
+              defaultValue={bioStatus.enrolled ? bioStatus.email : ""}
+              required
+            />
+          </Field>
+          <div className="field">
+            <label htmlFor={passwordId}>{t("Password")}</label>
+            <div className="password-input-wrap">
+              <input
+                id={passwordId}
+                name="password"
+                type={pwdProps.inputType}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={t(pwdProps.buttonLabel)}
+                aria-pressed={pwdProps.ariaPressed}
+                title={t(pwdProps.buttonLabel)}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+          {bioStatus.available && !bioStatus.enrolled && (
+            <label className="biometric-check-row">
+              <input
+                type="checkbox"
+                data-testid="biometric-enroll-checkbox"
+                checked={enableBiometric}
+                onChange={(e) => setEnableBiometric(e.target.checked)}
+              />
+              <span>{t("Enable Fingerprint / Face unlock for faster sign-in")}</span>
+            </label>
+          )}
+          <FormError message={t(failure || error)} />
+          <button
+            className={`button full ${bioStatus.available && bioStatus.enrolled ? "secondary" : ""}`}
+            disabled={busy || bioBusy || googleBusy}
+          >
+            {t(busy ? "Signing in…" : "Sign in")}
+            <ArrowRight size={16} />
+          </button>
+        </form>
+        <div className="biometric-divider">
+          <span>{t("Or continue with Google")}</span>
+        </div>
+        <button
+          type="button"
+          className="button secondary full"
+          data-testid="staff-google-signin-btn"
+          disabled={busy || bioBusy || googleBusy}
+          onClick={handleGoogleSignIn}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+          </svg>
+          {t(googleBusy ? "Connecting Google…" : "Sign in with Google")}
+        </button>
+        <details>
+          <summary>{t("Forgot password?")}</summary>
+          <PasswordForm t={t} done={() => {}} />
+        </details>
+        <p className="login-private">
+          <ShieldCheck size={14} />
+          {t("Private, authorized staff access only · Fixed Role Workspace")}
+        </p>
+      </main>
+      <footer>Attaie Properties · Kabul, Afghanistan</footer>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(<App />);

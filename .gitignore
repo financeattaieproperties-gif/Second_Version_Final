@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+admin-panel/node_modules/
+
+# Build output directories
+dist/
+build/
+out/
+.next/
+public/admin/
+public/callcenter/
+public/management/
+public/dashboard/
+admin-panel/dist/
+admin-panel/out/
+admin-panel/release/
+
+# Environment files and sensitive database config
+.env
+.env.local
+.env*.local
+public/api/db.php
+
+# Package archives
+releases/
+*.zip
+*.tar.gz
+
+# Test results and temporary screenshot artifacts
+test-results/
+verify-*.png
+screenshot-*.png
+
+# Cache and build tool outputs
+debug.log
+.gmp_cache/
+*.tsbuildinfo
+.aistudio/
+
+# AI Studio / IDE metadata
+.mcp.json
+.cursor/mcp.json
+.gemini/settings.json
+opencode.json
+.worktrees/
