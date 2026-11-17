@@ -12,11 +12,18 @@ import {
   Compass,
   Sparkles,
   Eye,
+  Camera,
+  Video,
+  Play,
+  ChevronLeft,
+  ChevronRight,
+  Film,
 } from 'lucide-react';
 import { getProjectUnits, type ProjectUnit } from '@/lib/dbService';
 import { Badge } from '@/components/ui/Badge';
 import { PaymentPlanComparisonCard } from '@/components/project/PaymentPlanComparisonCard';
 import { ProjectUnitsOccupancyChart } from '@/components/project/ProjectUnitsOccupancyChart';
+import { VideoPlayer } from '@/components/property/VideoPlayer';
 import { resolveUnitPlans } from '@/lib/projectExplorerUtils';
 
 interface ProjectUnitsSectionProps {
@@ -51,6 +58,16 @@ export function ApartmentFullInfoModal({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
+  const allPhotos: string[] = [
+    ...(unit.image_url ? [unit.image_url] : []),
+    ...(Array.isArray(unit.gallery_images)
+      ? unit.gallery_images.filter((img): img is string => Boolean(img) && img !== unit.image_url)
+      : []),
+  ];
+
+  const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
+  const activePhoto = allPhotos[currentPhotoIdx] || unit.image_url || null;
+
   const displayTitle = unit.title || `${projectName} — Unit ${unit.unit_number}`;
   const currency = unit.currency || 'USD';
   const { technicalPlan, furnishedPlan, legendImg } = resolveUnitPlans(unit, null);
@@ -61,7 +78,7 @@ export function ApartmentFullInfoModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -69,40 +86,87 @@ export function ApartmentFullInfoModal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.25 }}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden my-8 max-h-[90vh] flex flex-col"
+        className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden my-6 max-h-[92vh] flex flex-col"
       >
-        {/* Modal Header */}
-        <div className="relative h-60 sm:h-72 bg-brand-navy shrink-0 overflow-hidden">
-          {unit.image_url ? (
+        {/* Modal Header & Main Photo Stage */}
+        <div className="relative h-64 sm:h-80 md:h-96 bg-brand-navy shrink-0 overflow-hidden select-none">
+          {activePhoto ? (
             <img
-              src={unit.image_url}
-              alt={displayTitle}
-              className="w-full h-full object-cover"
+              key={activePhoto}
+              src={activePhoto}
+              alt={`${displayTitle} - Photo ${currentPhotoIdx + 1}`}
+              className="w-full h-full object-cover transition-opacity duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-navy via-brand-navy-light to-brand-navy-deep">
               <Building2 className="w-16 h-16 text-white/20" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/30" />
 
+          {/* Close button */}
           <button
             type="button"
             onClick={onClose}
             aria-label="Close apartment details"
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/55 text-white hover:bg-black/80 flex items-center justify-center transition-colors cursor-pointer"
+            className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 text-white hover:bg-black/90 flex items-center justify-center transition-colors cursor-pointer backdrop-blur-xs"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div className="absolute bottom-4 left-6 right-6 flex flex-wrap items-end justify-between gap-4">
+          {/* Media Badges Top-Left */}
+          <div className="absolute top-4 left-4 z-20 flex flex-wrap items-center gap-2">
+            {allPhotos.length > 1 && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-black/65 text-white backdrop-blur-xs flex items-center gap-1.5 shadow-xs border border-white/10">
+                <Camera className="w-3.5 h-3.5 text-brand-gold" />
+                <span>Photo {currentPhotoIdx + 1} of {allPhotos.length}</span>
+              </span>
+            )}
+            {unit.video_url && (
+              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1.5 shadow-xs border border-emerald-400/20">
+                <Film className="w-3.5 h-3.5 text-white" />
+                <span>Interior Video Tour</span>
+              </span>
+            )}
+          </div>
+
+          {/* Gallery Navigation Arrows (if multiple photos) */}
+          {allPhotos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPhotoIdx((prev) => (prev > 0 ? prev - 1 : allPhotos.length - 1));
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs shadow-md border border-white/10"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentPhotoIdx((prev) => (prev < allPhotos.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer backdrop-blur-xs shadow-md border border-white/10"
+                aria-label="Next photo"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </>
+          )}
+
+          {/* Unit Info overlay at bottom of header */}
+          <div className="absolute bottom-4 left-6 right-6 z-10 flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-gold text-white">
+                <span className="px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider bg-brand-gold text-white shadow-xs">
                   Unit {unit.unit_number}
                 </span>
                 <Badge status={statusBadgeMap[unit.status]} />
-                <span className="text-xs text-white/80 font-medium">
+                <span className="text-xs text-white/90 font-medium bg-black/40 backdrop-blur-xs px-2.5 py-1 rounded-md">
                   {unit.floor !== null ? `Floor ${unit.floor}` : 'Typical Floor'}
                 </span>
               </div>
@@ -123,6 +187,31 @@ export function ApartmentFullInfoModal({
             </div>
           </div>
         </div>
+
+        {/* Thumbnail Gallery Strip (if multiple photos) */}
+        {allPhotos.length > 1 && (
+          <div className="bg-brand-navy-deep/95 border-b border-brand-navy/60 px-4 py-2.5 flex items-center gap-2.5 overflow-x-auto scrollbar-thin">
+            <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider shrink-0 flex items-center gap-1 mr-1">
+              <Camera className="w-3.5 h-3.5 text-brand-gold" />
+              Gallery:
+            </span>
+            {allPhotos.map((photo, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setCurrentPhotoIdx(idx)}
+                className={`relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all cursor-pointer ${
+                  currentPhotoIdx === idx
+                    ? 'border-brand-gold ring-2 ring-brand-gold/60 opacity-100 scale-105'
+                    : 'border-white/10 opacity-60 hover:opacity-100 hover:border-white/40'
+                }`}
+                title={`Photo ${idx + 1}`}
+              >
+                <img src={photo} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-6">
@@ -184,6 +273,28 @@ export function ApartmentFullInfoModal({
               </div>
             </div>
           </div>
+
+          {/* Interior Video Walkthrough Section (if video provided) */}
+          {unit.video_url && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-brand-navy flex items-center gap-1.5">
+                  <Video className="w-4 h-4 text-brand-gold" />
+                  Interior Video Walkthrough & Tour
+                </h4>
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Play className="w-2.5 h-2.5 fill-emerald-700" />
+                  HD Apartment Video Tour
+                </span>
+              </div>
+              <div className="rounded-xl overflow-hidden shadow-xs">
+                <VideoPlayer
+                  url={unit.video_url}
+                  title={`${displayTitle} — Interior Video Walkthrough`}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Interactive Architectural Floor Plan */}
           <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -390,6 +501,11 @@ export function ProjectUnitsSection({ projectId, projectName }: ProjectUnitsSect
           <AnimatePresence mode="popLayout">
             {filteredUnits.map((unit) => {
               const displayTitle = unit.title || `${projectName} — Unit ${unit.unit_number}`;
+              const cardCover =
+                unit.image_url ||
+                (Array.isArray(unit.gallery_images) && unit.gallery_images.length > 0
+                  ? unit.gallery_images[0]
+                  : null);
               return (
                 <motion.div
                   layout
@@ -411,15 +527,36 @@ export function ProjectUnitsSection({ projectId, projectName }: ProjectUnitsSect
                   className="group bg-white rounded-xl border border-gray-200 hover:border-brand-gold/60 p-5 shadow-xs hover:shadow-lg transition-all flex flex-col justify-between cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-brand-gold"
                 >
                   <div>
-                    {unit.image_url && (
+                    {cardCover && (
                       <div className="relative mb-3 -mx-5 -mt-5 h-44 overflow-hidden rounded-t-xl bg-gray-100 border-b border-gray-100">
                         <img
-                          src={unit.image_url}
+                          src={cardCover}
                           alt={displayTitle}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           loading="lazy"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+
+                        {/* Media Badges */}
+                        <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5 z-10">
+                          {Array.isArray(unit.gallery_images) && unit.gallery_images.length > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-brand-navy/90 text-white backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold shadow-xs border border-white/10">
+                              <Camera className="w-3 h-3 text-brand-gold" />
+                              {unit.gallery_images.length +
+                                (unit.image_url && !unit.gallery_images.includes(unit.image_url)
+                                  ? 1
+                                  : 0)}{' '}
+                              Photos
+                            </span>
+                          )}
+                          {unit.video_url && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600/90 text-white backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold shadow-xs border border-white/10">
+                              <Play className="w-2.5 h-2.5 fill-white text-white" />
+                              Video Tour
+                            </span>
+                          )}
+                        </div>
+
                         <span className="absolute bottom-2.5 right-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 backdrop-blur-xs px-2.5 py-1 text-[11px] font-semibold text-brand-navy shadow-xs">
                           <Eye className="w-3.5 h-3.5 text-brand-gold" />
                           View Full Details

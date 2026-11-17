@@ -93,7 +93,7 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "revision": "e04fc45d2129633250578fe6f19126af"
   }, {
     "url": "index.html",
-    "revision": "0b878745e44acc28e42fc3051da6dc35"
+    "revision": "56b6485f6176f3f7b8feff9cac8706fe"
   }, {
     "url": "assets/window-4-C9gUup8J.png",
     "revision": null
@@ -128,7 +128,7 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "url": "assets/inventory-DVvxCqn8.js",
     "revision": null
   }, {
-    "url": "assets/index-DceEInIa.js",
+    "url": "assets/index-DdXPqp0L.js",
     "revision": null
   }, {
     "url": "assets/index-BarJ5Cqn.css",

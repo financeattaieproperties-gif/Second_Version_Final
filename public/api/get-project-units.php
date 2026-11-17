@@ -2,6 +2,53 @@
 require_once __DIR__ . '/bootstrap.php';
 cors();
 
+function decode_gallery(?string $raw): array {
+    if (!$raw) return [];
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? array_values(array_filter($decoded)) : [];
+}
+
+function normalize_public_unit_row(array $row): array {
+    $row['id']         = (int) $row['id'];
+    $row['project_id'] = (int) $row['project_id'];
+    $row['beds']       = $row['beds']  !== null ? (int) $row['beds']   : null;
+    $row['baths']      = $row['baths'] !== null ? (int) $row['baths']  : null;
+    $row['area']       = $row['area']  !== null ? (float) $row['area'] : null;
+    $row['floor']      = $row['floor'] !== null ? (int) $row['floor']  : null;
+    $row['price']      = $row['price'] !== null ? (float) $row['price']: null;
+
+    $gallery = decode_gallery($row['gallery_images'] ?? null);
+    $video = !empty($row['video_url']) ? (string) $row['video_url'] : null;
+    $techPlan = !empty($row['technical_plan_url']) ? (string) $row['technical_plan_url'] : null;
+    $desc = (string) ($row['description'] ?? '');
+
+    if (strpos($desc, '[TECHNICAL_PLAN:') !== false) {
+        if (preg_match('/\[TECHNICAL_PLAN:\s*([^\]]+)\]/', $desc, $m)) {
+            if (!$techPlan) $techPlan = trim($m[1]);
+            $desc = trim(preg_replace('/\[TECHNICAL_PLAN:\s*[^\]]+\]/', '', $desc));
+        }
+    }
+    if (strpos($desc, '[GALLERY:') !== false) {
+        if (preg_match('/\[GALLERY:\s*(\[[^\]]*\])\]/', $desc, $m)) {
+            $parsed = json_decode($m[1], true);
+            if (is_array($parsed) && empty($gallery)) $gallery = array_values(array_filter($parsed));
+            $desc = trim(preg_replace('/\[GALLERY:\s*\[[^\]]*\]\]/', '', $desc));
+        }
+    }
+    if (strpos($desc, '[VIDEO:') !== false) {
+        if (preg_match('/\[VIDEO:\s*([^\]]+)\]/', $desc, $m)) {
+            if (!$video) $video = trim($m[1]);
+            $desc = trim(preg_replace('/\[VIDEO:\s*[^\]]+\]/', '', $desc));
+        }
+    }
+
+    $row['description']        = $desc !== '' ? $desc : null;
+    $row['gallery_images']     = $gallery;
+    $row['video_url']          = $video;
+    $row['technical_plan_url'] = $techPlan;
+    return $row;
+}
+
 $projectId = intval($_GET['project_id'] ?? 0);
 $allUnits  = !empty($_GET['all']);
 if (!$projectId && !$allUnits) {
@@ -45,9 +92,21 @@ $countStmt->execute();
 $totalRow = $countStmt->get_result()->fetch_assoc();
 $total = (int) ($totalRow['total'] ?? 0);
 
+// Check if columns exist
+$hasGalleryCol = false;
+$hasVideoCol = false;
+$checkCols = db()->query("SHOW COLUMNS FROM project_units LIKE 'gallery_images'");
+if ($checkCols && $checkCols->num_rows > 0) $hasGalleryCol = true;
+$checkCols2 = db()->query("SHOW COLUMNS FROM project_units LIKE 'video_url'");
+if ($checkCols2 && $checkCols2->num_rows > 0) $hasVideoCol = true;
+
+$extraCols = '';
+if ($hasGalleryCol) $extraCols .= ', u.gallery_images';
+if ($hasVideoCol)   $extraCols .= ', u.video_url';
+
 $sql = 'SELECT u.id, u.project_id, p.name AS project_name, p.location AS project_location,
                u.unit_number, u.title, u.beds, u.baths, u.area, u.floor, u.price,
-               u.currency, u.status, u.image_url, u.description
+               u.currency, u.status, u.image_url, u.description' . $extraCols . '
         FROM project_units u
         INNER JOIN projects p ON p.id = u.project_id'
         . $whereSql
@@ -65,14 +124,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 $rows = [];
 while ($row = $result->fetch_assoc()) {
-    $row['id']         = (int) $row['id'];
-    $row['project_id'] = (int) $row['project_id'];
-    $row['beds']       = $row['beds']  !== null ? (int) $row['beds']   : null;
-    $row['baths']      = $row['baths'] !== null ? (int) $row['baths']  : null;
-    $row['area']       = $row['area']  !== null ? (float) $row['area'] : null;
-    $row['floor']      = $row['floor'] !== null ? (int) $row['floor']  : null;
-    $row['price']      = $row['price'] !== null ? (float) $row['price']: null;
-    $rows[] = $row;
+    $rows[] = normalize_public_unit_row($row);
 }
 $hasMore = ($offset + count($rows)) < $total;
 json_out([
@@ -82,6 +134,3 @@ json_out([
     'total'    => $total,
     'has_more' => $hasMore,
 ]);
-
-
-

@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useStat
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import gsap from 'gsap';
-import { SlidersHorizontal, Bed, Bath, Maximize2, Layers, MapPin, Building2, Eye, LayoutGrid, Map as MapIcon, Columns2, X, RotateCcw } from 'lucide-react';
+import { SlidersHorizontal, Bed, Bath, Maximize2, Layers, MapPin, Building2, Eye, LayoutGrid, Map as MapIcon, Columns2, X, RotateCcw, Camera, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -54,6 +54,11 @@ function ProjectUnitInventoryCard({
   const [selectedUnitOpen, setSelectedUnitOpen] = useState(false);
   const projectLabel = unit.project_name || `Project #${unit.project_id}`;
   const unitTitle = unit.title || `${projectLabel} — ${t('projectUnits.unitPrefix', { number: unit.unit_number })}`;
+  const cardCover =
+    unit.image_url ||
+    (Array.isArray(unit.gallery_images) && unit.gallery_images.length > 0
+      ? unit.gallery_images[0]
+      : null);
 
   return (
     <>
@@ -70,9 +75,9 @@ function ProjectUnitInventoryCard({
         className="group bg-white rounded-2xl overflow-hidden border border-brand-navy/8 hover:border-brand-gold/60 shadow-brand-sm hover:shadow-brand-lg transition-all duration-300 flex flex-col h-full cursor-pointer text-left focus:outline-none focus:ring-2 focus:ring-brand-gold"
       >
         <div className="relative block aspect-[16/10] overflow-hidden bg-brand-navy">
-          {unit.image_url ? (
+          {cardCover ? (
             <img
-              src={unit.image_url}
+              src={cardCover}
               alt={`${projectLabel} — ${unit.unit_number}`}
               loading="lazy"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
@@ -82,15 +87,29 @@ function ProjectUnitInventoryCard({
               <Building2 size={36} />
             </div>
           )}
-          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+          <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-brand-navy/90 text-white backdrop-blur-xs">
               {t('projectUnits.projectApartmentBadge')}
             </span>
             <span className="px-2.5 py-1 rounded-full text-xs font-bold capitalize bg-brand-gold text-white">
               {unit.status}
             </span>
+            {Array.isArray(unit.gallery_images) && unit.gallery_images.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-navy/85 text-white backdrop-blur-xs flex items-center gap-1 shadow-xs border border-white/10">
+                <Camera size={11} className="text-brand-gold" />
+                {unit.gallery_images.length +
+                  (unit.image_url && !unit.gallery_images.includes(unit.image_url) ? 1 : 0)}{' '}
+                Photos
+              </span>
+            )}
+            {unit.video_url && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600/90 text-white backdrop-blur-xs flex items-center gap-1 shadow-xs border border-white/10">
+                <Play size={10} fill="white" />
+                Video Tour
+              </span>
+            )}
           </div>
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white z-10">
             <span className="text-xs font-bold bg-black/50 backdrop-blur-xs px-2.5 py-1 rounded-lg">
               {projectLabel} · {t('projectUnits.unitPrefix', { number: unit.unit_number })}
             </span>

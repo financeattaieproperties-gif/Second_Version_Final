@@ -17,6 +17,8 @@ $db = db();
 $queries = [
     "ALTER TABLE properties ADD COLUMN IF NOT EXISTS gallery_images TEXT NULL COMMENT 'JSON array of image URLs'",
     "ALTER TABLE properties ADD COLUMN IF NOT EXISTS video_url VARCHAR(1000) NULL COMMENT 'YouTube, Vimeo, or direct MP4 URL'",
+    "ALTER TABLE project_units ADD COLUMN IF NOT EXISTS gallery_images TEXT NULL COMMENT 'JSON array of image URLs'",
+    "ALTER TABLE project_units ADD COLUMN IF NOT EXISTS video_url VARCHAR(1000) NULL COMMENT 'YouTube, Vimeo, or direct MP4 URL'",
 ];
 
 $results = [];

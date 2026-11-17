@@ -903,6 +903,8 @@ export interface ProjectUnit {
   currency: string;
   status: 'available' | 'reserved' | 'sold' | 'rented';
   image_url: string | null;
+  gallery_images?: string[];
+  video_url?: string | null;
   technical_plan_url?: string | null;
   description: string | null;
 }

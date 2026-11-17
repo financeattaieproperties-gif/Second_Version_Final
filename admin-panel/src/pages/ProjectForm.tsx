@@ -46,6 +46,8 @@ const blankUnit = (projectId: number): ProjectUnitInput => ({
   currency: 'USD',
   status: 'available',
   image_url: null,
+  gallery_images: [],
+  video_url: null,
   technical_plan_url: null,
   description: null,
 });
@@ -193,13 +195,21 @@ export default function ProjectForm() {
   const startEditUnit = (u: ProjectUnit) => {
     const { id: uId, ...rest } = u;
     setEditingUnitId(uId);
-    setUnitForm(rest);
+    setUnitForm({
+      ...rest,
+      gallery_images: Array.isArray(rest.gallery_images) ? rest.gallery_images : [],
+      video_url: rest.video_url || null,
+    });
   };
 
   const startEditStagedUnit = (su: StagedUnit) => {
     setEditingUnitId(su._tempId);
     const { _tempId: _discard, ...rest } = su;
-    setUnitForm(rest);
+    setUnitForm({
+      ...rest,
+      gallery_images: Array.isArray(rest.gallery_images) ? rest.gallery_images : [],
+      video_url: rest.video_url || null,
+    });
   };
 
   const removeUnit = async (u: ProjectUnit) => {
@@ -429,7 +439,7 @@ export default function ProjectForm() {
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Unit #</th>
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Title</th>
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Specs</th>
-                    <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Plans</th>
+                    <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Media &amp; Plans</th>
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Price</th>
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Status</th>
                     <th style={{ padding: '0.6rem 0.75rem', borderBottom: '1px solid #e2e8f0' }}>Actions</th>
@@ -449,23 +459,45 @@ export default function ProjectForm() {
                         ].filter(Boolean).join(' · ') || '—'}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
-                            background: u.image_url ? '#dcfce7' : '#f1f5f9',
-                            color: u.image_url ? '#166534' : '#94a3b8',
-                            fontWeight: 600,
-                          }}>
-                            {u.image_url ? '2D Furnished' : '— Furnished'}
-                          </span>
-                          <span style={{
-                            fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
-                            background: u.technical_plan_url ? '#dbeafe' : '#f1f5f9',
-                            color: u.technical_plan_url ? '#1e40af' : '#94a3b8',
-                            fontWeight: 600,
-                          }}>
-                            {u.technical_plan_url ? '2D Technical' : '— Technical'}
-                          </span>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {u.image_url ? (
+                            <img
+                              src={u.image_url}
+                              alt="Cover"
+                              style={{ width: 28, height: 28, borderRadius: 4, objectFit: 'cover', border: '1px solid #cbd5e1' }}
+                            />
+                          ) : (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#f1f5f9', color: '#94a3b8', fontWeight: 600,
+                            }}>
+                              No Cover
+                            </span>
+                          )}
+                          {Array.isArray(u.gallery_images) && u.gallery_images.length > 0 && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#fef3c7', color: '#92400e', fontWeight: 600,
+                            }}>
+                              📷 {u.gallery_images.length}
+                            </span>
+                          )}
+                          {u.video_url && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#ede9fe', color: '#5b21b6', fontWeight: 600,
+                            }}>
+                              ▶ Video
+                            </span>
+                          )}
+                          {u.technical_plan_url && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#dbeafe', color: '#1e40af', fontWeight: 600,
+                            }}>
+                              CAD
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>
@@ -504,23 +536,45 @@ export default function ProjectForm() {
                         ].filter(Boolean).join(' · ') || '—'}
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
-                            background: su.image_url ? '#dcfce7' : '#f1f5f9',
-                            color: su.image_url ? '#166534' : '#94a3b8',
-                            fontWeight: 600,
-                          }}>
-                            {su.image_url ? '2D Furnished' : '— Furnished'}
-                          </span>
-                          <span style={{
-                            fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
-                            background: su.technical_plan_url ? '#dbeafe' : '#f1f5f9',
-                            color: su.technical_plan_url ? '#1e40af' : '#94a3b8',
-                            fontWeight: 600,
-                          }}>
-                            {su.technical_plan_url ? '2D Technical' : '— Technical'}
-                          </span>
+                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {su.image_url ? (
+                            <img
+                              src={su.image_url}
+                              alt="Cover"
+                              style={{ width: 28, height: 28, borderRadius: 4, objectFit: 'cover', border: '1px solid #cbd5e1' }}
+                            />
+                          ) : (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#f1f5f9', color: '#94a3b8', fontWeight: 600,
+                            }}>
+                              No Cover
+                            </span>
+                          )}
+                          {Array.isArray(su.gallery_images) && su.gallery_images.length > 0 && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#fef3c7', color: '#92400e', fontWeight: 600,
+                            }}>
+                              📷 {su.gallery_images.length}
+                            </span>
+                          )}
+                          {su.video_url && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#ede9fe', color: '#5b21b6', fontWeight: 600,
+                            }}>
+                              ▶ Video
+                            </span>
+                          )}
+                          {su.technical_plan_url && (
+                            <span style={{
+                              fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
+                              background: '#dbeafe', color: '#1e40af', fontWeight: 600,
+                            }}>
+                              CAD
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600 }}>
@@ -645,25 +699,118 @@ export default function ProjectForm() {
                 />
               </div>
 
-              {/* 2D Furnished Plan */}
-              <div>
-                <label style={S.label}>
-                  2D Furnished Floor Plan (Interactive 3D / Furnished Layout)
-                </label>
+              {/* Apartment Cover Photo */}
+              <div style={S.full}>
+                <label style={S.label}>Apartment Cover Photo *</label>
                 <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.4rem' }}>
-                  Colored or furnished 2D/3D floor plan with interior furniture layout.
+                  Primary high-resolution photo displayed on the apartment card and modal header.
                 </p>
                 <ImageUpload
                   value={unitForm.image_url}
                   onChange={url => setUnitForm(prev => ({ ...prev, image_url: url }))}
-                  purpose="blueprint"
                 />
               </div>
 
-              {/* 2D Technical Blueprint */}
-              <div>
+              {/* Apartment Photo Gallery */}
+              <div style={S.full}>
+                <label style={S.label}>Apartment Photo Gallery (Up to 8 Images)</label>
+                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.6rem' }}>
+                  Upload photos of interior living spaces, master bedrooms, custom kitchen, modern bathrooms, and balcony panorama.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
+                  {[...(unitForm.gallery_images ?? []), null].slice(0, 8).map((url, i) => (
+                    <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem', background: '#fff' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b' }}>Photo {i + 1}</span>
+                        {url && (
+                          <button
+                            type="button"
+                            style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
+                            onClick={() => {
+                              const imgs = [...(unitForm.gallery_images ?? [])];
+                              imgs.splice(i, 1);
+                              setUnitForm(prev => ({ ...prev, gallery_images: imgs }));
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <ImageUpload
+                        value={url ?? null}
+                        onChange={newUrl => {
+                          const imgs = [...(unitForm.gallery_images ?? [])];
+                          if (newUrl) imgs[i] = newUrl;
+                          else imgs.splice(i, 1);
+                          setUnitForm(prev => ({ ...prev, gallery_images: imgs.filter(Boolean) }));
+                        }}
+                        purpose="gallery"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Apartment Interior Video Walkthrough */}
+              <div style={S.full}>
+                <label style={S.label}>Apartment Interior Video Walkthrough (Video URL or Direct Link)</label>
+                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.4rem' }}>
+                  Paste a YouTube, Vimeo, or direct MP4 link showing an interior walkthrough tour of this apartment.
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    style={{ ...S.input, flex: 1 }}
+                    type="url"
+                    value={unitForm.video_url ?? ''}
+                    onChange={e => setUnitForm(prev => ({ ...prev, video_url: e.target.value || null }))}
+                    placeholder="https://www.youtube.com/watch?v=… or https://…/apartment_tour.mp4"
+                  />
+                  {unitForm.video_url && (
+                    <button
+                      type="button"
+                      style={{ ...S.cancel, padding: '0.5rem 0.8rem', fontSize: '0.8rem' }}
+                      onClick={() => setUnitForm(prev => ({ ...prev, video_url: null }))}
+                    >
+                      Clear Video
+                    </button>
+                  )}
+                </div>
+                {unitForm.video_url && (
+                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#0F172A', borderRadius: 8, color: '#fff' }}>
+                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#D4E1FD', fontWeight: 600 }}>
+                      Interior Video Preview:
+                    </p>
+                    {unitForm.video_url.includes('youtube.com') || unitForm.video_url.includes('youtu.be') ? (
+                      <iframe
+                        src={unitForm.video_url.replace('watch?v=', 'embed/').replace('youtu.be/', 'www.youtube.com/embed/')}
+                        style={{ width: '100%', height: 200, border: 'none', borderRadius: 6 }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Apartment Walkthrough Video"
+                      />
+                    ) : unitForm.video_url.includes('vimeo.com') ? (
+                      <iframe
+                        src={unitForm.video_url.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                        style={{ width: '100%', height: 200, border: 'none', borderRadius: 6 }}
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowFullScreen
+                        title="Apartment Walkthrough Video"
+                      />
+                    ) : (
+                      <video
+                        src={unitForm.video_url}
+                        controls
+                        style={{ width: '100%', maxHeight: 220, borderRadius: 6, background: '#000' }}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 2D Technical Architectural Blueprint */}
+              <div style={S.full}>
                 <label style={S.label}>
-                  2D Technical Blueprint (Architectural CAD / Engineering Layout)
+                  2D Technical Blueprint (Optional Architectural CAD / Engineering Layout)
                 </label>
                 <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.4rem' }}>
                   Architectural line blueprint, CAD, wall dimensions & MEP technical layout.
