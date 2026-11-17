@@ -1,5 +1,38 @@
-const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
+const DEFAULT_DESKTOP_SERVER = 'https://website.attaieproperties.com';
+const SERVER_URL_STORAGE_KEY = 'attaie_admin_server_url';
 const CSRF_STORAGE_KEY = 'admin_csrf_token';
+
+export function isDesktopClient(): boolean {
+  return typeof window !== 'undefined' && (window.location.protocol === 'file:' || Boolean(window.electronAPI?.isElectron));
+}
+
+export function getAdminServerUrl(): string {
+  if (typeof window === 'undefined') return DEFAULT_DESKTOP_SERVER;
+  const saved = localStorage.getItem(SERVER_URL_STORAGE_KEY)?.trim();
+  if (saved && /^https?:\/\//i.test(saved)) return saved.replace(/\/+$/, '');
+  return DEFAULT_DESKTOP_SERVER;
+}
+
+export function setAdminServerUrl(url: string): string {
+  const cleaned = url.trim().replace(/\/api\/?$/i, '').replace(/\/+$/, '');
+  if (!/^https?:\/\/[a-z0-9.-]+(?::\d+)?(?:\/.*)?$/i.test(cleaned)) {
+    throw new Error('Enter a valid http:// or https:// server URL.');
+  }
+  localStorage.setItem(SERVER_URL_STORAGE_KEY, cleaned);
+  sessionStorage.removeItem(CSRF_STORAGE_KEY);
+  return cleaned;
+}
+
+export function getApiBase(): string {
+  const envUrl = import.meta.env.VITE_API_URL as string | undefined;
+  if (envUrl && /^https?:\/\//i.test(envUrl)) return envUrl.replace(/\/+$/, '');
+  if (isDesktopClient()) return `${getAdminServerUrl()}/api`;
+  return (envUrl ?? '/api').replace(/\/+$/, '') || '/api';
+}
+
+function desktopHeaders(): Record<string, string> {
+  return isDesktopClient() ? { 'X-Attaie-Desktop': '1' } : {};
+}
 
 async function getCsrfToken(forceRefresh = false): Promise<string> {
   if (forceRefresh) {
@@ -9,7 +42,10 @@ async function getCsrfToken(forceRefresh = false): Promise<string> {
     if (cached) return cached;
   }
   try {
-    const res = await fetch(`${BASE}/admin/csrf.php`, { credentials: 'include' });
+    const res = await fetch(`${getApiBase()}/admin/csrf.php`, {
+      credentials: 'include',
+      headers: desktopHeaders(),
+    });
     if (res.ok) {
       const data = (await res.json()) as { csrf_token?: string };
       if (data.csrf_token) {
@@ -24,10 +60,12 @@ async function getCsrfToken(forceRefresh = false): Promise<string> {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const base = getApiBase();
   const method = (options?.method ?? 'GET').toUpperCase();
   const isMutation = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method);
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...desktopHeaders(),
     ...((options?.headers as Record<string, string>) ?? {}),
   };
 
@@ -38,7 +76,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
   }
 
-  let res = await fetch(`${BASE}${path}`, {
+  let res = await fetch(`${base}${path}`, {
     credentials: 'include',
     ...options,
     headers,
@@ -49,7 +87,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const freshToken = await getCsrfToken(true);
     if (freshToken) {
       headers['X-CSRF-Token'] = freshToken;
-      res = await fetch(`${BASE}${path}`, {
+      res = await fetch(`${base}${path}`, {
         credentials: 'include',
         ...options,
         headers,
@@ -70,9 +108,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 async function chatRequest<T>(action:string,body?:Record<string,unknown>):Promise<T> {
-  const root=BASE.replace(/\/api\/?$/,'');
+  const root=getApiBase().replace(/\/api\/?$/,'');
   const token=body ? await getCsrfToken() : '';
-  const headers:Record<string,string>={'Content-Type':'application/json',...(token?{'X-CSRF-Token':token}:{})};
+  const headers:Record<string,string>={'Content-Type':'application/json',...desktopHeaders(),...(token?{'X-CSRF-Token':token}:{})};
   const options:RequestInit={method:body?'POST':'GET',credentials:'include',cache:'no-store',headers,...(body?{body:JSON.stringify(body)}:{})};
   let response=await fetch(`${root}/chat-service.php?action=${action}`,options);
   if(response.status===403 && body) {
@@ -213,7 +251,7 @@ export const api = {
   getCareerApplications: (jobId?: number) =>
     request<CareerApplication[]>(jobId ? `/admin/career-applications.php?job_id=${jobId}` : '/admin/career-applications.php'),
   getCareerFileUrl: (id: number, type: 'photo' | 'cv', download = false) =>
-    `${BASE}/admin/career-file.php?id=${id}&type=${type}${download ? '&download=1' : ''}`,
+    `${getApiBase()}/admin/career-file.php?id=${id}&type=${type}${download ? '&download=1' : ''}`,
 
   getSeoSettings: async (): Promise<SeoSettings> => {
     try {
@@ -398,7 +436,7 @@ export const api = {
   },
 
   fetchSitemapStatusJson: async (): Promise<SitemapStatusData> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const candidates = [
       `/sitemap-status.json?t=${Date.now()}`,
       ...(baseRoot ? [`${baseRoot}/sitemap-status.json?t=${Date.now()}`] : []),
@@ -426,7 +464,7 @@ export const api = {
   },
 
   fetchSitemapXmlText: async (): Promise<string> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const candidates = [
       `/sitemap.xml?t=${Date.now()}`,
       ...(baseRoot ? [`${baseRoot}/sitemap.xml?t=${Date.now()}`] : []),
@@ -498,11 +536,11 @@ export const api = {
     };
 
     const token = await getCsrfToken();
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...desktopHeaders() };
     if (token) {
       headers['X-CSRF-Token'] = token;
     }
-    const endpoint = `${BASE}/admin/upload.php${purpose ? `?purpose=${encodeURIComponent(purpose)}` : ''}`;
+    const endpoint = `${getApiBase()}/admin/upload.php${purpose ? `?purpose=${encodeURIComponent(purpose)}` : ''}`;
     let res = await fetch(endpoint, {
       method: 'POST',
       credentials: 'include',
@@ -595,11 +633,11 @@ export const api = {
   updateChatStatus: async (sessionId:string,status:'open'|'resolved'):Promise<void> => {await chatRequest('admin_status',{session_id:sessionId,status});},
   deleteChatConversation: async (sessionId:string):Promise<void> => {await chatRequest('admin_delete',{session_id:sessionId});},
   getAiAdminSettings: async (): Promise<AiAdminSettings> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const token = await getCsrfToken();
     const res = await fetch(`${baseRoot}/ai-chat/admin-settings.php`, {
       credentials: 'include',
-      headers: token ? { 'X-CSRF-Token': token } : {},
+      headers: { ...desktopHeaders(), ...(token ? { 'X-CSRF-Token': token } : {}) },
       cache: 'no-store',
     });
     const ct = res.headers.get('content-type') || '';
@@ -615,13 +653,14 @@ export const api = {
     api_key: string;
     model: string;
   }): Promise<{ message: string; settings: AiAdminSettings }> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const token = await getCsrfToken();
     const res = await fetch(`${baseRoot}/ai-chat/admin-settings.php`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...desktopHeaders(),
         ...(token ? { 'X-CSRF-Token': token } : {}),
       },
       body: JSON.stringify({
@@ -644,13 +683,14 @@ export const api = {
   deleteAiProviderKey: async (
     provider: 'openai' | 'gemini' | 'anthropic'
   ): Promise<{ message: string; settings: AiAdminSettings }> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const token = await getCsrfToken();
     const res = await fetch(`${baseRoot}/ai-chat/admin-settings.php`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...desktopHeaders(),
         ...(token ? { 'X-CSRF-Token': token } : {}),
       },
       body: JSON.stringify({
@@ -679,13 +719,14 @@ export const api = {
     daily_request_limit?: number;
     retention_days?: number;
   }): Promise<{ message: string; settings: AiAdminSettings }> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const token = await getCsrfToken();
     const res = await fetch(`${baseRoot}/ai-chat/admin-settings.php`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...desktopHeaders(),
         ...(token ? { 'X-CSRF-Token': token } : {}),
       },
       body: JSON.stringify({
@@ -710,13 +751,14 @@ export const api = {
     model: string;
     api_key?: string;
   }): Promise<{ ok: boolean; message?: string; sample?: string; error?: string; settings?: AiAdminSettings }> => {
-    const baseRoot = BASE.replace(/\/api\/?$/, '');
+    const baseRoot = getApiBase().replace(/\/api\/?$/, '');
     const token = await getCsrfToken();
     const res = await fetch(`${baseRoot}/ai-chat/admin-settings.php`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...desktopHeaders(),
         ...(token ? { 'X-CSRF-Token': token } : {}),
       },
       body: JSON.stringify({

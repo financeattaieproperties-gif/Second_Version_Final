@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { ShieldCheck, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getAdminServerUrl, isDesktopClient, setAdminServerUrl } from '../api';
 import { AttaieLogoEntrance } from '../components/AttaieLogoEntrance';
 
 const S = {
@@ -301,6 +302,10 @@ function GoogleMark() {
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth();
+  const desktopMode = isDesktopClient();
+  const [serverUrl, setServerUrl] = useState(() => getAdminServerUrl());
+  const [editingServer, setEditingServer] = useState(false);
+  const [serverDraft, setServerDraft] = useState(() => getAdminServerUrl());
   const [u, setU] = useState('');
   const [p, setP] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -309,6 +314,18 @@ export default function Login() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+
+  const saveServer = () => {
+    try {
+      const normalized = setAdminServerUrl(serverDraft);
+      setServerUrl(normalized);
+      setServerDraft(normalized);
+      setEditingServer(false);
+      setErr('');
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : 'Invalid server URL.');
+    }
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -359,8 +376,48 @@ export default function Login() {
 
         <div style={S.roleBox}>
           <span><strong>Role:</strong> Website Administrator</span>
-          <code style={S.codeBadge}>/admin</code>
+          <code style={S.codeBadge}>{desktopMode ? 'Desktop App' : '/admin'}</code>
         </div>
+
+        {desktopMode && (
+          <div style={{ marginBottom: '1rem', padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 11, color: '#CBD5E1' }}>
+            {!editingServer ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <Globe size={13} />
+                  <span>{serverUrl.replace(/^https?:\/\//, '')}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setServerDraft(serverUrl); setEditingServer(true); }}
+                  style={{ background: 'none', border: 'none', color: '#93C5FD', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                >
+                  Change Server
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <input
+                  type="url"
+                  value={serverDraft}
+                  onChange={e => setServerDraft(e.target.value)}
+                  placeholder="https://website.attaieproperties.com"
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 11, boxSizing: 'border-box' }}
+                />
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" onClick={() => setServerDraft('https://website.attaieproperties.com')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>V2 Test</button>
+                    <button type="button" onClick={() => setServerDraft('https://attaieproperties.af')} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#E2E8F0', fontSize: 10, padding: '3px 6px', borderRadius: 4, cursor: 'pointer' }}>Live</button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button type="button" onClick={() => setEditingServer(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                    <button type="button" onClick={saveServer} style={{ background: '#0145F2', border: 'none', color: '#fff', fontSize: 11, fontWeight: 600, padding: '4px 9px', borderRadius: 5, cursor: 'pointer' }}>Save</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {err && <div style={S.err}>{err}</div>}
 

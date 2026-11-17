@@ -162,5 +162,10 @@
   "Sign-in service is unavailable. Please try again.": "Sign-in service is unavailable. Please try again.",
   "Password reset is unavailable. Please try again.": "Password reset is unavailable. Please try again.",
   "Remember me": "Remember me",
-  "or": "or"
+  "or": "or",
+  "Welcome Back": "Welcome Back",
+  "Sign In": "Sign In",
+  "Don't have an account?": "Don't have an account?",
+  "Contact Admin": "Contact Admin",
+  "Private, authorized staff access only · Fixed Role Workspace": "Private, authorized staff access only · Fixed Role Workspace"
 }

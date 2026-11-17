@@ -93,3 +93,4 @@ INSERT INTO core_role_permissions VALUES
  ('editor','core.submissions.read'),('videographer','core.submissions.read'),
  ('finance_manager','core.submissions.read'),
  ('sales_leader','core.submissions.read'),('sales','core.submissions.read'),('callcenter','core.submissions.read');
+INSERT IGNORE INTO core_branches(id,code,name,active) VALUES (1,'HQ','Main Branch (Kabul)',1);

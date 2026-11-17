@@ -7,12 +7,12 @@ const option = (name) => process.argv[process.argv.indexOf(name) + 1];
 const role = option("--role");
 const output = option("--out");
 if (
-  !["callcenter", "management", "dashboard"].includes(role) ||
+  !["callcenter", "management", "dashboard", "sales"].includes(role) ||
   !output ||
   output.startsWith("--")
 )
   throw new Error(
-    "Usage: node scripts/build-staff.mjs --role callcenter|management|dashboard --out <new directory>. Sales dashboard is excluded.",
+    "Usage: node scripts/build-staff.mjs --role callcenter|management|dashboard|sales --out <new directory>.",
   );
 const out = path.resolve(output);
 if (fs.existsSync(out))
@@ -24,8 +24,13 @@ await build({
   configFile: path.join(root, "apps/staff/vite.config.ts"),
   build: { outDir: out, emptyOutDir: false },
 });
-fs.renameSync(path.join(out, role, "index.html"), path.join(out, "index.html"));
-fs.rmdirSync(path.join(out, role));
+const htmlEntry = role === "sales" ? "dashboard" : role;
+fs.renameSync(path.join(out, htmlEntry, "index.html"), path.join(out, "index.html"));
+fs.rmdirSync(path.join(out, htmlEntry));
+if (role === "sales") {
+  const swNotif = path.join(root, "apps/staff/pwa-assets/sw-notifications.js");
+  if (fs.existsSync(swNotif)) fs.copyFileSync(swNotif, path.join(out, "sw-notifications.js"));
+}
 fs.copyFileSync(
   path.join(root, "deployment/staff/dashboard.htaccess"),
   path.join(out, ".htaccess"),

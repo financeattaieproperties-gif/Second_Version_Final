@@ -136,7 +136,10 @@ export async function notifyLeadAssigned(
 
   const targetUrl = `/sales/leads?id=${leadId}`;
 
-  const notificationOptions: NotificationOptions = {
+  const notificationOptions: NotificationOptions & {
+    vibrate?: number[];
+    renotify?: boolean;
+  } = {
     body,
     icon: '/sales/pwa-192x192.png',
     badge: '/sales/pwa-192x192.png',

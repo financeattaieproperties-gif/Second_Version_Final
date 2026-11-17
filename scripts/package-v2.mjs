@@ -24,7 +24,31 @@ await build({configFile:path.join(root,'admin-panel/vite.config.ts'),root:path.j
 const adminHtml=path.join(dist,'admin/index.html');
 fs.writeFileSync(adminHtml,fs.readFileSync(adminHtml,'utf8').replace('<head>','<head>\n<meta name="robots" content="noindex, nofollow, noarchive">'));
 copy('deployment/staff/dashboard.htaccess','dist/admin/.htaccess');
-for(const role of ['callcenter','management'])run(process.execPath,['scripts/build-staff.mjs','--role',role,'--out',path.join(dist,role)]);
+process.env.STAFF_ALLOW_PREVIEW='0';
+for(const role of ['callcenter','management','dashboard','sales'])run(process.execPath,['scripts/build-staff.mjs','--role',role,'--out',path.join(dist,role)]);
+const dashboardDir=path.join(dist,'dashboard');
+const dashboardHtml=fs.readFileSync(path.join(dashboardDir,'index.html'),'utf8');
+for(const panel of [
+  {id:'ceo',title:'CEO Executive Command · Attaie Properties'},
+  {id:'sales-leader',title:'Sales Team Leader Workspace · Attaie Properties'},
+  {id:'finance',title:'Finance Manager Workspace · Attaie Properties'},
+  {id:'marketing',title:'Marketing & Media Workspace · Attaie Properties'},
+  {id:'engineering',title:'Engineering & 3D Workspace · Attaie Properties'}
+]){
+  const panelDir=path.join(dist,panel.id);
+  fs.mkdirSync(panelDir,{recursive:true});
+  fs.cpSync(path.join(dashboardDir,'assets'),path.join(panelDir,'assets'),{recursive:true});
+  for(const assetFile of fs.readdirSync(path.join(panelDir,'assets'))){
+    if(assetFile.endsWith('.js')||assetFile.endsWith('.css')){
+      const assetPath=path.join(panelDir,'assets',assetFile);
+      const raw=fs.readFileSync(assetPath,'utf8');
+      if(raw.includes('/dashboard/'))fs.writeFileSync(assetPath,raw.replaceAll('/dashboard/',`/${panel.id}/`),'utf8');
+    }
+  }
+  fs.writeFileSync(path.join(panelDir,'index.html'),dashboardHtml.replaceAll('/dashboard/',`/${panel.id}/`).replace(/<title>.*?<\/title>/,`<title>${panel.title}</title>`),'utf8');
+  copy('deployment/staff/dashboard.htaccess',`dist/${panel.id}/.htaccess`);
+}
+fs.rmSync(dashboardDir,{recursive:true,force:true});
 for(const folder of ['assets','fonts'])fs.cpSync(path.join(root,'public',folder),path.join(dist,folder),{recursive:true});
 copy('public/logo.png','dist/logo.png');
 
@@ -42,11 +66,11 @@ function phpTree(relative){
 for(const tree of ['api','visual-config','staff-api'])phpTree(tree);
 for(const file of ['seo.php','sitemap.php','.user.ini'])copy('public/'+file,'dist/'+file);
 let rules=fs.readFileSync(path.join(root,'public/.htaccess'),'utf8');
-rules=rules.replace('# Admin CRM SPA fallback',`# Staff module deep links (existing files/assets already served above)\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\n\n# Admin CRM SPA fallback`);
+rules=rules.replace('# Admin CRM SPA fallback',`# Staff module deep links (existing files/assets already served above)\nAddType application/manifest+json .webmanifest\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\nRewriteRule ^ceo(?:/.*)?$ /ceo/index.html [L]\nRewriteRule ^sales-leader(?:/.*)?$ /sales-leader/index.html [L]\nRewriteRule ^sales(?:/.*)?$ /sales/index.html [L]\nRewriteRule ^finance(?:/.*)?$ /finance/index.html [L]\nRewriteRule ^marketing(?:/.*)?$ /marketing/index.html [L]\nRewriteRule ^engineering(?:/.*)?$ /engineering/index.html [L]\n\n# Admin CRM SPA fallback`);
 if(!rules.includes('^staff-api/v1'))throw new Error('Review changed root routing before packaging.');
 write('dist/.htaccess',`# V2 TESTING ONLY. Never upload into the main domain document root.\nRewriteEngine On\nRewriteRule ^(?:ai-chat(?:/|$)|chat-service\\.php$) - [F,L]\n${rules}\n<IfModule mod_headers.c>\n Header always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>\n<Files "initiate-call.php">\n Require all denied\n</Files>\n`);
 write('dist/robots.txt','User-agent: *\nDisallow: /\n');
-write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://website.attaieproperties.com/</loc></url></urlset>\n');
+write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9"><url><loc>https://website.attaieproperties.com/</loc></url></urlset>\n');
 write('dist/visual-config/data/.htaccess','Require all denied\n');
 write('dist/visual-config/.htaccess','Options -Indexes\n<FilesMatch "^(?:.*\\.json|.*\\.tmp.*)$">\n Require all denied\n</FilesMatch>\n');
 write('dist/uploads/.htaccess','Options -Indexes\n<FilesMatch "\\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh|shtml)$">\n Require all denied\n</FilesMatch>\n');
@@ -56,7 +80,7 @@ for(const [from,to] of [["define('ADMIN_USER', 'admin');","define('ADMIN_USER', 
 db=db.replace('<?php',"<?php\n// V2 manual phpMyAdmin schema import: never run request-time migrations.\ndefine('ATTAIE_MANUAL_SCHEMA', true);");
 write('dist/api/db.php',db);
 copy('public/staff-api/paths.example.php','dist/staff-api/paths.php');
-for(const file of ['src/App.php','src/Domain.php','src/FirebaseAuth.php'])copy('staff-service/'+file,'private/app/'+file);
+for(const file of ['src/App.php','src/Completion.php','src/CompletionRules.php','src/Domain.php','src/FirebaseAuth.php','src/LeadPropertyClaims.php'])copy('staff-service/'+file,'private/app/'+file);
 let config=fs.readFileSync(path.join(root,'staff-service/config/config.example.php'),'utf8');
 const firebase=fs.readFileSync(path.join(root,'staff-service/config/firebase.local.php'),'utf8');
 for(const key of ['firebase_project_id','firebase_api_key']){
@@ -68,8 +92,10 @@ config=config.replace('NEW_STAFF_DATABASE','YOUR_V2_DATABASE').replace('NEW_STAF
 write('private/config.php',config);
 copy('public/staff-api/paths.example.php','private/paths-reference.php');
 
-const sqls=['public/api/schema.sql','staff-service/database/001-core.sql','staff-service/database/010-callcenter.sql'];
-write('database/01-new-v2-schema.sql','-- NEW EMPTY V2 TEST DATABASE ONLY. Select it explicitly in phpMyAdmin.\n-- Website tables + shared core + call-center module. Import once; not an upgrade.\n'+sqls.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n\n'));
+const sqls=['public/api/schema.sql','staff-service/database/102-website-submission-map.sql','staff-service/database/001-core.sql','staff-service/database/010-callcenter.sql','staff-service/database/020-inventory.sql','staff-service/database/030-sales-crm.sql','staff-service/database/040-hr-finance.sql','staff-service/database/050-marketing-production.sql','staff-service/database/060-engineering.sql','staff-service/database/090-role-migration.sql','staff-service/database/095-retire-finance-assistant.sql','staff-service/database/100-dashboard-completion.sql','staff-service/database/103-customer-property-leads.sql','staff-service/database/110-ceo-manager-branch-model.sql'];
+write('database/01-new-v2-schema.sql','-- NEW EMPTY V2 TEST DATABASE ONLY. Select it explicitly in phpMyAdmin.\n-- Website tables + shared core + full CRM/Inventory/HR/Finance/Marketing/Engineering modules.\n'+sqls.map(f=>fs.readFileSync(path.join(root,f),'utf8')).join('\n\n'));
+copy('staff-service/database/055-submissions-db.sql','database/01b-submissions-db.sql');
+copy('deployment/v2/complete-v2-mysql-schema.sql','database/complete-v2-mysql-schema.sql');
 const catalog=JSON.parse(fs.readFileSync(path.join(root,'deployment/v2/project-showcase.json'),'utf8'));
 if(catalog.projects.length || catalog.units.length)throw new Error('Project seeds are disabled; new V2 packages start with an empty project catalog.');
 const value=v=>v==null?'NULL':v===''?"''":typeof v==='number'?(Number.isFinite(v)?String(v):(()=>{throw new Error('Invalid number');})()):`CONVERT(0x${Buffer.from(Array.isArray(v)?JSON.stringify(v):String(v),'utf8').toString('hex')} USING utf8mb4)`;

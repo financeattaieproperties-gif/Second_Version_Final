@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Call Center Server URL</title>
+    <style>
+      body {
+        margin: 0;
+        background: #F7F8FA;
+        color: #0F172A;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 14px;
+        padding: 20px;
+      }
+      h2 { font-size: 16px; margin: 0 0 6px; }
+      p { font-size: 12px; color: #64748B; margin: 0 0 14px; line-height: 1.5; }
+      label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+      input {
+        width: 100%;
+        height: 38px;
+        padding: 0 10px;
+        border: 1px solid #CBD5E1;
+        border-radius: 8px;
+        font-size: 13px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+      .presets { display: flex; gap: 8px; margin-bottom: 14px; }
+      .preset {
+        font-size: 11px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        border: 1px solid #E2E8F0;
+        background: #F1F5F9;
+        color: #0F172A;
+        cursor: pointer;
+      }
+      .err { font-size: 12px; color: #B91C1C; margin-bottom: 10px; display: none; }
+      .actions { display: flex; justify-content: flex-end; gap: 8px; }
+      button.action {
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #0F172A;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #0F172A;
+        border-color: #0F172A;
+        color: #FFFFFF;
+      }
+    </style>
+  </head>
+  <body>
+    <form class="card" id="server-form">
+      <h2>Connect Call Center Workspace</h2>
+      <p>Choose V2 testing or live production host for this desktop app.</p>
+      <label for="url-input">Call Center URL</label>
+      <input id="url-input" type="url" required placeholder="https://website.attaieproperties.com/callcenter/" />
+      <div class="presets">
+        <button type="button" class="preset" data-url="https://website.attaieproperties.com/callcenter/">V2 Testing</button>
+        <button type="button" class="preset" data-url="https://attaieproperties.af/callcenter/">Live Production</button>
+      </div>
+      <div class="err" id="err-msg"></div>
+      <div class="actions">
+        <button type="button" class="action" id="cancel-btn">Cancel</button>
+        <button type="submit" class="action primary">Save &amp; Connect</button>
+      </div>
+    </form>
+    <script>
+      (async () => {
+        const api = window.callcenterDesktop;
+        const input = document.getElementById('url-input');
+        const err = document.getElementById('err-msg');
+        if (api) {
+          const info = await api.getStatus();
+          input.value = info.serverUrl;
+        }
+        document.querySelectorAll('.preset').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            input.value = btn.getAttribute('data-url');
+          });
+        });
+        document.getElementById('cancel-btn').addEventListener('click', () => api && api.closeConfig());
+        document.getElementById('server-form').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          err.style.display = 'none';
+          try {
+            await api.setServerUrl(input.value);
+          } catch (ex) {
+            err.textContent = ex.message || 'Invalid URL';
+            err.style.display = 'block';
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -5,9 +5,9 @@ import crypto from 'node:crypto';
 const root=path.resolve(process.argv[2]);
 const exists=p=>fs.existsSync(path.join(root,p));
 assert.ok(exists('dist/index.html'));
-for(const file of ['admin/index.html','callcenter/index.html','management/index.html','staff-api/paths.php','api/db.php','.htaccess','.user.ini'])assert.ok(exists('dist/'+file),file);
+for(const file of ['admin/index.html','callcenter/index.html','management/index.html','ceo/index.html','sales-leader/index.html','sales/index.html','finance/index.html','marketing/index.html','engineering/index.html','staff-api/paths.php','api/db.php','.htaccess','.user.ini'])assert.ok(exists('dist/'+file),file);
 const rules=fs.readFileSync(path.join(root,'dist/.htaccess'),'utf8');
-assert.ok(rules.includes('staff-api/v1'));assert.ok(rules.includes('callcenter'));assert.ok(rules.includes('noindex'));
+assert.ok(rules.includes('staff-api/v1'));assert.ok(rules.includes('callcenter'));assert.ok(rules.includes('sales-leader'));assert.ok(rules.includes('ceo'));assert.ok(rules.includes('noindex'));
 assert.ok(fs.readFileSync(path.join(root,'dist/api/db.php'),'utf8').includes("define('ATTAIE_MANUAL_SCHEMA', true)"));
 const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)]);
 for(const file of walk(path.join(root,'dist'))){
@@ -15,8 +15,8 @@ for(const file of walk(path.join(root,'dist'))){
  assert.ok(!/\.sql$|\.env|WEBSITE-ADMIN-LOGIN|config\.php$|(^|\/)install\.php$|firebase\.local\.php|paths\.example\.php/.test(relative),relative);
  assert.ok(!relative.startsWith('private/'),relative);
 }
-for(const file of ['01-new-v2-schema.sql','02-five-project-showcase.sql','03-website-admin.sql','04-staff-ceo.template.sql'])assert.ok(exists('database/'+file),file);
-assert.ok(exists('private/app/src/FirebaseAuth.php'));
+for(const file of ['01-new-v2-schema.sql','01b-submissions-db.sql','complete-v2-mysql-schema.sql','02-five-project-showcase.sql','03-website-admin.sql','04-staff-ceo.template.sql'])assert.ok(exists('database/'+file),file);
+for(const phpSrc of ['App.php','Completion.php','CompletionRules.php','Domain.php','FirebaseAuth.php','LeadPropertyClaims.php'])assert.ok(exists('private/app/src/'+phpSrc),phpSrc);
 assert.ok(exists('private/config.php'));
 assert.ok(exists('private-setup/WEBSITE-ADMIN-LOGIN-PRIVATE.txt'));
 const catalog=JSON.parse(fs.readFileSync(path.join(root,'private-setup/project-showcase.json'),'utf8'));

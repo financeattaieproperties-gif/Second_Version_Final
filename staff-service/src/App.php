@@ -48,14 +48,29 @@ final class App {
         $sessions = realpath($this->config['session_directory'] ?? '');
         if (!$sessions || !is_writable($sessions) || str_starts_with(str_replace('\\','/', $sessions) . '/', rtrim(str_replace('\\','/', $root), '/') . '/')) throw new HttpError(503, 'Private staff sessions are not configured.');
         $local = in_array($_SERVER['SERVER_NAME'] ?? '', ['127.0.0.1','localhost'], true) && ($this->config['allow_local_http'] ?? false);
-        if (!$local && (!str_starts_with($this->config['origin'] ?? '', 'https://') || (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off'))) throw new HttpError(503, 'Staff access requires HTTPS.');
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        if (!$local && (!str_starts_with($this->config['origin'] ?? '', 'https://') || !$isHttps)) throw new HttpError(503, 'Staff access requires HTTPS.');
+        $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $allowedOrigins = $this->allowedOrigins();
+        $isCrossOrigin = $requestOrigin !== '' && $requestOrigin !== ($this->config['origin'] ?? '') && in_array($requestOrigin, $allowedOrigins, true);
+        if ($requestOrigin !== '' && in_array($requestOrigin, $allowedOrigins, true)) {
+            header('Vary: Origin');
+            header('Access-Control-Allow-Origin: ' . $requestOrigin);
+            header('Access-Control-Allow-Credentials: true');
+            header('Access-Control-Allow-Methods: GET, POST, PATCH, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, Idempotency-Key');
+        }
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+            http_response_code(204);
+            exit;
+        }
         session_name('attaie_staff_session');
         session_save_path($sessions);
         ini_set('session.use_strict_mode', '1');
-        session_set_cookie_params(['lifetime'=>0, 'path'=>'/', 'secure'=>!$local, 'httponly'=>true, 'samesite'=>'Strict']);
+        session_set_cookie_params(['lifetime'=>0, 'path'=>'/', 'secure'=>!$local, 'httponly'=>true, 'samesite'=>($isCrossOrigin && !$local ? 'None' : 'Strict')]);
         session_start();
         if (!empty($_SESSION['user_id'])) {
-            $row = $this->one('SELECT id,name,username,firebase_uid,role,branch_id,active,auth_version FROM core_users WHERE id=?', [$_SESSION['user_id']]);
+            $row = $this->one('SELECT id,name,username,firebase_uid,role,department_code,team_leader_id,branch_id,active,auth_version FROM core_users WHERE id=?', [$_SESSION['user_id']]);
             if (!$row || !$row['active'] || $row['role'] === 'finance_assistant' || $row['auth_version'] !== ($_SESSION['auth_version'] ?? null) || time() - ($_SESSION['last_seen'] ?? 0) > 1800 || time() >= ($_SESSION['firebase_expiry'] ?? 0)) {
                 $_SESSION = [];
                 session_regenerate_id(true);
@@ -71,6 +86,17 @@ final class App {
         }
         $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
     }
+    private function allowedOrigins(): array {
+        $defaults = [
+            $this->config['origin'] ?? '',
+            'https://sales.attaieproperties.com',
+            'capacitor://localhost',
+            'http://localhost',
+            'https://localhost',
+        ];
+        $extra = $this->config['allowed_origins'] ?? [];
+        return array_values(array_unique(array_filter(array_merge($defaults, is_array($extra) ? $extra : []))));
+    }
     private function dispatch(): mixed {
         $method = $_SERVER['REQUEST_METHOD'];
         $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -84,18 +110,18 @@ final class App {
         if (!$this->user && !(($route==='session' && $method==='GET') || ($route==='auth/login' && $method==='POST'))) throw new HttpError(401,'Please sign in.');
         if ($method !== 'GET') {
             if (!in_array($method, ['POST','PATCH'], true)) throw new HttpError(405, 'Method not allowed.');
-            if (($_SERVER['HTTP_ORIGIN'] ?? '') !== $this->config['origin']) throw new HttpError(403, 'Origin is not allowed.');
+            if (!in_array($_SERVER['HTTP_ORIGIN'] ?? '', $this->allowedOrigins(), true)) throw new HttpError(403, 'Origin is not allowed.');
             if (!hash_equals($_SESSION['csrf'], $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) throw new HttpError(403, 'Session token expired. Refresh and try again.');
         }
         if ($route === 'session' && $method === 'GET') return ['user'=>$this->user ? $this->publicUser($this->user) : null,'csrfToken'=>$_SESSION['csrf'],'serverTime'=>Domain::iso($this->now)];
         if ($route === 'auth/login' && $method === 'POST') return $this->login($this->body());
         if (!$this->user) throw new HttpError(401, 'Please sign in.');
-        if ($route === 'auth/logout' && $method === 'POST') { $_SESSION=[]; session_destroy(); setcookie(session_name(), '', ['expires'=>1,'path'=>'/','secure'=>session_get_cookie_params()['secure'],'httponly'=>true,'samesite'=>'Strict']); return ['success'=>true]; }
+        if ($route === 'auth/logout' && $method === 'POST') { $_SESSION=[]; session_destroy(); setcookie(session_name(), '', ['expires'=>1,'path'=>'/','secure'=>session_get_cookie_params()['secure'],'httponly'=>true,'samesite'=>session_get_cookie_params()['samesite'] ?? 'Strict']); return ['success'=>true]; }
         if ($method === 'GET') {
             if (preg_match('#^files/([a-f0-9]{32})$#D',$route,$m)) $this->downloadPrivate($m[1]);
             if ($route === 'dashboard') return $this->workspace();
             if (preg_match('#^leads/(\d+)$#', $route, $m)) return $this->leadDetails((int)$m[1]);
-            if ($route === 'staff') { $this->permission('core.staff.manage'); return $this->query("SELECT id,name,username,role,active FROM core_users WHERE role <> 'customer' ORDER BY id LIMIT 200"); }
+            if ($route === 'staff') { $this->permission('core.staff.manage'); return $this->query("SELECT id,name,username,role,department_code,team_leader_id,branch_id,active FROM core_users WHERE role <> 'customer' ORDER BY id LIMIT 200"); }
             if ($route === 'departments') { $this->permission('core.departments.manage'); return $this->query("SELECT code,name FROM core_departments WHERE code <> 'customers' ORDER BY name"); }
             throw new HttpError(404, 'Route not found.');
         }
@@ -166,7 +192,11 @@ final class App {
         elseif ($bucket==='due') { $bucketSql=' AND f.completed_at IS NULL AND f.scheduled_at<=? AND f.deadline_at>=?'; $bucketParams=[$this->now,$this->now]; }
         elseif ($bucket==='upcoming') { $bucketSql=' AND f.completed_at IS NULL AND f.scheduled_at>?'; $bucketParams=[$this->now]; }
         elseif ($bucket==='overtime') { $bucketSql=' AND f.completed_at IS NULL AND f.deadline_at<?'; $bucketParams=[$this->now]; }
-        $access=$this->isManager() ? '1=1' : '(l.origin_agent_id='.$this->uid().' OR l.assignee_id='.$this->uid().')';
+        $access=$this->isManager()
+            ? '1=1'
+            : ($this->user['role']==='sales_leader'
+                ? '(l.origin_agent_id='.$this->uid().' OR l.assignee_id='.$this->uid().' OR l.origin_agent_id IN (SELECT id FROM core_users WHERE team_leader_id='.$this->uid().') OR l.assignee_id IN (SELECT id FROM core_users WHERE team_leader_id='.$this->uid().'))'
+                : '(l.origin_agent_id='.$this->uid().' OR l.assignee_id='.$this->uid().')');
         $mine='f.assignee_id='.$this->uid();
         $base="SELECT f.*,l.serial,l.customer_name,l.phone,l.requirements FROM cc_followup_tasks f JOIN cc_leads l ON l.id=f.lead_id WHERE $mine";
         $followups=in_array($view,['overview','followups'],true) ? $this->query($base.$bucketSql." AND (l.customer_name LIKE ? ESCAPE '!' OR l.serial LIKE ? ESCAPE '!') ORDER BY f.completed_at IS NOT NULL, f.scheduled_at,f.id LIMIT 25 OFFSET $offset",[...$bucketParams,$like,$like]) : [];
@@ -181,8 +211,9 @@ final class App {
         $counts['newLeads']=(int)$this->one("SELECT COUNT(*) AS n FROM cc_leads l WHERE $access AND l.status='draft'")['n'];
         $counts['tasks']=(int)$this->one("SELECT COUNT(*) AS n FROM core_management_tasks WHERE assignee_id=? AND status IN ('todo','in_progress')",[$this->uid()])['n'];
         $roles=$this->isManager() ? "('manager','hr_manager','callcenter','sales_leader','sales','marketing_manager','production_manager','editor','videographer','photographer','finance_manager','architect','graphic_designer','visual_designer_3d','ceo')" : "('callcenter','sales','sales_leader')";
-        $assignees=$this->query("SELECT id,name,role,active FROM core_users WHERE active=1 AND role IN $roles ORDER BY name LIMIT 100");
-        return ['leads'=>array_map([$this,'leadDto'],$leads),'followups'=>array_map([$this,'followupDto'],$followups),'customers'=>$customers,'tasks'=>array_map([$this,'taskDto'],$tasks),'assignees'=>array_map([$this,'publicUser'],$assignees),'counts'=>array_map('intval',$counts),'page'=>$page,'integration'=>['enabled'=>false,'message'=>'Etisalat automatic capture is not connected. Manual call entries are labeled.'],'serverTime'=>Domain::iso($this->now)];
+        $assignees=$this->query("SELECT id,name,role,department_code,team_leader_id,branch_id,active FROM core_users WHERE active=1 AND role IN $roles ORDER BY name LIMIT 100");
+        $branches=$this->query("SELECT id,code,name,address,phone,email,active,version FROM core_branches WHERE active=1 ORDER BY id LIMIT 50");
+        return ['leads'=>array_map([$this,'leadDto'],$leads),'followups'=>array_map([$this,'followupDto'],$followups),'customers'=>$customers,'tasks'=>array_map([$this,'taskDto'],$tasks),'assignees'=>array_map([$this,'publicUser'],$assignees),'branches'=>$branches,'counts'=>array_map('intval',$counts),'page'=>$page,'integration'=>['enabled'=>false,'message'=>'Etisalat automatic capture is not connected. Manual call entries are labeled.'],'serverTime'=>Domain::iso($this->now)];
     }
     private function leadDetails(int $id): array {
         $this->permission('callcenter.access');
@@ -280,13 +311,15 @@ final class App {
         if (!filter_var($username,FILTER_VALIDATE_EMAIL)) throw new InvalidArgumentException('Enter the Firebase account email.');
         $uid=Domain::text($body['firebaseUid']??null,128);
         if (!preg_match('/^[\x21-\x7e]{1,128}$/D',$uid)) throw new InvalidArgumentException('Enter the exact Firebase UID.');
-        $allowedRoles=['callcenter','sales','sales_leader','hr_manager','marketing_manager','production_manager','editor','videographer','photographer','finance_manager','architect','graphic_designer','visual_designer_3d'];
+        $allowedRoles=['manager','callcenter','sales','sales_leader','marketing_manager','editor','videographer','finance_manager','architect','graphic_designer','visual_designer_3d'];
         if (!in_array($body['role']??'',$allowedRoles,true)) throw new InvalidArgumentException('Select an internal operational staff role.');
         if ($this->one('SELECT id FROM core_users WHERE username=? OR firebase_uid=?',[$username,$uid])) throw new HttpError(409,'That email or Firebase UID is already provisioned.');
         $department=$body['departmentCode']??$this->one('SELECT department_code FROM core_roles WHERE code=?',[$body['role']])['department_code'];
         if (!$this->one('SELECT code FROM core_departments WHERE code=? AND code<>?',[$department,'customers'])) throw new InvalidArgumentException('Choose internal department.');
+        $branchId=!empty($body['branchId']) ? (int)$body['branchId'] : ((int)($this->user['branch_id'] ?? 0) ?: (int)($this->one('SELECT id FROM core_branches WHERE active=1 ORDER BY id LIMIT 1')['id'] ?? 0));
+        if (!$branchId || !$this->one('SELECT id FROM core_branches WHERE id=? AND active=1',[$branchId])) throw new InvalidArgumentException('Select an active branch.');
         $leader=empty($body['teamLeaderId'])?null:(int)$body['teamLeaderId']; if ($leader&&$this->activeUser($leader)['role']!=='sales_leader') throw new InvalidArgumentException('Choose Sales Team Leader.');
-        $this->execute('INSERT INTO core_users(name,username,firebase_uid,role,department_code,team_leader_id) VALUES (?,?,?,?,?,?)',[$name,$username,$uid,$body['role'],$department,$leader]);
+        $this->execute('INSERT INTO core_users(name,username,firebase_uid,role,department_code,team_leader_id,branch_id) VALUES (?,?,?,?,?,?,?)',[$name,$username,$uid,$body['role'],$department,$leader,$branchId]);
         $id=(int)$this->db->lastInsertId(); $this->audit('staff.created',$id); return ['id'=>$id];
     }
     private function setStaffActive(int $id,array $body): array {
@@ -334,7 +367,7 @@ final class App {
     private function uid(): int { return (int)$this->user['id']; }
     private function isManager(): bool { return $this->hasPermission('callcenter.manage'); }
     private function manager(): void { if (!$this->isManager()) throw new HttpError(403,'Management permission is required.'); }
-    private function publicUser(array $row): array { return ['id'=>(int)$row['id'],'name'=>$row['name'],'role'=>$row['role'],'username'=>$row['username'] ?? '','departmentCode'=>$row['department_code']??null,'teamLeaderId'=>empty($row['team_leader_id'])?null:(int)$row['team_leader_id'],'active'=>(bool)($row['active'] ?? 1)]; }
+    private function publicUser(array $row): array { return ['id'=>(int)$row['id'],'name'=>$row['name'],'role'=>$row['role'],'username'=>$row['username'] ?? '','departmentCode'=>$row['department_code']??null,'teamLeaderId'=>empty($row['team_leader_id'])?null:(int)$row['team_leader_id'],'branchId'=>empty($row['branch_id'])?null:(int)$row['branch_id'],'active'=>(bool)($row['active'] ?? 1)]; }
     private function leadDto(array $r): array { return ['property'=>!empty($r['property_kind']) && !empty($r['property_id']) ? ['kind'=>$r['property_kind'],'id'=>(int)$r['property_id']] : null,'projectId'=>empty($r['project_id']) ? null : (int)$r['project_id'],'apartmentId'=>empty($r['apartment_id']) ? null : (int)$r['apartment_id'],'id'=>(int)$r['id'],'serial'=>$r['serial'],'customerId'=>$r['customer_id']===null ? null : (int)$r['customer_id'],'customerName'=>$r['customer_name'],'phone'=>$r['phone'],'requirements'=>$r['requirements'],'status'=>$r['status'],'originAgentId'=>(int)$r['origin_agent_id'],'assigneeId'=>(int)$r['assignee_id'],'callAt'=>Domain::iso($r['call_at']),'source'=>$r['source'],'version'=>(int)$r['version']]; }
     private function followupDto(array $r): array { return ['id'=>(int)$r['id'],'leadId'=>(int)$r['lead_id'],'serial'=>$r['serial'],'customerName'=>$r['customer_name'],'phone'=>$r['phone'],'requirements'=>$r['requirements'],'assigneeId'=>(int)$r['assignee_id'],'scheduledAt'=>Domain::iso($r['scheduled_at']),'completedAt'=>Domain::iso($r['completed_at']),'notes'=>$r['notes'],'version'=>(int)$r['version']]; }
     private function taskDto(array $r): array { return ['id'=>(int)$r['id'],'title'=>$r['title'],'instructions'=>$r['instructions'],'priority'=>$r['priority'],'assigneeId'=>(int)$r['assignee_id'],'assignedBy'=>$r['assigned_by_name'],'deadlineAt'=>Domain::iso($r['deadline_at']),'status'=>$r['status'],'completedAt'=>Domain::iso($r['completed_at']),'version'=>(int)$r['version']]; }

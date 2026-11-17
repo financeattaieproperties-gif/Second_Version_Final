@@ -250,6 +250,7 @@ export interface InventoryApartment {
 
 export interface InventoryProject {
   id: number;
+  branchId?: number;
   code: string;
   name: string;
   location: string;
@@ -485,6 +486,7 @@ export interface DashboardData {
   customers: Customer[];
   customerReviewRequests?: CustomerReviewRequest[];
   departments?: Department[];
+  branches?: Branch[];
   projects?: InventoryProject[];
   hrWorkItems?: Array<{
     id: number;

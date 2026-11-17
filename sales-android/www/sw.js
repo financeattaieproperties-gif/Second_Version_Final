@@ -69,6 +69,7 @@ if (!self.define) {
 }
 define(['./workbox-970124e6'], (function (workbox) { 'use strict';
 
+  importScripts("sw-notifications.js");
   self.skipWaiting();
   workbox.clientsClaim();
   /**
@@ -77,6 +78,9 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
+    "url": "sw-notifications.js",
+    "revision": "6fa3c12cd214c2f87e9b60dc0270ad97"
+  }, {
     "url": "pwa-maskable-512x512.png",
     "revision": "1d86fbaf605299570d6340b76373c16e"
   }, {
@@ -93,7 +97,7 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "revision": "e04fc45d2129633250578fe6f19126af"
   }, {
     "url": "index.html",
-    "revision": "4c1ad585c061c3e7d27aa9b158a4d9f9"
+    "revision": "e37080c32f4ae521366f6f1ece934f4c"
   }, {
     "url": "assets/window-4-C9gUup8J.png",
     "revision": null
@@ -122,13 +126,13 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "url": "assets/keys-C3odUwaQ.png",
     "revision": null
   }, {
-    "url": "assets/index-CFLdt2je.css",
+    "url": "assets/index-DipW6xrf.css",
     "revision": null
   }, {
-    "url": "assets/index-B49u15c7.js",
+    "url": "assets/index-Bp5yIZYX.js",
     "revision": null
   }, {
-    "url": "assets/fa-DQLyoD7g.js",
+    "url": "assets/fa-DwHrQKJd.js",
     "revision": null
   }, {
     "url": "assets/attaie-original-D6FwvO_c.png",
@@ -148,6 +152,9 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
   }, {
     "url": "pwa-maskable-512x512.png",
     "revision": "1d86fbaf605299570d6340b76373c16e"
+  }, {
+    "url": "sw-notifications.js",
+    "revision": "6fa3c12cd214c2f87e9b60dc0270ad97"
   }, {
     "url": "manifest.webmanifest",
     "revision": "6a6c559b6989dfdc8f1f8a38bf963386"

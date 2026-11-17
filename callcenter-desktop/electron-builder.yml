@@ -1,0 +1,49 @@
+appId: af.attaieproperties.callcenter
+productName: Attaie Call Center
+copyright: Copyright © 2026 Attaie Properties
+
+directories:
+  buildResources: resources
+  output: release
+
+files:
+  - src/**/*
+  - resources/**/*
+  - package.json
+
+extraResources:
+  - from: resources/
+    to: resources/
+    filter:
+      - "**/*"
+
+win:
+  icon: resources/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Attaie Call Center
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+
+mac:
+  icon: resources/icon.png
+  category: public.app-category.business
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+
+linux:
+  icon: resources/icon.png
+  category: Office
+  target:
+    - target: AppImage
+      arch: [x64]

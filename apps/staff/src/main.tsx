@@ -112,6 +112,8 @@ import { registerSalesServiceWorker } from "./pwa/register";
 import { useLeadNotifications } from "./hooks/useLeadNotifications";
 import { notifyLeadAssigned } from "./pwa/leadNotificationService";
 import { AttaieLogoEntrance } from "./components/AttaieLogoEntrance";
+import { AgentConversionChart } from "./components/AgentConversionChart";
+import { LeadConversionFunnelChart } from "./components/LeadConversionFunnelChart";
 import { ProjectInventoryWizard } from "./components/ProjectInventoryWizard";
 import { HrContractsWorkspace } from "./components/HrContractsWorkspace";
 import { AgreementVerification } from "./components/AgreementVerification";
@@ -1681,6 +1683,24 @@ function App() {
                   </button>
                 ))}
               </div>
+              {activeRole === "sales_leader" && (
+                <div className="sales-leader-charts-grid">
+                  <AgentConversionChart
+                    leads={data?.leads || []}
+                    assignees={data?.assignees || []}
+                    leaderId={session.user.id}
+                    serverTime={data?.serverTime}
+                    language={language}
+                  />
+                  <LeadConversionFunnelChart
+                    leads={data?.leads || []}
+                    assignees={data?.assignees || []}
+                    leaderId={session.user.id}
+                    serverTime={data?.serverTime}
+                    language={language}
+                  />
+                </div>
+              )}
               <div className="overview-grid">
                 <section className="panel">
                   <div className="panel-heading">
@@ -1764,6 +1784,7 @@ function App() {
               <ProjectInventoryWizard
                 projects={data?.projects || []}
                 staffUsers={data?.assignees || []}
+                branches={data?.branches || []}
                 language={language}
                 onUpload={client.upload}
                 actorRole={activeRole}
@@ -2126,6 +2147,25 @@ function App() {
                     </div>
                   </div>
                 </section>
+              )}
+
+              {page === "leads" && activeRole === "sales_leader" && (
+                <div className="sales-leader-charts-grid">
+                  <AgentConversionChart
+                    leads={data?.leads || []}
+                    assignees={data?.assignees || []}
+                    leaderId={session.user.id}
+                    serverTime={data?.serverTime}
+                    language={language}
+                  />
+                  <LeadConversionFunnelChart
+                    leads={data?.leads || []}
+                    assignees={data?.assignees || []}
+                    leaderId={session.user.id}
+                    serverTime={data?.serverTime}
+                    language={language}
+                  />
+                </div>
               )}
 
               <section className="panel">
@@ -2714,6 +2754,10 @@ function App() {
             <StaffForm
               t={t}
               departments={data?.departments || []}
+              branches={data?.branches || []}
+              salesLeaders={(data?.assignees || []).filter(
+                (u) => u.role === "sales_leader" && u.active !== false,
+              )}
               done={complete}
             />
           ) : modal.kind === "department" ? (
@@ -3756,22 +3800,50 @@ function DepartmentForm({
     </form>
   );
 }
+const STAFF_DEFAULT_DEPARTMENT: Partial<Record<Role, string>> = {
+  manager: "management",
+  callcenter: "callcenter",
+  sales_leader: "sales",
+  sales: "sales",
+  marketing_manager: "production",
+  videographer: "production",
+  editor: "production",
+  finance_manager: "finance",
+  architect: "engineering",
+  graphic_designer: "engineering",
+  visual_designer_3d: "engineering",
+};
+
 function StaffForm({
   t,
   departments,
+  branches,
+  salesLeaders,
   done,
 }: {
   t: Translate;
   departments: Array<{ code: string; name: string }>;
+  branches: Array<{ id: number; name: string }>;
+  salesLeaders: StaffUser[];
   done: () => Promise<void>;
 }) {
   const { busy, error, submit } = useSubmission(done);
+  const [selectedRole, setSelectedRole] = useState<Role>("sales");
+  const [departmentCode, setDepartmentCode] = useState<string>("sales");
+  const provisionableRoles = SWITCHABLE_ROLES.filter((r) => r.role !== "ceo");
+
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
-        const body = Object.fromEntries(f);
+        const body: Record<string, unknown> = Object.fromEntries(f);
+        if (selectedRole !== "sales" || !body.teamLeaderId) {
+          delete body.teamLeaderId;
+        }
+        if (body.branchId) {
+          body.branchId = Number(body.branchId);
+        }
         void submit(body, (key) => client.createStaff(body, key));
       }}
     >
@@ -3801,8 +3873,30 @@ function StaffForm({
         />
       </Field>
       <div className="form-grid">
+        <Field label={t("Role")}>
+          <select
+            name="role"
+            value={selectedRole}
+            onChange={(e) => {
+              const nextRole = e.target.value as Role;
+              setSelectedRole(nextRole);
+              const nextDept = STAFF_DEFAULT_DEPARTMENT[nextRole];
+              if (nextDept) setDepartmentCode(nextDept);
+            }}
+          >
+            {provisionableRoles.map((r) => (
+              <option key={r.role} value={r.role}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </Field>
         <Field label={t("Department")}>
-          <select name="departmentCode" defaultValue="sales">
+          <select
+            name="departmentCode"
+            value={departmentCode}
+            onChange={(e) => setDepartmentCode(e.target.value)}
+          >
             {departments.map((d) => (
               <option key={d.code} value={d.code}>
                 {d.name}
@@ -3810,16 +3904,30 @@ function StaffForm({
             ))}
           </select>
         </Field>
-        <Field label={t("Role")}>
-          <select name="role" defaultValue="callcenter">
-            {SWITCHABLE_ROLES.map((r) => (
-              <option key={r.role} value={r.role}>
-                {r.label}
+      </div>
+      {branches.length > 0 && (
+        <Field label={t("Branch")}>
+          <select name="branchId" defaultValue={String(branches[0].id)}>
+            {branches.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
               </option>
             ))}
           </select>
         </Field>
-      </div>
+      )}
+      {selectedRole === "sales" && (
+        <Field label={t("Sales team leader")}>
+          <select name="teamLeaderId" defaultValue="">
+            <option value="">{t("None (unassigned)")}</option>
+            {salesLeaders.map((leader) => (
+              <option key={leader.id} value={leader.id}>
+                {leader.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
       <FormError message={error} />
       <button className="button full" disabled={busy}>
         {t("Create agent")}

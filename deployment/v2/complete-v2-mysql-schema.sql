@@ -1,10 +1,12 @@
 -- ==============================================================================
--- Attaie Properties V2 — Complete Consolidated MySQL Schema (All 39 Tables)
+-- Attaie Properties V2 — Complete Consolidated MySQL Schema (Website + Staff CRM + Submissions)
 -- ==============================================================================
 -- Includes:
---   • Part A: Public Website, Catalog Admin (/admin), Careers, Visits, CTC, SEO, AI Chat (19 tables)
---   • Part B: Shared Staff Core Identity, RBAC, Tasks, Audit & Idempotency (12 tables)
+--   • Part A: Public Website, Catalog Admin (/admin), Careers, Visits, CTC, SEO, AI Chat, Publication Map (20 tables)
+--   • Part B: Shared Staff Core Identity, RBAC, Branches, Files, Tasks, Audit & Idempotency (15 tables)
 --   • Part C: Call Center & Sales CRM Module (/callcenter & /management) (8 tables)
+--   • Part D: Pre-Sale Inventory, Sales CRM Claims, HR Contracts, Finance & Engineering (15 tables)
+--   • Part E: Isolated Submission Bridge (4 tables)
 --
 -- Instructions:
 --   1. Open cPanel > phpMyAdmin, select your V2 database, and click the "SQL" tab.
@@ -362,6 +364,14 @@ CREATE TABLE IF NOT EXISTS ai_chat_rate_limits (
   INDEX idx_ai_rl_bucket_ip_time (bucket, ip_hash, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 19b. Website Submission Publications Retry Ledger
+CREATE TABLE IF NOT EXISTS website_submission_publications (
+  submission_id INT UNSIGNED PRIMARY KEY,
+  property_id   INT UNSIGNED NOT NULL UNIQUE,
+  published_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (property_id) REFERENCES properties(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
 -- ==============================================================================
 -- PART B: STAFF CORE IDENTITY, RBAC & MANAGEMENT TASKS (12 TABLES)
@@ -433,6 +443,8 @@ CREATE TABLE IF NOT EXISTS core_users (
   name VARCHAR(120) NOT NULL,
   username VARCHAR(254) NOT NULL UNIQUE,
   role VARCHAR(60) NOT NULL,
+  department_code VARCHAR(60) NULL,
+  team_leader_id INT UNSIGNED NULL,
   branch_id INT UNSIGNED NULL,
   active TINYINT NOT NULL DEFAULT 1,
   auth_version INT NOT NULL DEFAULT 1,
@@ -441,6 +453,9 @@ CREATE TABLE IF NOT EXISTS core_users (
   FOREIGN KEY (branch_id) REFERENCES core_branches(id),
   INDEX idx_core_users_role_active (role, active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO core_branches (id, code, name, active)
+VALUES (1, 'HQ', 'Main Branch (Kabul)', 1);
 
 -- 28. Canonical Branch Manager Assignment
 CREATE TABLE IF NOT EXISTS core_branch_managers (
@@ -504,9 +519,40 @@ CREATE TABLE IF NOT EXISTS core_idempotency_keys (
   FOREIGN KEY (actor_id) REFERENCES core_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 31b. Core Private Binary Files (Project covers, Buyer 3x4 photos, Tazkira documents)
+CREATE TABLE IF NOT EXISTS core_private_files (
+  id CHAR(32) PRIMARY KEY,
+  owner_id INT UNSIGNED NOT NULL,
+  purpose VARCHAR(40) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  mime VARCHAR(100) NOT NULL,
+  byte_size INT NOT NULL,
+  content LONGBLOB NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (owner_id) REFERENCES core_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 31c. Core Migration Ledger & Branch Assignment Issues
+CREATE TABLE IF NOT EXISTS core_migration_ledger (
+  migration_key VARCHAR(100) PRIMARY KEY,
+  applied_at DATETIME NOT NULL,
+  notes VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS core_branch_assignment_issues (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  record_type VARCHAR(60) NOT NULL,
+  record_id BIGINT UNSIGNED NOT NULL,
+  issue_code VARCHAR(80) NOT NULL,
+  recorded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  resolved_at DATETIME NULL,
+  UNIQUE KEY uq_branch_issue (record_type, record_id, issue_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Seed Core RBAC Metadata
 INSERT IGNORE INTO core_modules VALUES ('core','Shared application core',UTC_TIMESTAMP());
 INSERT IGNORE INTO core_module_versions VALUES ('core',3,UTC_TIMESTAMP());
+INSERT IGNORE INTO core_migration_ledger VALUES ('ceo_manager_branch_model_v1',UTC_TIMESTAMP(),'Canonical CEO/Manager roles and branch boundaries');
 
 INSERT IGNORE INTO core_departments VALUES
   ('management','Management'),
@@ -549,7 +595,14 @@ INSERT IGNORE INTO core_role_permissions VALUES
   ('ceo','core.staff.manage'),
   ('ceo','core.departments.manage'),
   ('manager','core.submissions.read'),
-  ('ceo','core.submissions.read');
+  ('ceo','core.submissions.read'),
+  ('marketing_manager','core.submissions.read'),
+  ('editor','core.submissions.read'),
+  ('videographer','core.submissions.read'),
+  ('finance_manager','core.submissions.read'),
+  ('sales_leader','core.submissions.read'),
+  ('sales','core.submissions.read'),
+  ('callcenter','core.submissions.read');
 
 
 -- ==============================================================================
@@ -592,6 +645,11 @@ CREATE TABLE IF NOT EXISTS cc_leads (
   provider_call_id VARCHAR(180) NULL UNIQUE,
   version INT NOT NULL DEFAULT 1,
   current_task_id INT UNSIGNED NULL,
+  project_id INT UNSIGNED NULL,
+  apartment_id INT UNSIGNED NULL,
+  stage_code VARCHAR(2) NOT NULL DEFAULT 'L',
+  property_kind ENUM('project','unit') NULL,
+  property_id INT UNSIGNED NULL,
   FOREIGN KEY (branch_id) REFERENCES core_branches(id),
   FOREIGN KEY (customer_id) REFERENCES cc_customers(id),
   FOREIGN KEY (origin_agent_id) REFERENCES core_users(id),
@@ -599,7 +657,8 @@ CREATE TABLE IF NOT EXISTS cc_leads (
   INDEX idx_cc_leads_branch (branch_id, status, id),
   INDEX idx_cc_leads_origin (origin_agent_id, status, id),
   INDEX idx_cc_leads_assignee (assignee_id, status, id),
-  INDEX idx_cc_leads_customer (customer_id)
+  INDEX idx_cc_leads_customer (customer_id),
+  INDEX idx_lead_property (customer_id, property_kind, property_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 35. Follow-up Tasks (24-Hour SLA)
@@ -696,7 +755,7 @@ INSERT IGNORE INTO core_role_permissions VALUES
 -- (INTERNAL OFFICE CRM DATABASE — TEXT & NUMERIC ONLY, NO WEBSITE IMAGE LINKS)
 -- ==============================================================================
 
--- 40. Pre-Sale Projects (Manager Inventory)
+-- 40. Pre-Sale Projects (CEO Inventory)
 CREATE TABLE IF NOT EXISTS inv_projects (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   branch_id INT UNSIGNED NOT NULL,
@@ -704,7 +763,13 @@ CREATE TABLE IF NOT EXISTS inv_projects (
   name VARCHAR(160) NOT NULL,
   location VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
+  total_area_sqm DECIMAL(12,2) NOT NULL DEFAULT 0,
   floors INT UNSIGNED NOT NULL DEFAULT 1,
+  commercial_floors_json TEXT NULL,
+  residential_floors_json TEXT NULL,
+  corridor_count INT NOT NULL DEFAULT 1,
+  cover_photo_url VARCHAR(500) NOT NULL DEFAULT '',
+  status VARCHAR(20) NOT NULL DEFAULT 'presale',
   assigned_team_leader_id INT UNSIGNED NULL,
   created_by INT UNSIGNED NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -726,6 +791,8 @@ CREATE TABLE IF NOT EXISTS inv_project_sellers (
   phone VARCHAR(40) NOT NULL DEFAULT '',
   address VARCHAR(255) NOT NULL DEFAULT '',
   share_percentage DECIMAL(5,2) NOT NULL DEFAULT 100.00,
+  photo_3x4_url VARCHAR(500) NOT NULL DEFAULT '',
+  details_json TEXT NULL,
   FOREIGN KEY (project_id) REFERENCES inv_projects(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -740,6 +807,8 @@ CREATE TABLE IF NOT EXISTS inv_construction_companies (
   representative_tazkira VARCHAR(80) NOT NULL DEFAULT '',
   phone VARCHAR(40) NOT NULL DEFAULT '',
   address VARCHAR(255) NOT NULL DEFAULT '',
+  representative_photo_url VARCHAR(500) NOT NULL DEFAULT '',
+  details_json TEXT NULL,
   FOREIGN KEY (project_id) REFERENCES inv_projects(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -749,9 +818,13 @@ CREATE TABLE IF NOT EXISTS inv_apartments (
   project_id INT UNSIGNED NOT NULL,
   unit_number VARCHAR(40) NOT NULL,
   serial_number VARCHAR(80) NOT NULL UNIQUE,
+  kind VARCHAR(20) NOT NULL DEFAULT 'apartment',
+  corridor VARCHAR(20) NOT NULL DEFAULT 'A',
   floor INT NOT NULL,
   rooms INT UNSIGNED NOT NULL DEFAULT 3,
   area_sqm DECIMAL(10,2) NOT NULL,
+  roof_area_sqm DECIMAL(10,2) NOT NULL DEFAULT 0,
+  is_vip TINYINT NOT NULL DEFAULT 0,
   direction VARCHAR(80) NOT NULL,
   boundary_north VARCHAR(180) NOT NULL,
   boundary_south VARCHAR(180) NOT NULL,
@@ -837,6 +910,7 @@ CREATE TABLE IF NOT EXISTS hr_contracts (
   notes TEXT NOT NULL,
   status ENUM('draft','issued','amended','cancelled') NOT NULL DEFAULT 'issued',
   amendment_version INT UNSIGNED NOT NULL DEFAULT 1,
+  verification_token CHAR(64) NULL UNIQUE,
   issued_by INT UNSIGNED NOT NULL,
   issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   version INT NOT NULL DEFAULT 1,
@@ -858,7 +932,21 @@ CREATE TABLE IF NOT EXISTS hr_contract_buyers (
   address VARCHAR(255) NOT NULL,
   photo_3x4_url VARCHAR(500) NOT NULL,
   tazkira_photo_url VARCHAR(500) NULL,
+  details_json TEXT NULL,
   FOREIGN KEY (contract_id) REFERENCES hr_contracts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 48b. HR Contract Amendment Revisions
+CREATE TABLE IF NOT EXISTS hr_contract_revisions (
+  contract_id INT UNSIGNED NOT NULL,
+  amendment_version INT UNSIGNED NOT NULL,
+  snapshot_json MEDIUMTEXT NOT NULL,
+  reason TEXT NOT NULL,
+  actor_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (contract_id, amendment_version),
+  FOREIGN KEY (contract_id) REFERENCES hr_contracts(id),
+  FOREIGN KEY (actor_id) REFERENCES core_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 49. HR Contract Installment Schedule (100% Reconciled)
@@ -876,7 +964,7 @@ CREATE TABLE IF NOT EXISTS hr_contract_installments (
   FOREIGN KEY (contract_id) REFERENCES hr_contracts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 50. Finance Installment Deposits (Assistant Draft -> Manager Post/Reverse)
+-- 50. Finance Installment Deposits (Maker-Checker Post/Reverse)
 CREATE TABLE IF NOT EXISTS fin_deposits (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   contract_id INT UNSIGNED NOT NULL,
@@ -888,6 +976,9 @@ CREATE TABLE IF NOT EXISTS fin_deposits (
   notes TEXT NOT NULL,
   status ENUM('draft','posted','returned','reversed') NOT NULL DEFAULT 'draft',
   reversal_reason TEXT NULL,
+  payment_date DATE NULL,
+  receipt_paid_to_date DECIMAL(14,2) NULL,
+  receipt_remaining_balance DECIMAL(14,2) NULL,
   entered_by INT UNSIGNED NOT NULL,
   approved_by INT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -965,6 +1056,91 @@ CREATE TABLE IF NOT EXISTS eng_deliverable_versions (
   FOREIGN KEY (reviewed_by_id) REFERENCES core_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 52b. Marketing Outbox, Phone Registry & Customer Property Lead Claims
+CREATE TABLE IF NOT EXISTS mkt_submission_outbox (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  entry_id INT UNSIGNED NOT NULL UNIQUE,
+  payload_json MEDIUMTEXT NOT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pending',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (entry_id) REFERENCES mkt_production_entries(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS crm_phone_registry (
+  phone VARCHAR(20) PRIMARY KEY,
+  customer_id INT UNSIGNED NULL,
+  FOREIGN KEY (customer_id) REFERENCES cc_customers(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS crm_customer_property_leads (
+  customer_id INT UNSIGNED NOT NULL,
+  property_kind ENUM('project','unit') NOT NULL,
+  property_id INT UNSIGNED NOT NULL,
+  lead_id INT UNSIGNED NOT NULL,
+  PRIMARY KEY (customer_id, property_kind, property_id),
+  UNIQUE KEY uq_property_lead (lead_id),
+  FOREIGN KEY (customer_id) REFERENCES cc_customers(id),
+  FOREIGN KEY (lead_id) REFERENCES cc_leads(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS crm_lead_property_readiness (
+  id TINYINT PRIMARY KEY,
+  enabled TINYINT NOT NULL DEFAULT 0,
+  checked_at DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO crm_lead_property_readiness (id, enabled, checked_at)
+SELECT 1, IF((SELECT COUNT(*) FROM cc_leads)=0 AND (SELECT COUNT(*) FROM cc_customers)=0, 1, 0), UTC_TIMESTAMP();
+
+-- Seed Inventory, Sales CRM, HR/Finance, Marketing, Engineering Modules & Canonical Permissions
+INSERT IGNORE INTO core_modules VALUES
+  ('inventory','Pre-Sale Project and Apartment Inventory',UTC_TIMESTAMP()),
+  ('sales_crm','Sales Pipeline and Customer Deduplication',UTC_TIMESTAMP()),
+  ('hr_finance','HR Contracts and Finance Installment Ledger',UTC_TIMESTAMP()),
+  ('marketing','Marketing and Media Production Workflow',UTC_TIMESTAMP()),
+  ('engineering','Engineering and Graphic Deliverables',UTC_TIMESTAMP());
+
+INSERT IGNORE INTO core_module_versions VALUES
+  ('inventory',1,UTC_TIMESTAMP()),
+  ('sales_crm',1,UTC_TIMESTAMP()),
+  ('hr_finance',1,UTC_TIMESTAMP()),
+  ('marketing',1,UTC_TIMESTAMP()),
+  ('engineering',1,UTC_TIMESTAMP());
+
+INSERT IGNORE INTO core_permissions VALUES
+  ('inventory.read','inventory','Read pre-sale project and apartment inventory'),
+  ('inventory.manage','inventory','Create and update pre-sale projects, sellers, and apartments'),
+  ('sales.access','sales_crm','Access Sales CRM leads, follow-ups, visits, and deals'),
+  ('sales.team_manage','sales_crm','Supervise assigned Sales Agents as Sales Team Leader'),
+  ('customers.review_duplicates','sales_crm','Review and resolve duplicate customer access requests'),
+  ('hr.contracts.manage','hr_finance','Create, issue, print, and amend bilingual apartment sale contracts'),
+  ('hr.preparation.manage','hr_finance','Prepare sellers and apartment boundaries'),
+  ('finance.read','hr_finance','Read contract installment schedules and deposit ledgers'),
+  ('finance.deposit.draft','hr_finance','Prepare draft customer installment deposits'),
+  ('finance.deposit.approve','hr_finance','Approve, post, return, and reverse customer deposits'),
+  ('marketing.submit_property','marketing','Submit property entries for Marketing filming and production'),
+  ('marketing.schedule_filming','marketing','Schedule filming dates and assign Videographers'),
+  ('marketing.complete_filming','marketing','Mark property filming completed'),
+  ('marketing.edit_and_post','marketing','Schedule editing, set content type, and mark Posted with 5 photos'),
+  ('engineering.deliverables.submit','engineering','Upload versioned architectural, graphic, and 3D deliverables'),
+  ('engineering.deliverables.review','engineering','Review, approve, or request revisions on Engineering deliverables');
+
+INSERT IGNORE INTO core_role_permissions VALUES
+  ('ceo','inventory.read'),('ceo','inventory.manage'),('ceo','sales.access'),('ceo','sales.team_manage'),
+  ('ceo','customers.review_duplicates'),('ceo','finance.read'),('ceo','marketing.submit_property'),('ceo','engineering.deliverables.review'),
+  ('manager','inventory.read'),('manager','sales.access'),('manager','sales.team_manage'),('manager','customers.review_duplicates'),
+  ('manager','hr.contracts.manage'),('manager','hr.preparation.manage'),('manager','marketing.submit_property'),
+  ('sales_leader','inventory.read'),('sales_leader','sales.access'),('sales_leader','sales.team_manage'),('sales_leader','marketing.submit_property'),
+  ('sales','inventory.read'),('sales','sales.access'),('sales','marketing.submit_property'),
+  ('callcenter','inventory.read'),('callcenter','marketing.submit_property'),
+  ('finance_manager','inventory.read'),('finance_manager','finance.read'),('finance_manager','finance.deposit.draft'),('finance_manager','finance.deposit.approve'),
+  ('marketing_manager','marketing.submit_property'),('marketing_manager','marketing.schedule_filming'),('marketing_manager','marketing.complete_filming'),
+  ('videographer','marketing.complete_filming'),
+  ('editor','marketing.edit_and_post'),
+  ('architect','inventory.read'),('architect','engineering.deliverables.submit'),
+  ('graphic_designer','inventory.read'),('graphic_designer','engineering.deliverables.submit'),
+  ('visual_designer_3d','inventory.read'),('visual_designer_3d','engineering.deliverables.submit');
+
 
 -- ==============================================================================
 -- PART E: ISOLATED THIRD SUBMISSION DATABASE (BRIDGE BETWEEN MARKETING & ADMIN)
@@ -1013,6 +1189,16 @@ CREATE TABLE IF NOT EXISTS sub_publish_events (
   next_status VARCHAR(40) NOT NULL,
   notes TEXT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sub_post_id) REFERENCES sub_posts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 56. Copied Submission Binary Assets
+CREATE TABLE IF NOT EXISTS sub_post_assets (
+  sub_post_id INT UNSIGNED NOT NULL,
+  sort_order TINYINT UNSIGNED NOT NULL,
+  mime VARCHAR(100) NOT NULL,
+  content LONGBLOB NOT NULL,
+  PRIMARY KEY (sub_post_id, sort_order),
   FOREIGN KEY (sub_post_id) REFERENCES sub_posts(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

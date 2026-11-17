@@ -62,12 +62,18 @@ function init_secure_session(): void {
     if (session_status() === PHP_SESSION_NONE) {
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        $isCrossOriginDesktop = $origin === 'null'
+            || strpos($origin, 'file://') === 0
+            || !empty($_SERVER['HTTP_X_ATTAIE_DESKTOP'])
+            || ($origin !== '' && $host !== '' && parse_url($origin, PHP_URL_HOST) !== explode(':', $host)[0]);
         session_set_cookie_params([
             'lifetime' => 0,
             'path'     => '/',
             'secure'   => $isHttps,
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => ($isCrossOriginDesktop && $isHttps) ? 'None' : 'Lax',
         ]);
         session_start();
     }
@@ -111,16 +117,19 @@ function cors(): void {
             if ($trimmed !== '') $allowed[] = $trimmed;
         }
     }
+    $desktopHeader = !empty($_SERVER['HTTP_X_ATTAIE_DESKTOP'])
+        || stripos((string) ($_SERVER['HTTP_ACCESS_CONTROL_REQUEST_HEADERS'] ?? ''), 'x-attaie-desktop') !== false;
     $isAllowed = in_array($origin, $allowed, true)
         || (bool) preg_match('#^https://[a-z0-9-]+\.run\.app$#i', $origin)
-        || strpos($origin, 'file://') === 0;
+        || strpos($origin, 'file://') === 0
+        || ($origin === 'null' && $desktopHeader);
 
     if ($origin !== '' && $isAllowed) {
         header("Access-Control-Allow-Origin: $origin");
         header('Access-Control-Allow-Credentials: true');
     }
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token');
+    header('Access-Control-Allow-Headers: Content-Type, X-CSRF-Token, X-Attaie-Desktop');
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
         http_response_code(200);
         exit;

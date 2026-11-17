@@ -1236,3 +1236,282 @@ export function summarizeLeadsPipeline(leads = []) {
   };
 }
 
+/**
+ * Computes lead-to-closed-deal conversion rates per sales agent within a date window.
+ * @param {{
+ *   leads?: Array<any>,
+ *   assignees?: Array<any>,
+ *   leaderId?: number | null,
+ *   dateRange?: 'all' | '7d' | '30d' | '90d' | 'custom',
+ *   startDate?: string,
+ *   endDate?: string,
+ *   now?: string | number | Date,
+ * }} input
+ */
+export function summarizeAgentConversionRates({
+  leads = [],
+  assignees = [],
+  leaderId = null,
+  dateRange = "30d",
+  startDate = "",
+  endDate = "",
+  now = new Date(),
+} = {}) {
+  const leadList = Array.isArray(leads) ? leads : [];
+  const staffList = Array.isArray(assignees) ? assignees : [];
+  const nowMs =
+    now instanceof Date
+      ? now.getTime()
+      : typeof now === "number"
+        ? now
+        : Date.parse(now || new Date().toISOString());
+  const safeNowMs = Number.isFinite(nowMs) ? nowMs : Date.now();
+
+  let rangeStartMs = -Infinity;
+  let rangeEndMs = Infinity;
+
+  if (dateRange === "7d") {
+    rangeStartMs = safeNowMs - 7 * DAY;
+    rangeEndMs = safeNowMs + DAY;
+  } else if (dateRange === "30d") {
+    rangeStartMs = safeNowMs - 30 * DAY;
+    rangeEndMs = safeNowMs + DAY;
+  } else if (dateRange === "90d") {
+    rangeStartMs = safeNowMs - 90 * DAY;
+    rangeEndMs = safeNowMs + DAY;
+  } else if (dateRange === "custom") {
+    if (String(startDate || "").trim()) {
+      const parsedStart = Date.parse(
+        startDate.length === 10 ? `${startDate}T00:00:00.000Z` : startDate,
+      );
+      if (Number.isFinite(parsedStart)) {
+        rangeStartMs = parsedStart;
+      }
+    }
+    if (String(endDate || "").trim()) {
+      const parsedEnd = Date.parse(
+        endDate.length === 10 ? `${endDate}T23:59:59.999Z` : endDate,
+      );
+      if (Number.isFinite(parsedEnd)) {
+        rangeEndMs = parsedEnd;
+      }
+    }
+  }
+
+  const salesAgents = staffList.filter(
+    (u) => u && u.role === "sales" && u.active !== false,
+  );
+  const teamAssigned =
+    leaderId != null
+      ? salesAgents.filter((u) => Number(u.teamLeaderId) === Number(leaderId))
+      : [];
+  const scopedAgents = teamAssigned.length > 0 ? teamAssigned : salesAgents;
+
+  const agentById = new Map();
+  for (const agent of scopedAgents) {
+    agentById.set(Number(agent.id), {
+      agentId: Number(agent.id),
+      agentName: String(agent.name || `Agent #${agent.id}`),
+      shortName: String(agent.name || `Agent #${agent.id}`).split(/\s+/).slice(0, 2).join(" "),
+      activeCount: 0,
+      closedCount: 0,
+      lostCount: 0,
+      draftCount: 0,
+      pipelineTotal: 0,
+      closedAmount: 0,
+      conversionRate: 0,
+    });
+  }
+
+  // Fallback map of any sales user in assignees if leads belong to an unlisted team member
+  const allSalesById = new Map(
+    salesAgents.map((a) => [Number(a.id), a]),
+  );
+
+  const filteredLeads = leadList.filter((lead) => {
+    if (!lead) return false;
+    if (dateRange === "all") return true;
+    const rawTs = lead.callAt || lead.deal?.closedAt || lead.createdAt || "";
+    const tsMs = Date.parse(rawTs);
+    if (!Number.isFinite(tsMs)) return false;
+    return tsMs >= rangeStartMs && tsMs <= rangeEndMs;
+  });
+
+  for (const lead of filteredLeads) {
+    const rawStatus = String(lead?.status || lead?.stage || "active")
+      .trim()
+      .toLowerCase();
+
+    const candidateIds = [
+      lead.assigneeId,
+      lead.originAgentId,
+      ...(Array.isArray(lead.sharedAgentIds) ? lead.sharedAgentIds : []),
+    ]
+      .map((v) => Number(v))
+      .filter((v) => Number.isFinite(v) && v > 0);
+
+    let targetId = candidateIds.find((id) => agentById.has(id));
+    if (!targetId) {
+      const salesCandidate = candidateIds.find((id) => allSalesById.has(id));
+      if (salesCandidate && teamAssigned.length === 0) {
+        targetId = salesCandidate;
+      } else if (
+        salesCandidate &&
+        teamAssigned.length > 0 &&
+        allSalesById.get(salesCandidate)?.teamLeaderId == null
+      ) {
+        const extra = allSalesById.get(salesCandidate);
+        agentById.set(salesCandidate, {
+          agentId: salesCandidate,
+          agentName: String(extra?.name || `Agent #${salesCandidate}`),
+          shortName: String(extra?.name || `Agent #${salesCandidate}`).split(/\s+/).slice(0, 2).join(" "),
+          activeCount: 0,
+          closedCount: 0,
+          lostCount: 0,
+          draftCount: 0,
+          pipelineTotal: 0,
+          closedAmount: 0,
+          conversionRate: 0,
+        });
+        targetId = salesCandidate;
+      }
+    }
+
+    if (!targetId) continue;
+    const bucket = agentById.get(targetId);
+    if (!bucket) continue;
+
+    if (
+      rawStatus === "draft" ||
+      rawStatus === "new" ||
+      rawStatus === "pending" ||
+      rawStatus === "needs details"
+    ) {
+      bucket.draftCount += 1;
+    } else if (
+      rawStatus === "closed" ||
+      rawStatus === "deal closed" ||
+      rawStatus === "won"
+    ) {
+      bucket.closedCount += 1;
+      const amt = Number(lead?.deal?.amount || lead?.agreedAmount || 0);
+      if (Number.isFinite(amt) && amt > 0) {
+        bucket.closedAmount += amt;
+      }
+    } else if (rawStatus === "lost" || rawStatus === "deal lost") {
+      bucket.lostCount += 1;
+    } else {
+      bucket.activeCount += 1;
+    }
+  }
+
+  let totalActive = 0;
+  let totalClosed = 0;
+  let totalLost = 0;
+  let totalLeadsCount = 0;
+
+  const agents = Array.from(agentById.values()).map((row) => {
+    const denominator = row.activeCount + row.closedCount;
+    const conversionRate =
+      denominator > 0
+        ? Math.round((row.closedCount / denominator) * 1000) / 10
+        : 0;
+    const pipelineTotal = row.activeCount + row.closedCount + row.lostCount;
+    totalActive += row.activeCount;
+    totalClosed += row.closedCount;
+    totalLost += row.lostCount;
+    totalLeadsCount += pipelineTotal + row.draftCount;
+    return {
+      ...row,
+      pipelineTotal,
+      conversionRate,
+    };
+  });
+
+  agents.sort((a, b) => {
+    if (b.conversionRate !== a.conversionRate) {
+      return b.conversionRate - a.conversionRate;
+    }
+    if (b.closedCount !== a.closedCount) {
+      return b.closedCount - a.closedCount;
+    }
+    return a.agentName.localeCompare(b.agentName);
+  });
+
+  const teamDenominator = totalActive + totalClosed;
+  const teamConversionRate =
+    teamDenominator > 0
+      ? Math.round((totalClosed / teamDenominator) * 1000) / 10
+      : 0;
+
+  return {
+    agents,
+    totals: {
+      active: totalActive,
+      closed: totalClosed,
+      lost: totalLost,
+      total: totalLeadsCount,
+      teamConversionRate,
+    },
+    filteredLeadCount: filteredLeads.length,
+  };
+}
+
+/**
+ * Aggregates last-30-day Active, Closed, and Lost lead counts per sales agent
+ * for stacked bar funnel visualization on the Sales Leader dashboard.
+ * @param {{
+ *   leads?: Array<any>,
+ *   assignees?: Array<any>,
+ *   leaderId?: number | null,
+ *   now?: string | number | Date,
+ * }} input
+ */
+export function summarizeLeadConversionFunnel({
+  leads = [],
+  assignees = [],
+  leaderId = null,
+  now = new Date(),
+} = {}) {
+  const base = summarizeAgentConversionRates({
+    leads,
+    assignees,
+    leaderId,
+    dateRange: "30d",
+    now,
+  });
+
+  const agents = [...base.agents].sort((a, b) => {
+    if (b.pipelineTotal !== a.pipelineTotal) {
+      return b.pipelineTotal - a.pipelineTotal;
+    }
+    if (b.closedCount !== a.closedCount) {
+      return b.closedCount - a.closedCount;
+    }
+    return a.agentName.localeCompare(b.agentName);
+  });
+
+  const active = base.totals.active;
+  const closed = base.totals.closed;
+  const lost = base.totals.lost;
+  const pipelineTotal = active + closed + lost;
+
+  const pct = (count) =>
+    pipelineTotal > 0 ? Math.round((count / pipelineTotal) * 1000) / 10 : 0;
+
+  return {
+    agents,
+    totals: {
+      active,
+      closed,
+      lost,
+      pipelineTotal,
+      activePct: pct(active),
+      closedPct: pct(closed),
+      lostPct: pct(lost),
+      teamConversionRate: base.totals.teamConversionRate,
+    },
+    filteredLeadCount: base.filteredLeadCount,
+  };
+}
+

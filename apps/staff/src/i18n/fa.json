@@ -250,5 +250,16 @@
   "Connecting Google…": "در حال اتصال به گوگل…",
   "Google sign-in popup was closed before completing.": "پنجره ورود گوگل پیش از تکمیل بسته شد.",
   "Remember me": "مرا به خاطر بسپار",
-  "or": "یا"
+  "or": "یا",
+  "Welcome Back": "خوش آمدید",
+  "Sign In": "ورود",
+  "Don't have an account?": "حساب کاربری ندارید؟",
+  "Contact Admin": "تماس با مدیر",
+  "Private, authorized staff access only · Fixed Role Workspace": "دسترسی خصوصی فقط برای کارمندان مجاز · محیط کاری با نقش ثابت",
+  "Branch": "نمایندگی",
+  "None (unassigned)": "هیچ‌کدام (تعیین‌نشده)",
+  "Sales team leader": "سرپرست تیم فروش",
+  "Department Code": "کد دیپارتمنت",
+  "Department Name": "نام دیپارتمنت",
+  "Save Department": "ثبت دیپارتمنت"
 }

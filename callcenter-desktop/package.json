@@ -1,0 +1,17 @@
+{
+  "name": "attaie-callcenter-desktop",
+  "version": "2.0.0",
+  "description": "Attaie Properties Call Center Workspace — Desktop Application",
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack:win": "electron-builder --win",
+    "pack:mac": "electron-builder --mac",
+    "pack:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  }
+}

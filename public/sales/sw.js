@@ -69,6 +69,7 @@ if (!self.define) {
 }
 define(['./workbox-970124e6'], (function (workbox) { 'use strict';
 
+  importScripts("sw-notifications.js");
   self.skipWaiting();
   workbox.clientsClaim();
   /**
@@ -77,6 +78,9 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
    * See https://goo.gl/S9QRab
    */
   workbox.precacheAndRoute([{
+    "url": "sw-notifications.js",
+    "revision": "6fa3c12cd214c2f87e9b60dc0270ad97"
+  }, {
     "url": "pwa-maskable-512x512.png",
     "revision": "1d86fbaf605299570d6340b76373c16e"
   }, {
@@ -93,7 +97,7 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "revision": "e04fc45d2129633250578fe6f19126af"
   }, {
     "url": "index.html",
-    "revision": "56b6485f6176f3f7b8feff9cac8706fe"
+    "revision": "295a76d3fce91938bfa079d17700c53f"
   }, {
     "url": "assets/window-4-C9gUup8J.png",
     "revision": null
@@ -119,22 +123,22 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
     "url": "assets/properties-C6ZTuQY_.png",
     "revision": null
   }, {
-    "url": "assets/preview-DX3dZ7E5.js",
+    "url": "assets/preview-D_RZZfzi.js",
     "revision": null
   }, {
     "url": "assets/keys-C3odUwaQ.png",
     "revision": null
   }, {
-    "url": "assets/inventory-DVvxCqn8.js",
+    "url": "assets/inventory-Boa3KTje.js",
     "revision": null
   }, {
-    "url": "assets/index-DdXPqp0L.js",
+    "url": "assets/index-fXBo2cIp.js",
     "revision": null
   }, {
-    "url": "assets/index-BarJ5Cqn.css",
+    "url": "assets/index-CMJMPFam.css",
     "revision": null
   }, {
-    "url": "assets/fa-CGweESK5.js",
+    "url": "assets/fa-BJppTkDe.js",
     "revision": null
   }, {
     "url": "assets/attaie-original-D6FwvO_c.png",
@@ -154,6 +158,9 @@ define(['./workbox-970124e6'], (function (workbox) { 'use strict';
   }, {
     "url": "pwa-maskable-512x512.png",
     "revision": "1d86fbaf605299570d6340b76373c16e"
+  }, {
+    "url": "sw-notifications.js",
+    "revision": "6fa3c12cd214c2f87e9b60dc0270ad97"
   }, {
     "url": "manifest.webmanifest",
     "revision": "1803a7d3c5ca6810968f24038a0d0eef"

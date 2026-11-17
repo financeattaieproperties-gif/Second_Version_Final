@@ -141,42 +141,46 @@ return [
 
 This public locator stores paths only, not passwords. Its HTTP access is denied by the included `.htaccess`; PHP loads it internally. The entrypoint checks that the service and config are outside its web root. Confirm they are outside **all** other web roots too. No environment-variable setup or cPanel Terminal is required for this method. Existing staff environment configuration remains supported if the locator file is absent.
 
-## 9. Sign in and create call-center agents
+## 9. Sign in and set up CEO, Sales Team Leaders, Sales Agents & CRM Projects
 
-These are separate current login surfaces:
+These are separate role-locked login surfaces:
 
-| URL | Account | How it is created |
+| URL / App | Role | How it is created |
 | --- | --- | --- |
-| `/admin/` | Website property/catalog administrator | Generated `owner` login in the private local text file, backed by `admin_users` |
-| `/management/` | Admin (CEO) | Firebase email/password plus the CEO `core_users` row from step 6 |
-| `/callcenter/` | Call Center Agent | Firebase user plus provisioning in management |
+| `/admin/` (or Admin PC `.exe`) | Website property/catalog administrator | Generated `owner` login in the private local text file, backed by `admin_users` (plus optional Google sign-in allowlist) |
+| `/ceo/` | CEO (Top-level owner) | Firebase email/password plus the CEO `core_users` row (`role='ceo'`) from step 6 |
+| `/management/` | Operations / HR Manager | Created by CEO inside `/ceo/` → Team (`role='manager'`) |
+| `/callcenter/` (or Call Center PC `.exe`) | Call Center Agent | Created by CEO inside `/ceo/` → Team (`role='callcenter'`) |
+| `/sales-leader/` | Sales Team Leader | Created by CEO inside `/ceo/` → Team (`role='sales_leader'`) |
+| `/sales/` (or Android APK / iOS App) | Sales Agent | Created by CEO inside `/ceo/` → Team (`role='sales'`, linked to Branch & Sales Team Leader) |
+| `/finance/`, `/marketing/`, `/engineering/` | Finance, Marketing & Engineering staff | Created by CEO inside `/ceo/` → Team |
 
-Existing website-admin authentication has not been migrated to Firebase in this call-center increment.
+### Day-2 Team & CRM Project Setup Order (2-Day Rollout)
 
-For each call-center agent:
-
-1. In Firebase **Authentication > Users > Add user**, create the agent's email/password. Give that password to the agent through your normal private process, not SQL or uploaded documents.
-2. Copy the agent's exact UID and email.
-3. Visit `https://website.attaieproperties.com/management/` and sign in with the CEO Firebase account.
-4. Open **Team tasks**, then **Create agent**.
-5. Enter the name, Firebase account email, exact **Firebase UID**, and select **Call center**. Save. This creates the MySQL profile/role mapping; it does not create a Firebase user.
-6. Have the agent sign in at `https://website.attaieproperties.com/callcenter/` with that Firebase email/password.
-7. Use **Forgot password?** on login or the profile's reset-email form for password recovery. Reset messages may arrive in spam; check the configured Firebase email templates.
-
-Do not select Sales for the call-center pilot. The sales dashboard and the other departments' interfaces are deferred. Their registered roles do not automatically grant access to this dashboard.
+1. **Bootstrap CEO first** (step 6): ensure the CEO user is in Firebase Auth and `core_users` (`role='ceo'`), and confirm `core_branches` has `Main Branch (Kabul)` (`id=1`).
+2. Sign in at **`https://website.attaieproperties.com/ceo/`**.
+3. Open **Team tasks → Create agent** for each staff member (creating each user's Email/Password in Firebase Auth first and copying their exact UID):
+   - Create your **Sales Team Leader(s)** first (`Role = Sales Team Leader`, `Branch = Main Branch (Kabul)`).
+   - Next, create each **Sales Agent** (`Role = Sales Agent`, `Branch = Main Branch (Kabul)`, and select their supervising **Sales Team Leader**).
+   - Create any **Call Center Agents**, **Manager**, **Finance Manager**, **Marketing**, or **Engineering** staff as needed.
+4. **Add all Pre-Sale Projects inside CRM (`/ceo/` → Pre-Sale Projects → Add New Project)**:
+   - Public website project catalogs stay empty (`/api/get-projects.php` stays `[]`).
+   - Add each project's exterior cover photo, Commercial vs. Residential floors, corridors (A–Z), apartment/shop/supermarket units, typical floor copy, and assign the **Sales Team Leader** and **Sales Agents** on Step 4.
+5. **Install Client Apps**:
+   - **Call Center PC `.exe`**: build from `callcenter-desktop/` (`npm install && npm run pack:win`) and install `Attaie Call Center Setup.exe` on call center PCs.
+   - **Website Admin PC `.exe`**: build from `admin-panel/` (`npm install && npm run pack`) and install `Attaie Admin Setup.exe` on admin PCs.
+   - **Sales Agent Android APK**: build from `sales-android/` in Android Studio (`Build APK(s)` or `./gradlew assembleDebug`).
+   - **Sales Agent iOS App**: open `https://website.attaieproperties.com/sales/` in iPhone/iPad Safari → **Share → Add to Home Screen** (instant standalone app), or build a signed `.ipa` via `sales-ios/` in Xcode on macOS.
 
 ## 10. Test the workflow
 
 Use clearly fictional test records in this V2 database:
 
-1. As an agent click **New entry**. Enter a fictional customer name/phone, actual manual call time, requirements, and a future next follow-up time. Choose yourself as the next agent and save.
-2. Check **Customers**: the customer is added automatically. Check **Leads** and **Follow-ups**: the same inquiry appears with an automatic serial such as `CA01-L1`. The number uses the actual core user ID, so your first agent may have a different prefix.
-3. Open **Feedback** and submit Follow up or Visit with notes and the next date/time. The feedback deadline is the scheduled time plus 24 elapsed hours. A task becomes Overtime strictly after that deadline; late completion remains in history.
-4. From management choose **Assign task**, select that agent, enter instructions/priority/deadline, and save. In the agent's **My Tasks**, open the task, start it, and mark it complete. General task deadlines have no extra 24-hour grace period.
-5. Check logout, password reset, browser refresh, mobile layout, and direct deep links such as `/callcenter/followups` and `/management/team`. Call center is English-only; management retains its current language option.
-6. Do not expect a real mobile call to create a lead automatically yet. Etisalat final-event ingestion is not connected. Do not hand off live work to a sales workflow without its dashboard being available.
-
-The agent can complete or lose a lead through permitted outcomes. Only the assigned sales role can submit deal closure in the backend; call-center agents cannot close deals. No sales dashboard is shipped here.
+1. As a Call Center agent sign in at `/callcenter/` (or the Call Center desktop `.exe`) and click **New entry**. Enter a fictional customer name/phone, manual call time, requirements, and next follow-up time. Save.
+2. As a Sales Team Leader sign in at `/sales-leader/`, verify your assigned Sales Agents appear under **Team** and team pipeline metrics + conversion charts render in **Leads**.
+3. As a Sales Agent sign in on `/sales/` (or Android APK / iOS Home Screen app), verify assigned leads load, offline cache saves snapshots, and follow-up feedback (`Follow up`, `Visit`, `Deal closed`, `Deal lost`) submits cleanly.
+4. From `/ceo/` choose **Assign task**, select an agent, enter instructions/priority/deadline, and verify task completion in the agent's **My Tasks**.
+5. Check logout, password reset, browser refresh, mobile layout, and deep links such as `/callcenter/followups`, `/sales/leads`, `/sales-leader/leads`, `/ceo/projects`.
 
 ## 11. Verify the server and database
 

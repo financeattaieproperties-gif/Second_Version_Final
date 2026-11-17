@@ -13,12 +13,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, '
 const output = path.resolve(process.argv[2] || path.join(root, 'releases', `manual-staging-dashboard-completion-${stamp}`));
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const walk = directory => fs.readdirSync(directory, {withFileTypes:true}).flatMap(entry => entry.isDirectory() ? walk(path.join(directory, entry.name)) : [path.join(directory, entry.name)]);
-const freshInternal = ['001-core.sql','010-callcenter.sql','020-inventory.sql','030-sales-crm.sql','040-hr-finance.sql','050-marketing-production.sql','060-engineering.sql','090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql'];
+const freshInternal = ['001-core.sql','010-callcenter.sql','020-inventory.sql','030-sales-crm.sql','040-hr-finance.sql','050-marketing-production.sql','060-engineering.sql','090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql','103-customer-property-leads.sql','110-ceo-manager-branch-model.sql'];
 function sourceAudit() {
   const catalog = JSON.parse(read('deployment/v2/project-showcase.json'));
   if (catalog.projects.length || catalog.units.length) throw new Error('New packages require empty project/unit catalogs.');
   for (const file of freshInternal) if (!fs.existsSync(path.join(root,'staff-service/database',file))) throw new Error(`Missing SQL: ${file}`);
-  for (const file of ['App.php','Completion.php','CompletionRules.php','Domain.php','FirebaseAuth.php']) if (!fs.existsSync(path.join(root,'staff-service/src',file))) throw new Error(`Missing service source: ${file}`);
+  for (const file of ['App.php','Completion.php','CompletionRules.php','Domain.php','FirebaseAuth.php','LeadPropertyClaims.php']) if (!fs.existsSync(path.join(root,'staff-service/src',file))) throw new Error(`Missing service source: ${file}`);
   if (/CREATE TABLE\s+(?:core_|inv_|hr_|fin_|cc_|sub_)/i.test(read('public/api/schema.sql'))) throw new Error('Website schema contains another database module.');
   console.log('Source packaging audit passed: empty catalog, complete PHP source, separate SQL inputs.');
 }
