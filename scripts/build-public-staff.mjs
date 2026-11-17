@@ -52,6 +52,13 @@ for (const role of roles) {
     fs.writeFileSync(rootHtml, html, "utf8");
   }
 
+  if (role === "sales") {
+    const swNotifSrc = path.join(root, "apps", "staff", "pwa-assets", "sw-notifications.js");
+    if (fs.existsSync(swNotifSrc)) {
+      fs.copyFileSync(swNotifSrc, path.join(outDir, "sw-notifications.js"));
+    }
+  }
+
   const htaccessSrc = path.join(root, "deployment/staff/dashboard.htaccess");
   if (fs.existsSync(htaccessSrc)) {
     fs.copyFileSync(htaccessSrc, path.join(outDir, ".htaccess"));

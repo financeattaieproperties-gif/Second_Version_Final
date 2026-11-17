@@ -160,5 +160,7 @@
   "Firebase sign-in is not configured. Contact your administrator.": "Firebase sign-in is not configured. Contact your administrator.",
   "Sign-in failed. Check your email and password.": "Sign-in failed. Check your email and password.",
   "Sign-in service is unavailable. Please try again.": "Sign-in service is unavailable. Please try again.",
-  "Password reset is unavailable. Please try again.": "Password reset is unavailable. Please try again."
+  "Password reset is unavailable. Please try again.": "Password reset is unavailable. Please try again.",
+  "Remember me": "Remember me",
+  "or": "or"
 }

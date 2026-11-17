@@ -1,31 +1,291 @@
 import { useState, type FormEvent } from 'react';
-import { ShieldCheck, Globe, Eye, EyeOff } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AttaieLogoEntrance } from '../components/AttaieLogoEntrance';
 
 const S = {
-  page:  { minHeight: '100vh', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center', background: '#F7F8FA', padding: '1.5rem', fontFamily: 'system-ui, -apple-system, sans-serif' } as const,
-  brand: { display: 'flex', flexDirection: 'column' as const, alignItems: 'center', gap: 8, marginBottom: '1.5rem' } as const,
-  brandCaption: { fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#64748B', fontWeight: 600 } as const,
-  card:  { background: '#FFFFFF', borderRadius: 12, padding: '2.25rem', width: '100%', maxWidth: 400, boxShadow: '0 4px 20px rgba(15,23,42,.04)', border: '1px solid #E2E8F0' } as const,
-  iconBox: { width: 48, height: 48, borderRadius: 10, background: '#F1F5F9', color: '#0F172A', display: 'grid', placeItems: 'center', marginBottom: '1.25rem' } as const,
-  eyebrow: { fontSize: 10, fontWeight: 700, letterSpacing: '0.16em', color: '#0F172A', marginBottom: 6, textTransform: 'uppercase' as const } as const,
-  title: { fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem', color: '#0F172A', letterSpacing: '-0.02em' } as const,
-  sub:   { fontSize: '0.82rem', color: '#64748B', marginBottom: '1.25rem', lineHeight: 1.5 } as const,
-  roleBox: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 12px', marginBottom: '1.25rem', borderRadius: 6, background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: 11, color: '#334155', fontVariantNumeric: 'tabular-nums' } as const,
-  codeBadge: { fontSize: 11, fontWeight: 600, color: '#0F172A', background: '#FFFFFF', padding: '2px 6px', borderRadius: 4, border: '1px solid #E2E8F0' } as const,
-  label: { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#0F172A', marginBottom: '0.35rem' } as const,
-  input: { width: '100%', padding: '0.65rem 0.85rem', border: '1px solid #E2E8F0', borderRadius: 7, fontSize: '0.88rem', outline: 'none', marginBottom: '1rem', background: '#F7F8FA', color: '#0F172A', boxSizing: 'border-box' as const } as const,
-  passwordWrap: { position: 'relative' as const, display: 'flex', alignItems: 'center', width: '100%', marginBottom: '1rem' } as const,
-  passwordInput: { width: '100%', padding: '0.65rem 2.5rem 0.65rem 0.85rem', border: '1px solid #E2E8F0', borderRadius: 7, fontSize: '0.88rem', outline: 'none', background: '#F7F8FA', color: '#0F172A', boxSizing: 'border-box' as const } as const,
-  passwordToggle: { position: 'absolute' as const, insetInlineEnd: 6, top: '50%', transform: 'translateY(-50%)', width: 30, height: 30, borderRadius: 6, border: 'none', background: 'transparent', color: '#64748B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 } as const,
-  btn:   { width: '100%', padding: '0.75rem', background: '#0F172A', border: '1px solid #0F172A', borderRadius: 8, color: '#FFFFFF', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer', marginTop: '0.25rem' } as const,
-  divider: { display: 'flex', alignItems: 'center', gap: 10, margin: '1.1rem 0', fontSize: 11, color: '#64748B', fontWeight: 500 } as const,
-  dividerLine: { flex: 1, height: 1, background: '#E2E8F0' } as const,
-  googleBtn: { width: '100%', padding: '0.68rem 0.9rem', background: '#FFFFFF', border: '1px solid #CBD5E1', borderRadius: 8, color: '#0F172A', fontWeight: 600, fontSize: '0.84rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 } as const,
-  err:   { background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', padding: '0.65rem 1rem', borderRadius: 6, marginBottom: '1rem', fontSize: '0.82rem' } as const,
-  privateNote: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: '1.35rem', fontSize: 10, color: '#64748B' } as const,
-  footer: { marginTop: '1.5rem', fontSize: 11, color: '#64748B' } as const,
+  page: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'radial-gradient(circle at 50% 25%, #0A1F5C 0%, #020E3A 50%, #010826 100%)',
+    padding: '1.5rem',
+    fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    color: '#FFFFFF',
+    position: 'relative' as const,
+    boxSizing: 'border-box' as const,
+  } as const,
+  brand: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: '1.5rem',
+  } as const,
+  brandCaption: {
+    fontSize: 10,
+    letterSpacing: '0.22em',
+    textTransform: 'uppercase' as const,
+    color: '#94A3B8',
+    fontWeight: 600,
+  } as const,
+  card: {
+    background: 'rgba(10, 20, 48, 0.78)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    borderRadius: 22,
+    padding: '2.5rem 2.25rem',
+    width: '100%',
+    maxWidth: 420,
+    boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    boxSizing: 'border-box' as const,
+  } as const,
+  avatarBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: '50%',
+    background: 'rgba(255, 255, 255, 0.08)',
+    border: '1px solid rgba(255, 255, 255, 0.18)',
+    color: '#FFFFFF',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 1.25rem',
+    fontWeight: 700,
+    fontSize: '1.25rem',
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+    letterSpacing: '-0.02em',
+  } as const,
+  title: {
+    fontSize: '1.65rem',
+    fontWeight: 700,
+    marginBottom: '0.35rem',
+    color: '#FFFFFF',
+    letterSpacing: '-0.025em',
+    textAlign: 'center' as const,
+  } as const,
+  sub: {
+    fontSize: '0.84rem',
+    color: '#94A3B8',
+    marginBottom: '1.35rem',
+    lineHeight: 1.5,
+    textAlign: 'center' as const,
+  } as const,
+  roleBox: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    padding: '8px 12px',
+    marginBottom: '1.25rem',
+    borderRadius: 8,
+    background: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    fontSize: 11,
+    color: '#CBD5E1',
+    fontVariantNumeric: 'tabular-nums',
+  } as const,
+  codeBadge: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: '#FFFFFF',
+    background: 'rgba(255, 255, 255, 0.1)',
+    padding: '2px 7px',
+    borderRadius: 4,
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+  } as const,
+  inputWrap: {
+    position: 'relative' as const,
+    display: 'flex',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: '0.9rem',
+  } as const,
+  inputIcon: {
+    position: 'absolute' as const,
+    insetInlineStart: 14,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: '#94A3B8',
+    pointerEvents: 'none' as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  } as const,
+  input: {
+    width: '100%',
+    padding: '0.82rem 1rem 0.82rem 2.75rem',
+    border: '1px solid rgba(255, 255, 255, 0.14)',
+    borderRadius: 12,
+    fontSize: '0.9rem',
+    outline: 'none',
+    background: 'rgba(255, 255, 255, 0.07)',
+    color: '#FFFFFF',
+    boxSizing: 'border-box' as const,
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  } as const,
+  passwordInput: {
+    width: '100%',
+    padding: '0.82rem 2.75rem 0.82rem 2.75rem',
+    border: '1px solid rgba(255, 255, 255, 0.14)',
+    borderRadius: 12,
+    fontSize: '0.9rem',
+    outline: 'none',
+    background: 'rgba(255, 255, 255, 0.07)',
+    color: '#FFFFFF',
+    boxSizing: 'border-box' as const,
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  } as const,
+  passwordToggle: {
+    position: 'absolute' as const,
+    insetInlineEnd: 10,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    border: 'none',
+    background: 'transparent',
+    color: '#94A3B8',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    padding: 0,
+  } as const,
+  utilRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    margin: '0.2rem 0 1.25rem',
+    fontSize: '0.82rem',
+    color: '#94A3B8',
+  } as const,
+  rememberLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 7,
+    cursor: 'pointer',
+    userSelect: 'none' as const,
+    color: '#CBD5E1',
+  } as const,
+  checkbox: {
+    accentColor: '#0145F2',
+    width: 15,
+    height: 15,
+    borderRadius: 4,
+    cursor: 'pointer',
+  } as const,
+  forgotBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#94A3B8',
+    fontSize: '0.82rem',
+    cursor: 'pointer',
+    padding: 0,
+    textDecoration: 'none',
+  } as const,
+  notice: {
+    background: 'rgba(1, 69, 242, 0.15)',
+    color: '#93C5FD',
+    border: '1px solid rgba(1, 69, 242, 0.3)',
+    padding: '0.65rem 0.85rem',
+    borderRadius: 8,
+    marginBottom: '1rem',
+    fontSize: '0.78rem',
+    lineHeight: 1.4,
+  } as const,
+  btn: {
+    width: '100%',
+    padding: '0.82rem 1rem',
+    background: '#FFFFFF',
+    border: 'none',
+    borderRadius: 12,
+    color: '#020E3A',
+    fontWeight: 700,
+    fontSize: '0.92rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+    transition: 'background-color 0.15s, transform 0.1s',
+  } as const,
+  divider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    margin: '1.25rem 0',
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: 500,
+  } as const,
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    background: 'rgba(255, 255, 255, 0.12)',
+  } as const,
+  googleBtn: {
+    width: '100%',
+    padding: '0.78rem 1rem',
+    background: 'rgba(255, 255, 255, 0.06)',
+    border: '1px solid rgba(255, 255, 255, 0.14)',
+    borderRadius: 12,
+    color: '#FFFFFF',
+    fontWeight: 600,
+    fontSize: '0.88rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    transition: 'background-color 0.15s',
+  } as const,
+  err: {
+    background: 'rgba(239, 68, 68, 0.15)',
+    color: '#FCA5A5',
+    border: '1px solid rgba(239, 68, 68, 0.35)',
+    padding: '0.65rem 1rem',
+    borderRadius: 10,
+    marginBottom: '1rem',
+    fontSize: '0.82rem',
+    textAlign: 'center' as const,
+  } as const,
+  accountRow: {
+    marginTop: '1.25rem',
+    textAlign: 'center' as const,
+    fontSize: '0.82rem',
+    color: '#94A3B8',
+  } as const,
+  accountLink: {
+    color: '#FFFFFF',
+    fontWeight: 600,
+    textDecoration: 'none',
+    cursor: 'pointer',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    marginLeft: 6,
+  } as const,
+  privateNote: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: '1.15rem',
+    fontSize: 11,
+    color: '#64748B',
+  } as const,
+  footer: {
+    marginTop: '1.75rem',
+    fontSize: 11,
+    color: '#64748B',
+    textAlign: 'center' as const,
+  } as const,
 };
 
 function GoogleMark() {
@@ -41,10 +301,12 @@ function GoogleMark() {
 
 export default function Login() {
   const { login, loginWithGoogle } = useAuth();
-  const [u, setU]       = useState('');
-  const [p, setP]       = useState('');
+  const [u, setU] = useState('');
+  const [p, setP] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [err, setErr]   = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showForgotNotice, setShowForgotNotice] = useState(false);
+  const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
 
@@ -89,25 +351,43 @@ export default function Login() {
         <span style={S.brandCaption}>Website Admin CRM</span>
       </div>
       <div style={S.card}>
-        <div style={S.iconBox}>
-          <Globe size={22} />
+        <div style={S.avatarBadge}>
+          <span>A</span>
         </div>
-        <div style={S.eyebrow}>ATTAIE WEBSITE ADMIN</div>
-        <h1 style={S.title}>Website Admin CRM</h1>
-        <p style={S.sub}>Sign in to manage public listings, projects, submissions, live chat, and SEO.</p>
+        <h1 style={S.title}>Welcome Back</h1>
+        <p style={S.sub}>Sign in to continue to Attaie Website Admin</p>
+
         <div style={S.roleBox}>
           <span><strong>Role:</strong> Website Administrator</span>
           <code style={S.codeBadge}>/admin</code>
         </div>
+
         {err && <div style={S.err}>{err}</div>}
+
         <form onSubmit={submit}>
-          <label htmlFor="admin-login-username" style={S.label}>Username</label>
-          <input id="admin-login-username" style={S.input} value={u} onChange={e => setU(e.target.value)} autoComplete="username" required />
-          <label htmlFor="admin-login-password" style={S.label}>Password</label>
-          <div style={S.passwordWrap}>
+          <div style={S.inputWrap}>
+            <span style={S.inputIcon}>
+              <Mail size={17} />
+            </span>
+            <input
+              id="admin-login-username"
+              style={S.input}
+              placeholder="Email address or username"
+              value={u}
+              onChange={e => setU(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </div>
+
+          <div style={S.inputWrap}>
+            <span style={S.inputIcon}>
+              <Lock size={17} />
+            </span>
             <input
               id="admin-login-password"
               style={S.passwordInput}
+              placeholder="Password"
               type={showPassword ? 'text' : 'password'}
               value={p}
               onChange={e => setP(e.target.value)}
@@ -125,13 +405,44 @@ export default function Login() {
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
-          <button style={S.btn} disabled={busy || googleBusy}>{busy ? 'Signing in…' : 'Sign in →'}</button>
+
+          <div style={S.utilRow}>
+            <label style={S.rememberLabel}>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+                style={S.checkbox}
+              />
+              <span>Remember me</span>
+            </label>
+            <button
+              type="button"
+              style={S.forgotBtn}
+              onClick={() => setShowForgotNotice(prev => !prev)}
+            >
+              Forgot password?
+            </button>
+          </div>
+
+          {showForgotNotice && (
+            <div style={S.notice}>
+              Please contact Attaie IT Administration (Kabul Head Office) to reset credentials.
+            </div>
+          )}
+
+          <button style={S.btn} disabled={busy || googleBusy}>
+            <span>{busy ? 'Signing in…' : 'Sign In'}</span>
+            <span aria-hidden="true">→</span>
+          </button>
         </form>
+
         <div style={S.divider}>
           <span style={S.dividerLine} />
           <span>or</span>
           <span style={S.dividerLine} />
         </div>
+
         <button
           type="button"
           data-testid="admin-google-signin-btn"
@@ -140,8 +451,20 @@ export default function Login() {
           onClick={handleGoogleSignIn}
         >
           <GoogleMark />
-          <span>{googleBusy ? 'Connecting Google…' : 'Continue with Google'}</span>
+          <span>{googleBusy ? 'Connecting Google…' : 'Sign in with Google'}</span>
         </button>
+
+        <div style={S.accountRow}>
+          <span>Don't have an account?</span>
+          <button
+            type="button"
+            style={S.accountLink}
+            onClick={() => setShowForgotNotice(true)}
+          >
+            Contact Admin
+          </button>
+        </div>
+
         <div style={S.privateNote}>
           <ShieldCheck size={13} />
           <span>Private, authorized staff access only · Fixed Role Workspace</span>

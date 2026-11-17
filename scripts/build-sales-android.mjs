@@ -71,6 +71,11 @@ if (fs.existsSync(logoSrc)) {
   fs.copyFileSync(logoSrc, path.join(wwwDir, "logo.png"));
 }
 
+const swNotifSrc = path.join(root, "apps", "staff", "pwa-assets", "sw-notifications.js");
+if (fs.existsSync(swNotifSrc)) {
+  fs.copyFileSync(swNotifSrc, path.join(wwwDir, "sw-notifications.js"));
+}
+
 // Mirror www/ into app/src/main/assets/www/ for direct Android Studio Gradle builds
 fs.rmSync(androidAssetsWwwDir, { recursive: true, force: true });
 fs.mkdirSync(path.dirname(androidAssetsWwwDir), { recursive: true });

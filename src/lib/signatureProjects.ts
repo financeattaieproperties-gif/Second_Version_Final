@@ -16,7 +16,7 @@ export const SIGNATURE_PROJECTS: Project[] = [
     total_units: 31,
     image_url: defaultExteriorImg,
     gallery_images: [defaultExteriorImg],
-    video_url: null,
+    video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     masterplan_image: null,
     description:
       '11-story luxury residential and commercial tower in the heart of Shahr-e-Naw offering 3, 4, and 5-bedroom apartments with private Mehmankhana and 11th-floor VIP penthouses.',
@@ -32,7 +32,7 @@ export const SIGNATURE_PROJECTS: Project[] = [
     total_units: 36,
     image_url: categoryProjectsImg,
     gallery_images: [categoryProjectsImg],
-    video_url: null,
+    video_url: 'https://vimeo.com/76979871',
     masterplan_image: null,
     description:
       '10-story architectural landmark on the main boulevard of Kart-e-Char featuring a 525 m² commercial shopping galleria and four distinct apartment typologies per floor.',

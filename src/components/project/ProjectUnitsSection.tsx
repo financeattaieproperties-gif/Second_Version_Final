@@ -290,7 +290,12 @@ export function ApartmentFullInfoModal({
               <div className="rounded-xl overflow-hidden shadow-xs">
                 <VideoPlayer
                   url={unit.video_url}
-                  title={`${displayTitle} — Interior Video Walkthrough`}
+                  title={`${displayTitle} — Interior Walkthrough`}
+                  subtitle="Detailed apartment walkthrough highlighting finishes, window glazing, and layout"
+                  posterUrl={unit.image_url || (Array.isArray(unit.gallery_images) ? unit.gallery_images[0] : null)}
+                  unitNumber={unit.unit_number}
+                  location={projectName}
+                  compact
                 />
               </div>
             </div>

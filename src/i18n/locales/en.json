@@ -74,6 +74,7 @@
   },
   "visitDialog": {
     "requestVisitBtn": "Request a Visit",
+    "bookNow": "Book Now",
     "eyebrow": "Request a visit",
     "titlePrefix": "Visit {{target}}",
     "subtitle": "We will confirm your requested time by phone.",

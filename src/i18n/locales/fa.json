@@ -74,6 +74,7 @@
   },
   "visitDialog": {
     "requestVisitBtn": "درخواست بازدید",
+    "bookNow": "رزرو نوبت",
     "eyebrow": "درخواست بازدید",
     "titlePrefix": "بازدید از {{target}}",
     "subtitle": "زمان درخواستی شما را از طریق تماس تلفنی تأیید خواهیم کرد.",

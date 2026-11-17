@@ -48,6 +48,7 @@ export default defineConfig(({ command }) => {
           "pwa-512x512.png",
           "pwa-maskable-512x512.png",
           "apple-touch-icon.png",
+          "sw-notifications.js",
         ],
         manifest: {
           id: scope,
@@ -89,6 +90,7 @@ export default defineConfig(({ command }) => {
           cleanupOutdatedCaches: true,
           clientsClaim: true,
           skipWaiting: true,
+          importScripts: ["sw-notifications.js"],
           manifestTransforms: [
             async (entries) => ({
               manifest: entries.map((entry) => ({

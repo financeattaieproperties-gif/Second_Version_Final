@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, type ProjectInput, type ProjectUnit, type ProjectUnitInput } from '../api';
 import ImageUpload from '../components/ImageUpload';
+import { ApartmentGalleryReorder } from '../components/ApartmentGalleryReorder';
 import ExplorerEditor from '../components/visual/ExplorerEditor';
 
 const S = {
@@ -699,56 +700,31 @@ export default function ProjectForm() {
                 />
               </div>
 
-              {/* Apartment Cover Photo */}
+              {/* Apartment Cover Photo & Photo Gallery (with Drag-and-Drop Reordering) */}
               <div style={S.full}>
-                <label style={S.label}>Apartment Cover Photo *</label>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.4rem' }}>
-                  Primary high-resolution photo displayed on the apartment card and modal header.
-                </p>
-                <ImageUpload
-                  value={unitForm.image_url}
-                  onChange={url => setUnitForm(prev => ({ ...prev, image_url: url }))}
-                />
-              </div>
-
-              {/* Apartment Photo Gallery */}
-              <div style={S.full}>
-                <label style={S.label}>Apartment Photo Gallery (Up to 8 Images)</label>
-                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.6rem' }}>
-                  Upload photos of interior living spaces, master bedrooms, custom kitchen, modern bathrooms, and balcony panorama.
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.75rem' }}>
-                  {[...(unitForm.gallery_images ?? []), null].slice(0, 8).map((url, i) => (
-                    <div key={i} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem', background: '#fff' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b' }}>Photo {i + 1}</span>
-                        {url && (
-                          <button
-                            type="button"
-                            style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600 }}
-                            onClick={() => {
-                              const imgs = [...(unitForm.gallery_images ?? [])];
-                              imgs.splice(i, 1);
-                              setUnitForm(prev => ({ ...prev, gallery_images: imgs }));
-                            }}
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                      <ImageUpload
-                        value={url ?? null}
-                        onChange={newUrl => {
-                          const imgs = [...(unitForm.gallery_images ?? [])];
-                          if (newUrl) imgs[i] = newUrl;
-                          else imgs.splice(i, 1);
-                          setUnitForm(prev => ({ ...prev, gallery_images: imgs.filter(Boolean) }));
-                        }}
-                        purpose="gallery"
-                      />
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.25rem' }}>
+                  <label style={S.label}>
+                    Apartment Cover Photo &amp; Photo Gallery (Up to 8 Gallery Images)
+                  </label>
+                  <span style={{ fontSize: '0.72rem', background: '#FEF3C7', color: '#92400E', padding: '0.15rem 0.45rem', borderRadius: 4, fontWeight: 700 }}>
+                    ⇄ Drag &amp; Drop Reordering
+                  </span>
                 </div>
+                <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: 0, marginBottom: '0.5rem' }}>
+                  Upload the primary Apartment Cover Photo and up to 8 apartment gallery photos. Drag and drop any card to rearrange display order—Slot 1 is always the primary cover photo.
+                </p>
+                <ApartmentGalleryReorder
+                  coverUrl={unitForm.image_url}
+                  galleryUrls={unitForm.gallery_images ?? []}
+                  onChange={(newCover, newGallery) => {
+                    setUnitForm(prev => ({
+                      ...prev,
+                      image_url: newCover,
+                      gallery_images: newGallery,
+                    }));
+                  }}
+                  maxPhotos={9}
+                />
               </div>
 
               {/* Apartment Interior Video Walkthrough */}

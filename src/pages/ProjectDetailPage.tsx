@@ -44,6 +44,11 @@ const DualPaneElevationXRayView = lazy(() =>
 const AttaieGoogleMap = lazy(() =>
   import('@/components/map/AttaieGoogleMap').then((m) => ({ default: m.AttaieGoogleMap }))
 );
+const ApartmentWalkthroughVideo = lazy(() =>
+  import('@/components/video/ApartmentWalkthroughVideo').then((m) => ({
+    default: m.ApartmentWalkthroughVideo,
+  }))
+);
 
 
 
@@ -290,6 +295,37 @@ export function ProjectDetailPage() {
                     </Swiper>
                   </div>
                 </div>
+              )}
+
+              {/* Development & Apartment Interior Video Walkthrough Showcase */}
+              {project.video_url && (
+                <motion.section
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="mb-8"
+                >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-1 h-5 bg-brand-gold rounded-full" />
+                    <h2 className="text-xl font-bold text-brand-navy">
+                      Development &amp; Apartment Interior Walkthrough
+                    </h2>
+                  </div>
+                  <Suspense
+                    fallback={
+                      <div className="w-full aspect-video bg-neutral-900 rounded-2xl animate-pulse" />
+                    }
+                  >
+                    <ApartmentWalkthroughVideo
+                      url={project.video_url}
+                      title={`${name} — Video Walkthrough Tour`}
+                      subtitle="High-definition virtual walkthrough showcasing architecture, floor plans, daylight exposure, and interior finishes"
+                      posterUrl={project.image_url || project.gallery_images?.[0]}
+                      location={location}
+                    />
+                  </Suspense>
+                </motion.section>
               )}
 
               {/* Direct Contact Actions */}

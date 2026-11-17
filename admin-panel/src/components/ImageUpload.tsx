@@ -259,3 +259,6 @@ export default function ImageUpload({ value, onChange, purpose }: Props) {
     </div>
   );
 }
+
+export { ImageUpload };
+

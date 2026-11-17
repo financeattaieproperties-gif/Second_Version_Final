@@ -1,5 +1,7 @@
 export function registerSalesServiceWorker(panelId: string): void {
-  if (typeof window === "undefined" || panelId !== "sales") return;
+  if (typeof window === "undefined") return;
+  const isSalesContext = panelId === "sales" || window.location.pathname.startsWith("/sales");
+  if (!isSalesContext) return;
   if (!("serviceWorker" in navigator)) return;
   if (window.location.protocol !== "https:" && window.location.protocol !== "http:") {
     return;

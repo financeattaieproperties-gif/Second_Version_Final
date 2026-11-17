@@ -37,6 +37,8 @@ import {
   Layers,
   PanelLeftClose,
   PanelLeftOpen,
+  Mail,
+  Lock,
   Eye,
   EyeOff,
   Fingerprint,
@@ -49,6 +51,9 @@ import {
   BatteryWarning,
   Table2,
   Calendar,
+  Bell,
+  BellRing,
+  BellOff,
 } from "lucide-react";
 import type {
   DashboardData,
@@ -104,6 +109,8 @@ import { useOnlineStatus } from "./hooks/useOnlineStatus";
 import { usePWAInstall } from "./hooks/usePWAInstall";
 import { useLowBatteryWarning } from "./hooks/useLowBatteryWarning";
 import { registerSalesServiceWorker } from "./pwa/register";
+import { useLeadNotifications } from "./hooks/useLeadNotifications";
+import { notifyLeadAssigned } from "./pwa/leadNotificationService";
 import { AttaieLogoEntrance } from "./components/AttaieLogoEntrance";
 import { ProjectInventoryWizard } from "./components/ProjectInventoryWizard";
 import { HrContractsWorkspace } from "./components/HrContractsWorkspace";
@@ -281,6 +288,19 @@ function App() {
     isInstalled: isPwaInstalled,
     promptInstall,
   } = usePWAInstall();
+  const {
+    isSupported: isNotificationSupported,
+    permission: notificationPermission,
+    requestPermission: requestNotificationPermission,
+    sendTestNotification,
+    isTesting: isTestingNotification,
+    testNotice: notificationTestNotice,
+  } = useLeadNotifications(
+    session?.user?.id,
+    data?.leads,
+    panelSpec.panelId === "sales" || isDashboardPath
+  );
+  const [showNotificationPopover, setShowNotificationPopover] = useState(false);
   const [offlineSavedAt, setOfflineSavedAt] = useState<string | null>(null);
   const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
   const [failedSyncCount, setFailedSyncCount] = useState<number>(0);
@@ -1303,6 +1323,107 @@ function App() {
                 {t("Install App")}
               </button>
             )}
+            {isNotificationSupported && (panelSpec.panelId === "sales" || isDashboardPath) && (
+              <div style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  className={`header-notification-btn ${
+                    notificationPermission === "granted"
+                      ? "tone-active"
+                      : notificationPermission === "default"
+                      ? "tone-prompt"
+                      : "tone-denied"
+                  }`}
+                  data-testid="header-notification-btn"
+                  onClick={() => {
+                    if (notificationPermission === "default") {
+                      void requestNotificationPermission();
+                    } else {
+                      setShowNotificationPopover((prev) => !prev);
+                    }
+                  }}
+                  title={
+                    notificationPermission === "granted"
+                      ? t("Mobile Lead Alerts Active")
+                      : notificationPermission === "default"
+                      ? t("Enable Mobile Lead Alerts")
+                      : t("Notifications Blocked in Browser")
+                  }
+                >
+                  {notificationPermission === "granted" ? (
+                    <>
+                      <BellRing size={14} />
+                      <span className="header-notification-dot" />
+                      <span>{t("Alerts Active")}</span>
+                    </>
+                  ) : notificationPermission === "default" ? (
+                    <>
+                      <Bell size={14} />
+                      <span className="header-notification-dot prompt" />
+                      <span>{t("Enable Alerts")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <BellOff size={14} />
+                      <span>{t("Alerts Blocked")}</span>
+                    </>
+                  )}
+                </button>
+
+                {showNotificationPopover && (
+                  <div className="notification-popover" data-testid="notification-popover">
+                    <div className="notification-popover-head">
+                      <strong>{t("Mobile Lead Alerts")}</strong>
+                      <button
+                        type="button"
+                        style={{ background: "transparent", border: "none", cursor: "pointer", padding: 2 }}
+                        onClick={() => setShowNotificationPopover(false)}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <p>
+                      {notificationPermission === "granted"
+                        ? t("Service worker notifications are active. You will receive device vibration and lock-screen alerts when customer leads are assigned.")
+                        : notificationPermission === "default"
+                        ? t("Allow notifications to get alerted on your mobile phone whenever a lead is assigned.")
+                        : t("Notifications are blocked in your browser. Reset permissions in site settings to receive lead alerts.")}
+                    </p>
+                    {notificationTestNotice && (
+                      <div style={{ fontSize: "11px", color: "#166534", background: "#DCFCE7", padding: "6px 8px", borderRadius: 6, marginBottom: 8, fontWeight: 600 }}>
+                        {notificationTestNotice}
+                      </div>
+                    )}
+                    <div className="notification-popover-actions">
+                      {notificationPermission === "default" ? (
+                        <button
+                          type="button"
+                          className="button"
+                          style={{ minHeight: 32, fontSize: "12px", padding: "4px 10px" }}
+                          onClick={async () => {
+                            await requestNotificationPermission();
+                          }}
+                        >
+                          <Bell size={14} />
+                          {t("Allow Mobile Notifications")}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="button secondary"
+                          style={{ minHeight: 32, fontSize: "12px", padding: "4px 10px" }}
+                          disabled={isTestingNotification}
+                          onClick={() => void sendTestNotification()}
+                        >
+                          <BellRing size={14} />
+                          {isTestingNotification ? t("Sending Alert...") : t("Send Test Alert to Device")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <span className="timezone">Kabul · UTC+04:30</span>
             <button
               type="button"
@@ -1833,6 +1954,48 @@ function App() {
                     </div>
                   </section>
                 )}
+
+              {page === "leads" && isNotificationSupported && notificationPermission === "default" && (
+                <section
+                  className="lead-notifications-banner tone-prompt"
+                  data-testid="lead-notifications-banner"
+                >
+                  <div className="lead-notifications-banner-copy">
+                    <span className="lead-notifications-banner-icon">
+                      <Bell size={20} />
+                    </span>
+                    <div>
+                      <strong>{t("Never miss a new customer inquiry")}</strong>
+                      <p>
+                        {t(
+                          "Enable mobile push notifications to get instant lock-screen alerts and vibration whenever new leads or property tours are assigned to you.",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="lead-notifications-banner-actions">
+                    <button
+                      type="button"
+                      className="button"
+                      style={{ minHeight: 34, fontSize: "12px", padding: "6px 14px" }}
+                      onClick={() => void requestNotificationPermission()}
+                    >
+                      <Bell size={14} />
+                      {t("Enable Notifications")}
+                    </button>
+                    <button
+                      type="button"
+                      className="button secondary"
+                      style={{ minHeight: 34, fontSize: "12px", padding: "6px 12px" }}
+                      disabled={isTestingNotification}
+                      onClick={() => void sendTestNotification()}
+                      title={t("Test notification delivery")}
+                    >
+                      {t("Test Alert")}
+                    </button>
+                  </div>
+                </section>
+              )}
 
               {page === "leads" && (
                 <section
@@ -2393,6 +2556,54 @@ function App() {
                 }}
                 onError={(m) => setError(m)}
               />
+              {isNotificationSupported && (
+                <section
+                  className="panel biometric-profile-card"
+                  data-testid="profile-notification-card"
+                >
+                  <div className="biometric-profile-head">
+                    <div className="biometric-profile-identity">
+                      <span className="biometric-quick-icon">
+                        {notificationPermission === "granted" ? (
+                          <BellRing size={20} />
+                        ) : (
+                          <Bell size={20} />
+                        )}
+                      </span>
+                      <div>
+                        <h3>{t("Mobile Lead Notifications (PWA)")}</h3>
+                        <p>
+                          {notificationPermission === "granted"
+                            ? t("Service worker device push alerts and vibration are active for new lead assignments.")
+                            : notificationPermission === "default"
+                            ? t("Turn on mobile push notifications to be alerted on your phone when new leads arrive.")
+                            : t("Notifications are blocked in your browser. Reset permissions in browser settings.")}
+                        </p>
+                      </div>
+                    </div>
+                    {notificationPermission === "granted" ? (
+                      <button
+                        type="button"
+                        className="button secondary"
+                        disabled={isTestingNotification}
+                        onClick={() => void sendTestNotification()}
+                      >
+                        <BellRing size={15} />
+                        {isTestingNotification ? t("Sending Alert...") : t("Send Test Alert")}
+                      </button>
+                    ) : notificationPermission === "default" ? (
+                      <button
+                        type="button"
+                        className="button"
+                        onClick={() => void requestNotificationPermission()}
+                      >
+                        <Bell size={15} />
+                        {t("Enable Notifications")}
+                      </button>
+                    ) : null}
+                  </div>
+                </section>
+              )}
             </div>
           )}
           <footer className="page-footer">
@@ -3834,6 +4045,8 @@ function Login({
   const [googleBusy, setGoogleBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showForgot, setShowForgot] = useState(false);
   const [bioStatus, setBioStatus] = useState(() => getBiometricStatus());
   const [enableBiometric, setEnableBiometric] = useState(true);
   const autoPromptTriggeredRef = useRef(false);
@@ -3955,41 +4168,16 @@ function Login({
       </div>
       <main className="login-card">
         <span className="login-icon">
-          <PanelIcon size={24} />
+          <PanelIcon size={22} />
         </span>
         <div className="eyebrow">{t(panelSpec.loginEyebrow)}</div>
-        <h1>{t(panelSpec.loginTitle)}</h1>
+        <h1>{t("Welcome Back")}</h1>
         <p>{t(panelSpec.loginSubtitle)}</p>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 8,
-            padding: "8px 12px",
-            marginBottom: 20,
-            borderRadius: 6,
-            background: "#F8FAFC",
-            border: "1px solid #E2E8F0",
-            fontSize: 11,
-            color: "#334155",
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
+        <div className="login-role-box">
           <span>
             <strong>{t("Role")}:</strong> {t(panelSpec.fixedRoleLabel)}
           </span>
-          <code
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: "#0F172A",
-              background: "#FFFFFF",
-              padding: "2px 6px",
-              borderRadius: 4,
-              border: "1px solid #E2E8F0",
-            }}
-          >
+          <code>
             {panelSpec.basePath}
           </code>
         </div>
@@ -4106,21 +4294,31 @@ function Login({
             }
           }}
         >
-          <Field label={t("Email")}>
-            <input
-              name="username"
-              type="email"
-              autoComplete="username"
-              defaultValue={bioStatus.enrolled ? bioStatus.email : ""}
-              required
-            />
-          </Field>
           <div className="field">
-            <label htmlFor={passwordId}>{t("Password")}</label>
+            <div className="input-with-icon">
+              <span className="input-icon-lead">
+                <Mail size={17} />
+              </span>
+              <input
+                id="staff-login-username"
+                name="username"
+                type="email"
+                placeholder={t("Email")}
+                autoComplete="username"
+                defaultValue={bioStatus.enrolled ? bioStatus.email : ""}
+                required
+              />
+            </div>
+          </div>
+          <div className="field">
             <div className="password-input-wrap">
+              <span className="input-icon-lead">
+                <Lock size={17} />
+              </span>
               <input
                 id={passwordId}
                 name="password"
+                placeholder={t("Password")}
                 type={pwdProps.inputType}
                 autoComplete="current-password"
                 required
@@ -4137,6 +4335,31 @@ function Login({
               </button>
             </div>
           </div>
+
+          <div className="login-util-row">
+            <label className="remember-label">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              <span>{t("Remember me")}</span>
+            </label>
+            <button
+              type="button"
+              className="forgot-link-btn"
+              onClick={() => setShowForgot((prev) => !prev)}
+            >
+              {t("Forgot password?")}
+            </button>
+          </div>
+
+          {showForgot && (
+            <div className="login-forgot-panel">
+              <PasswordForm t={t} done={() => setShowForgot(false)} />
+            </div>
+          )}
+
           {bioStatus.available && !bioStatus.enrolled && (
             <label className="biometric-check-row">
               <input
@@ -4153,12 +4376,12 @@ function Login({
             className={`button full ${bioStatus.available && bioStatus.enrolled ? "secondary" : ""}`}
             disabled={busy || bioBusy || googleBusy}
           >
-            {t(busy ? "Signing in…" : "Sign in")}
+            <span>{t(busy ? "Signing in…" : "Sign In")}</span>
             <ArrowRight size={16} />
           </button>
         </form>
         <div className="biometric-divider">
-          <span>{t("Or continue with Google")}</span>
+          <span>{t("or")}</span>
         </div>
         <button
           type="button"
@@ -4173,15 +4396,23 @@ function Login({
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
           </svg>
-          {t(googleBusy ? "Connecting Google…" : "Sign in with Google")}
+          <span>{t(googleBusy ? "Connecting Google…" : "Sign in with Google")}</span>
         </button>
-        <details>
-          <summary>{t("Forgot password?")}</summary>
-          <PasswordForm t={t} done={() => {}} />
-        </details>
+
+        <div className="login-account-row">
+          <span>{t("Don't have an account?") || "Don't have an account?"}</span>
+          <button
+            type="button"
+            className="login-contact-admin-btn"
+            onClick={() => setShowForgot(true)}
+          >
+            {t("Contact Admin") || "Contact Admin"}
+          </button>
+        </div>
+
         <p className="login-private">
           <ShieldCheck size={14} />
-          {t("Private, authorized staff access only · Fixed Role Workspace")}
+          <span>{t("Private, authorized staff access only · Fixed Role Workspace")}</span>
         </p>
       </main>
       <footer>Attaie Properties · Kabul, Afghanistan</footer>

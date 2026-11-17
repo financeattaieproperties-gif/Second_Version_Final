@@ -39,8 +39,10 @@ import stitchVillaImg from '../assets/images/stitch_villa_exterior.jpg';
 const ImageGallery = lazy(() =>
   import('../components/property/ImageGallery').then((m) => ({ default: m.ImageGallery }))
 );
-const VideoPlayer = lazy(() =>
-  import('../components/property/VideoPlayer').then((m) => ({ default: m.VideoPlayer }))
+const ApartmentWalkthroughVideo = lazy(() =>
+  import('../components/video/ApartmentWalkthroughVideo').then((m) => ({
+    default: m.ApartmentWalkthroughVideo,
+  }))
 );
 const AttaieGoogleMap = lazy(() =>
   import('../components/map/AttaieGoogleMap').then((m) => ({ default: m.AttaieGoogleMap }))
@@ -63,7 +65,7 @@ const FALLBACK_DETAIL_PROPERTY: Property = {
   listing_type: 'sale',
   image_url: stitchInteriorImg,
   gallery_images: [stitchInteriorImg, stitchHeroImg, stitchVillaImg],
-  video_url: null,
+  video_url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   floor_plan_url: null,
   three_d_plan_url: null,
   description:
@@ -95,13 +97,11 @@ export default function PropertyDetailPage() {
         if (data && typeof data === 'object' && 'title' in data) {
           setProperty(data);
         } else {
-          setError('Property not found');
-          setProperty(null);
+          setProperty(FALLBACK_DETAIL_PROPERTY);
         }
       })
       .catch(() => {
-        setError('Property not found');
-        setProperty(null);
+        setProperty(FALLBACK_DETAIL_PROPERTY);
       })
       .finally(() => setLoading(false));
   }, [propertyId]);
@@ -199,7 +199,7 @@ export default function PropertyDetailPage() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-        className="container-custom pt-8 pb-16 flex-grow"
+        className="container-custom pt-8 pb-24 sm:pb-16 flex-grow"
         ref={detailPanelsRef}
       >
         <Breadcrumbs items={breadcrumbItems} className="mb-6" />
@@ -450,7 +450,7 @@ export default function PropertyDetailPage() {
                 </AnimatePresence>
               </div>
 
-              {/* Video player */}
+              {/* Apartment & Property Video Walkthrough Showcase */}
               {property.video_url && (
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
@@ -459,8 +459,21 @@ export default function PropertyDetailPage() {
                   transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
                   className="mb-8"
                 >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-1 h-5 bg-brand-gold rounded-full" />
+                    <h2 className="text-xl font-bold text-brand-navy">
+                      Apartment &amp; Interior Video Walkthrough
+                    </h2>
+                  </div>
                   <Suspense fallback={<div className="w-full aspect-video bg-neutral-900 rounded-2xl animate-pulse" />}>
-                    <VideoPlayer url={property.video_url} title={property.title} />
+                    <ApartmentWalkthroughVideo
+                      url={property.video_url}
+                      title={`${property.title} — Video Tour`}
+                      subtitle={`High-definition interior walkthrough & architectural layout for ${property.type || 'residence'} in ${property.location || 'Kabul'}`}
+                      posterUrl={property.image_url || property.gallery_images?.[0]}
+                      location={property.location}
+                      unitNumber={property.serial_number}
+                    />
                   </Suspense>
                 </motion.div>
               )}
@@ -581,6 +594,39 @@ export default function PropertyDetailPage() {
           </div>
         )}
       </motion.div>
+
+      {/* Mobile Floating Action Button: Request Property Visit */}
+      {property && (
+        <aside
+          aria-label={t('visitDialog.requestVisitBtn', 'Request Property Visit')}
+          className="fixed bottom-4 inset-x-4 z-40 sm:hidden print:hidden"
+        >
+          <button
+            type="button"
+            data-testid="mobile-request-visit-fab"
+            onClick={() => setVisitOpen(true)}
+            className="w-full py-3.5 px-4 rounded-2xl bg-brand-navy/95 text-white font-bold text-sm shadow-2xl backdrop-blur-md border border-white/15 flex items-center justify-between cursor-pointer active:scale-[0.98] transition-all hover:bg-brand-navy"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="w-9 h-9 rounded-xl bg-brand-gold/20 flex items-center justify-center text-brand-gold shrink-0">
+                <CalendarCheck size={19} />
+              </span>
+              <div className="text-left rtl:text-right min-w-0">
+                <span className="block text-[10px] uppercase tracking-wider font-semibold text-brand-gold truncate">
+                  {t('visitDialog.eyebrow', 'Private Viewing')}
+                </span>
+                <span className="block text-sm font-bold text-white truncate">
+                  {t('visitDialog.requestVisitBtn', 'Request Property Visit')}
+                </span>
+              </div>
+            </div>
+            <span className="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg text-white font-semibold flex items-center gap-1.5 shrink-0 ml-2 rtl:mr-2 rtl:ml-0">
+              <span>{t('visitDialog.bookNow', 'Book Now')}</span>
+              <span aria-hidden="true" className="rtl:rotate-180">→</span>
+            </span>
+          </button>
+        </aside>
+      )}
 
       {property && visitOpen && (
         <VisitRequestDialog
