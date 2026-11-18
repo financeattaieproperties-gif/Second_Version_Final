@@ -1,3 +1,4 @@
+USE attaiepropert_crm;
 -- INTERNAL CRM DATABASE ONLY (Import into your Attaie CRM database in phpMyAdmin)
 -- Maps the CEO and all 10 departmental staff members to their exact Firebase UIDs and roles.
 
