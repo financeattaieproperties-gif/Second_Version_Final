@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, type ChangeEvent, type DragEvent } from 'react';
 import { api } from '../api';
+import { LiquidProgressBar } from './ui/LiquidProgressBar';
 
 interface Props {
   value: string | null;
@@ -212,8 +213,8 @@ export default function ImageUpload({ value, onChange, purpose }: Props) {
 
       {/* Progress bar */}
       {uploading && (
-        <div style={{ height: 4, background: '#E2E8F0' }}>
-          <div style={{ height: '100%', background: '#0F172A', width: `${progress}%`, transition: 'width .3s' }} />
+        <div style={{ padding: '0.5rem 0.75rem 0' }}>
+          <LiquidProgressBar progress={progress} />
         </div>
       )}
 

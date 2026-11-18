@@ -125,3 +125,17 @@ Implementation specs and plans live in `docs/superpowers/`. Consult these before
 - `docs/superpowers/specs/2026-06-01-landing-page-design.md` — landing page Warm Kabul Character aesthetic
 - `docs/superpowers/plans/2026-06-02-cms-admin-panel.md` — admin panel build plan
 - `docs/superpowers/specs/2026-06-03-nextjs-to-vite-migration-design.md` — migration decisions
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs for this repo live as GitHub issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Canonical triage roles mapped to GitHub labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context repo layout. See `docs/agents/domain.md`.

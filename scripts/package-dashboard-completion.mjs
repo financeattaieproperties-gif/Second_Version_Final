@@ -9,8 +9,11 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const isProduction = process.argv.includes('--production');
+const targetOrigin = isProduction ? 'https://attaieproperties.com' : 'https://website.attaieproperties.com';
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-const output = path.resolve(process.argv[2] || path.join(root, 'releases', `manual-staging-dashboard-completion-${stamp}`));
+const posArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
+const output = path.resolve(posArgs[0] || path.join(root, 'releases', `manual-${isProduction ? 'production' : 'staging'}-dashboard-completion-${stamp}`));
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 const walk = directory => fs.readdirSync(directory, {withFileTypes:true}).flatMap(entry => entry.isDirectory() ? walk(path.join(directory, entry.name)) : [path.join(directory, entry.name)]);
 const freshInternal = ['001-core.sql','010-callcenter.sql','020-inventory.sql','030-sales-crm.sql','040-hr-finance.sql','050-marketing-production.sql','060-engineering.sql','090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql','103-customer-property-leads.sql','110-ceo-manager-branch-model.sql'];
@@ -24,7 +27,7 @@ function sourceAudit() {
 }
 sourceAudit();
 if (process.argv.includes('--audit-source')) process.exit(0);
-if (path.dirname(output) !== path.join(root,'releases') || !path.basename(output).startsWith('manual-staging-dashboard-completion-') || fs.existsSync(output)) throw new Error('Use a NEW manual-staging-dashboard-completion-* folder directly under releases/.');
+if (path.dirname(output) !== path.join(root,'releases') || !/^manual-(?:staging|production)-dashboard-completion-/.test(path.basename(output)) || fs.existsSync(output)) throw new Error('Use a NEW manual-(staging|production)-dashboard-completion-* folder directly under releases/.');
 const dist = path.join(output,'dist');
 const write = (relative,content) => {const target=path.join(output,relative);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,content);};
 const copy = (source,relative) => {const target=path.join(output,relative);fs.mkdirSync(path.dirname(target),{recursive:true});fs.copyFileSync(path.join(root,source),target);};
@@ -34,13 +37,17 @@ const run = (command,args) => {const result=spawnSync(command,args,{cwd:root,enc
 for (const config of ['tsconfig.json','admin-panel/tsconfig.json','apps/staff/tsconfig.json']) run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit','-p',config]);
 fs.mkdirSync(dist,{recursive:true});
 process.env.VITE_API_URL='/api';
-process.env.VITE_SITE_URL='https://attaieproperties.com';
+process.env.VITE_SITE_URL=targetOrigin;
 const firebaseConfigured=Boolean(process.env.VITE_STAFF_FIREBASE_API_KEY);
 const common={configFile:false,envDir:false,publicDir:false,logLevel:'warn',build:{emptyOutDir:false}};
 // Do not load repository vite.config.ts: it explicitly loads private .env.local.
 await build({...common,root,plugins:[react(),tailwindcss()],resolve:{alias:{'@':path.join(root,'src')}},define:{'process.env.GOOGLE_MAPS_PLATFORM_KEY':JSON.stringify(process.env.VITE_GOOGLE_MAPS_API_KEY||'')},build:{...common.build,outDir:dist}});
 const websiteHtml=path.join(dist,'index.html');
-fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replaceAll('https://www.attaieproperties.com','https://attaieproperties.com'));
+if (isProduction) {
+  fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replaceAll('https://www.attaieproperties.com',targetOrigin));
+} else {
+  fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replace(/(<meta name="robots" content=")[^"]+/, '$1noindex, nofollow, noarchive').replaceAll('https://www.attaieproperties.com',targetOrigin));
+}
 await build({...common,root:path.join(root,'admin-panel'),plugins:[react()],base:'/admin/',build:{...common.build,outDir:path.join(dist,'admin')}});
 const adminHtml=path.join(dist,'admin/index.html');
 fs.writeFileSync(adminHtml,fs.readFileSync(adminHtml,'utf8').replace('<head>','<head>\n<meta name="robots" content="noindex, nofollow, noarchive">'));
@@ -75,10 +82,12 @@ for (const tree of ['api','visual-config','staff-api']) {
 }
 for (const name of ['seo.php','sitemap.php','.user.ini']) copy(`public/${name}`,`dist/${name}`);
 let rules=read('public/.htaccess').replace(/RewriteRule \^sitemap\\\.xml\$ .*\n/,'');
-rules=rules.replace('# Admin CRM SPA fallback', '# V2 staff API and dashboard routing\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^dashboard(?:/.*)?$ /dashboard/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\n\n# Admin CRM SPA fallback');
+if(!rules.includes('^ceo')) {
+  rules=rules.replace('# Admin CRM SPA fallback', '# V2 staff API and dashboard routing\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^dashboard(?:/.*)?$ /dashboard/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\nRewriteRule ^ceo(?:/.*)?$ /ceo/index.html [L]\nRewriteRule ^sales-leader(?:/.*)?$ /sales-leader/index.html [L]\nRewriteRule ^sales(?:/.*)?$ /sales/index.html [L]\nRewriteRule ^finance(?:/.*)?$ /finance/index.html [L]\nRewriteRule ^marketing(?:/.*)?$ /marketing/index.html [L]\nRewriteRule ^engineering(?:/.*)?$ /engineering/index.html [L]\n\n# Admin CRM SPA fallback');
+}
 if(!rules.includes('^dashboard')||!rules.includes('^staff-api/v1'))throw new Error('Routing insertion failed.');
-write('dist/.htaccess','# V2 testing document root ONLY.\nRewriteEngine On\nRewriteRule ^(?:ai-chat(?:/|$)|chat-service\\.php$) - [F,L]\n'+rules+'\n<IfModule mod_headers.c>\nHeader always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>\n<Files "initiate-call.php">\nRequire all denied\n</Files>\n');
-write('dist/robots.txt','User-agent: *\nDisallow: /\n');
+write('dist/.htaccess',(isProduction?'# Production document root.\n':'# V2 testing document root ONLY.\n')+'RewriteEngine On\nRewriteRule ^(?:ai-chat(?:/|$)|chat-service\\.php$) - [F,L]\n'+rules+(isProduction?'':'\n<IfModule mod_headers.c>\nHeader always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>')+'\n<Files "initiate-call.php">\nRequire all denied\n</Files>\n');
+write('dist/robots.txt',isProduction?'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /dashboard/\nDisallow: /management/\nDisallow: /callcenter/\nDisallow: /ceo/\nDisallow: /sales-leader/\nDisallow: /sales/\nDisallow: /finance/\nDisallow: /marketing/\nDisallow: /engineering/\nDisallow: /api/\nDisallow: /staff-api/\n':'User-agent: *\nDisallow: /\n');
 write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n');
 write('dist/uploads/.htaccess','Options -Indexes\n<FilesMatch "\\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh|shtml)$">\nRequire all denied\n</FilesMatch>\n');
 for(const folder of ['private_applications','chat_store'])write(`dist/uploads/${folder}/.htaccess`,'Require all denied\n');
@@ -87,14 +96,14 @@ write('dist/visual-config/.htaccess','Options -Indexes\n<FilesMatch "\\.(?:json|
 write('dist/api/db.php',"<?php\n// Path only. Real website/submission configuration lives outside every web root.\nrequire '/home/CPANEL_USER/attaie-v2-private/website-db.php';\n");
 copy('public/staff-api/paths.example.php','dist/staff-api/paths.php');
 for(const file of walk(path.join(root,'staff-service/src')))copy(path.relative(root,file),`private/app/${path.relative(path.join(root,'staff-service'),file)}`);
-write('private/config.example.php',read('staff-service/config/config.example.php').replaceAll('/home/CPANEL_USER/private-staff/sessions','/home/CPANEL_USER/attaie-v2-private/sessions'));
+write('private/config.example.php',read('staff-service/config/config.example.php').replaceAll('/home/CPANEL_USER/private-staff/sessions','/home/CPANEL_USER/attaie-v2-private/sessions').replaceAll('https://website.attaieproperties.com',targetOrigin));
 copy('public/staff-api/paths.example.php','private/paths.example.php');
 let websiteConfig=read('public/api/db.example.php').replace("define('ADMIN_USER', 'admin');","define('ADMIN_USER', '');").replace("define('ADMIN_PASS', 'choose_a_strong_password');","define('ADMIN_PASS', '');");
 websiteConfig=websiteConfig.replace('<?php',"<?php\ndefine('ATTAIE_MANUAL_SCHEMA', true);\n// Separate THIRD submission database. Never use website or internal CRM credentials.\ndefine('SUBMISSION_DB_HOST','localhost');\ndefine('SUBMISSION_DB_USER','YOUR_SUBMISSION_USER');\ndefine('SUBMISSION_DB_PASS','');\ndefine('SUBMISSION_DB_NAME','YOUR_SUBMISSION_DATABASE');");
 write('private/website-db.example.php',websiteConfig);
 write('private/sessions/.gitkeep','');
-const header=name=>`-- ${name}. V2 DEPLOYMENT. Verify DATABASE() in phpMyAdmin before import.\n-- Fresh install requires a NEW EMPTY database. Never import fresh SQL over existing data.\n`;
-write('database/fresh/01-website.sql',header('WEBSITE database')+read('public/api/schema.sql')+"\n"+read('staff-service/database/102-website-submission-map.sql')+"\nUPDATE seo_settings SET canonical_base_url='https://attaieproperties.com',robots_index=1 WHERE id=1;\n");
+const header=name=>`-- ${name}. ${isProduction ? 'PRODUCTION' : 'V2 TESTING ONLY'}. Verify DATABASE() in phpMyAdmin before import.\n-- Fresh install requires a NEW EMPTY database. Never import fresh SQL over existing data.\n`;
+write('database/fresh/01-website.sql',header('WEBSITE database')+read('public/api/schema.sql')+"\n"+read('staff-service/database/102-website-submission-map.sql')+`\nUPDATE seo_settings SET canonical_base_url='${targetOrigin}',robots_index=${isProduction?1:0} WHERE id=1;\n`);
 write('database/fresh/02-internal-crm.sql',header('SEPARATE INTERNAL OFFICE CRM database')+freshInternal.map(name=>`\n-- SOURCE ${name}\n`+read(`staff-service/database/${name}`)).join('\n'));
 write('database/fresh/03-submissions.sql',header('SEPARATE THIRD SUBMISSION database')+read('staff-service/database/055-submissions-db.sql'));
 for(const name of ['090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql'])copy(`staff-service/database/${name}`,`database/upgrade/internal-crm/${name}`);
@@ -104,7 +113,7 @@ write('database/upgrade/README.md','Existing V2 only: back up all three database
 write('database/04-firebase-owner.template.sql',"-- INTERNAL CRM only, after fresh schema or verified upgrade. No password belongs here.\n-- Provision Email/Password users in V2 Firebase first. Replace exact UID/email.\nSET @uid=''; SET @email=''; SET @name='Admin (CEO)';\nINSERT INTO core_users(firebase_uid,username,name,role) SELECT @uid,@email,@name,'ceo' WHERE @uid<>'' AND @email<>'';\n-- Manager is a separate role. Map an authorized Manager explicitly so inventory/user creation is available.\nSET @manager_uid=''; SET @manager_email=''; SET @manager_name='';\nINSERT INTO core_users(firebase_uid,username,name,role) SELECT @manager_uid,@manager_email,@manager_name,'manager' WHERE @manager_uid<>'' AND @manager_email<>'' AND @manager_name<>'';\n");
 write('database/05-website-admin.template.sql',"-- WEBSITE database only. Generate a strong password hash privately; never put password text here.\n-- After replacing both placeholders, remove the leading comment from the statement.\n-- INSERT INTO admin_users(username,password_hash) VALUES ('YOUR_ADMIN_USERNAME','YOUR_PASSWORD_HASH');\n");
 copy('docs/staff/dashboard-completion-delivery.md','START-HERE.md');
-write('BUILD-STATUS.json',JSON.stringify({builtAt:new Date().toISOString(),target:'https://attaieproperties.com',firebasePublicKeyConfigured:firebaseConfigured,serverUploaded:false,databaseImported:false,serverVerified:false},null,2));
+write('BUILD-STATUS.json',JSON.stringify({builtAt:new Date().toISOString(),target:targetOrigin,firebasePublicKeyConfigured:firebaseConfigured,serverUploaded:false,databaseImported:false,serverVerified:false},null,2));
 
 // Fail the release before archive creation when private/setup material is public.
 for(const file of walk(dist)) {

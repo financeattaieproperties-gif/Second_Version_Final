@@ -1,0 +1,79 @@
+name: Build Sales Agent iOS App (Cloud CI)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'Backend Staff API URL'
+        required: true
+        default: 'https://attaieproperties.com/staff-api/v1'
+
+jobs:
+  build-ios:
+    name: Compile iOS Application on macOS Runner
+    runs-on: macos-14
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm ci || npm install
+
+      - name: Build Staff Workspaces for Production
+        env:
+          VITE_STAFF_API_BASE_URL: ${{ github.event.inputs.target_url }}
+        run: |
+          npm run build:staff
+
+      - name: Prepare Capacitor iOS Project
+        run: |
+          npm install -D @capacitor/core @capacitor/cli @capacitor/ios
+          npx cap init "Attaie Sales CRM" "af.attaieproperties.sales" --web-dir public/sales
+          npx cap add ios || true
+          npx cap sync ios
+
+      - name: Build iOS Archive (Unsigned)
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath ../../build/AttaieSalesCRM.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Export Simulator / Development App
+        run: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ../../build/DerivedData \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload iOS Archive Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AttaieSalesCRM-iOS-Archive
+          path: build/AttaieSalesCRM.xcarchive
+          retention-days: 14
+
+      - name: Upload iOS App Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: AttaieSalesCRM-iOS-App
+          path: build/DerivedData/Build/Products/Release-iphoneos/App.app
+          retention-days: 14

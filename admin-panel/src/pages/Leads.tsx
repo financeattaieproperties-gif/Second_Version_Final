@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Agent, type Lead } from '../api';
+import { DateRangePicker, type DateRangeValue } from '../components/ui/DateRangePicker';
 import InquiryFollowupEditor, { inquiryLabels, inquiryTime } from '../components/InquiryFollowupEditor';
 import {
   AdminCalendarSyncConfirmModal,
@@ -262,6 +263,7 @@ export default function Leads() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('ALL');
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ from: '', to: '' });
   const [exportNotice, setExportNotice] = useState('');
   const [editing, setEditing] = useState<Lead | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -338,6 +340,11 @@ export default function Leads() {
           return false;
         }
       }
+      if (dateRange.from || dateRange.to) {
+        const createdIso = new Date(l.created_at).toISOString().slice(0, 10);
+        if (dateRange.from && createdIso < dateRange.from) return false;
+        if (dateRange.to && createdIso > dateRange.to) return false;
+      }
       if (!q) return true;
       return (
         l.name.toLowerCase().includes(q) ||
@@ -348,7 +355,7 @@ export default function Leads() {
         (l.receipt_reference ?? '').toLowerCase().includes(q)
       );
     });
-  }, [items, searchQuery, stageFilter]);
+  }, [items, searchQuery, stageFilter, dateRange]);
 
   const triggerDownload = (content: string, mimeType: string, filename: string) => {
     const blob = new Blob([content], { type: mimeType });
@@ -597,6 +604,7 @@ export default function Leads() {
           style={S.searchInput}
           aria-label="Search leads"
         />
+        <DateRangePicker value={dateRange} onChange={setDateRange} />
         <div style={S.filterPills}>
           {stages.map((st) => (
             <button

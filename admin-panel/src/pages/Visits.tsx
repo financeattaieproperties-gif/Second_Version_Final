@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Agent, type VisitRequest } from '../api';
 import { extractAgentEmail } from '../../../shared/googleCalendarSyncService';
+import FullscreenCalendar from '../components/ui/FullscreenCalendar';
 import {
   AdminCalendarSyncConfirmModal,
   type PendingAdminCalendarSync,
@@ -47,6 +48,7 @@ export default function Visits() {
   const [draftStatus, setDraftStatus]   = useState<Record<number, VisitRequest['status']>>({});
   const [draftAgentId, setDraftAgentId] = useState<Record<number, string>>({});
   const [syncFlag, setSyncFlag]         = useState<Record<number, boolean>>({});
+  const [viewMode, setViewMode]         = useState<'list' | 'calendar'>('list');
   const [pendingCalendarSync, setPendingCalendarSync] = useState<PendingAdminCalendarSync | null>(null);
 
   const load = () => {
@@ -128,7 +130,25 @@ export default function Visits() {
 
   return (
     <div>
-      <h1 style={S.title}>Visit Requests ({filteredItems.length} of {items.length})</h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <h1 style={{ ...S.title, marginBottom: 0 }}>Visit Requests ({filteredItems.length} of {items.length})</h1>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            style={viewMode === 'list' ? S.btn : S.clearBtn}
+          >
+            List View
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('calendar')}
+            style={viewMode === 'calendar' ? S.btn : S.clearBtn}
+          >
+            Calendar View
+          </button>
+        </div>
+      </div>
 
       {/* Filters by status, date, and listing/customer */}
       <div style={S.filterBar}>
@@ -206,7 +226,22 @@ export default function Visits() {
         </div>
       )}
 
-      {filteredItems.length === 0 ? (
+      {viewMode === 'calendar' ? (
+        <FullscreenCalendar
+          title="Visit Requests Schedule"
+          events={filteredItems.map(item => ({
+            id: item.id,
+            date: item.requested_at.slice(0, 10),
+            title: `${item.name} — ${item.listing_name}`,
+            subtitle: `${item.phone} (${item.status})`,
+            status: item.status,
+          }))}
+          onSelectEvent={ev => {
+            setDateFilter(ev.date);
+            setViewMode('list');
+          }}
+        />
+      ) : filteredItems.length === 0 ? (
         <p style={{ color: '#64748b' }}>No visit requests match the current filters.</p>
       ) : (
         filteredItems.map(item => {

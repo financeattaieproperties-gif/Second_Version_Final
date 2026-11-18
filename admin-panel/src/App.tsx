@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -22,6 +22,8 @@ import CareerApplications from './pages/CareerApplications';
 import ChatInbox from './pages/ChatInbox';
 import PublishingTasks from './pages/PublishingTasks';
 import { AttaieLogoEntrance } from './components/AttaieLogoEntrance';
+
+const FullscreenCalendar = lazy(() => import('./components/ui/FullscreenCalendar').then(m => ({ default: m.default })));
 
 const isElectron = !!window.electronAPI?.isElectron;
 const Router = isElectron ? HashRouter : BrowserRouter;

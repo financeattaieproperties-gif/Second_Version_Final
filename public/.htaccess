@@ -40,6 +40,18 @@ RewriteRule ^ - [L]
 # Do not rewrite missing /api/* endpoints to HTML
 RewriteRule ^api/ - [L]
 
+# V2 staff API and dashboard routing
+RewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]
+RewriteRule ^dashboard(?:/.*)?$ /dashboard/index.html [L]
+RewriteRule ^management(?:/.*)?$ /management/index.html [L]
+RewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]
+RewriteRule ^ceo(?:/.*)?$ /ceo/index.html [L]
+RewriteRule ^sales-leader(?:/.*)?$ /sales-leader/index.html [L]
+RewriteRule ^sales(?:/.*)?$ /sales/index.html [L]
+RewriteRule ^finance(?:/.*)?$ /finance/index.html [L]
+RewriteRule ^marketing(?:/.*)?$ /marketing/index.html [L]
+RewriteRule ^engineering(?:/.*)?$ /engineering/index.html [L]
+
 # Admin CRM SPA fallback — routes under /admin/* serve /admin/index.html
 RewriteRule ^admin(?:/.*)?$ /admin/index.html [L]
 

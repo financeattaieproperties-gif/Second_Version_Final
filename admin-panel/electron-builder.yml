@@ -17,7 +17,6 @@ extraResources:
       - "**/*"
 
 win:
-  icon: resources/icon.ico
   target:
     - target: nsis
       arch: [x64]
@@ -30,8 +29,6 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Attaie Admin
-  installerIcon: resources/icon.ico
-  uninstallerIcon: resources/icon.ico
 
 mac:
   icon: resources/icon.icns

@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, type PropertyInput } from '../api';
 import ImageUpload from '../components/ImageUpload';
+import { BeforeAfterComparison } from '../components/ui/BeforeAfterComparison';
 
 const S = {
   page:     { maxWidth: 760 } as const,
@@ -242,6 +243,17 @@ export default function PropertyForm() {
                 />
               </div>
             </div>
+            {form.floor_plan_url && form.three_d_plan_url && (
+              <div style={{ marginTop: '1rem' }}>
+                <label style={S.label}>Interactive 2D / 3D Blueprint Comparison Preview</label>
+                <div style={{ maxWidth: 640 }}>
+                  <BeforeAfterComparison
+                    beforeImage={form.floor_plan_url}
+                    afterImage={form.three_d_plan_url}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Video URL */}
