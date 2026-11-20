@@ -223,7 +223,7 @@ const S = {
     flex: '1 1 340px',
     maxWidth: 440,
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
   } as const,
   filterPills: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' as const } as const,
   pill: (active: boolean) => V1_STYLES.filterPill(active),
@@ -452,10 +452,10 @@ export default function Leads() {
           }}
         >
           <div>
-            <strong style={{ fontSize: '0.95rem', color: '#0F172A' }}>
+            <strong style={{ fontSize: '0.95rem', color: '#1E293B' }}>
               Pipeline Health Summary
             </strong>
-            <span style={{ fontSize: '0.8rem', color: '#64748B', marginLeft: '0.6rem' }}>
+            <span style={{ fontSize: '0.8rem', color: '#818285', marginLeft: '0.6rem' }}>
               Total leads broken down by status
             </span>
           </div>
@@ -465,7 +465,7 @@ export default function Leads() {
               fontSize: '0.75rem',
               fontWeight: 600,
               background: '#F1F5F9',
-              color: '#0F172A',
+              color: '#1E293B',
               border: '1px solid #E2E8F0',
               padding: '0.2rem 0.65rem',
               borderRadius: 6,
@@ -507,11 +507,11 @@ export default function Leads() {
           }}
         >
           {[
-            { key: 'ALL', label: 'Total Leads', count: pipelineSummary.total, pct: 100, dot: '#0F172A' },
-            { key: 'BUCKET_ACTIVE', label: 'Active', count: pipelineSummary.active, pct: pipelineSummary.activePct, dot: '#0ea5e9' },
-            { key: 'BUCKET_DRAFT', label: 'Draft / New', count: pipelineSummary.draft, pct: pipelineSummary.draftPct, dot: '#f59e0b' },
-            { key: 'BUCKET_CLOSED', label: 'Closed', count: pipelineSummary.closed, pct: pipelineSummary.closedPct, dot: '#16a34a' },
-            { key: 'BUCKET_LOST', label: 'Lost', count: pipelineSummary.lost, pct: pipelineSummary.lostPct, dot: '#dc2626' },
+            { key: 'ALL', label: 'Total Leads', count: pipelineSummary.total, pct: 100, dot: '#0072BC' },
+            { key: 'BUCKET_ACTIVE', label: 'Active', count: pipelineSummary.active, pct: pipelineSummary.activePct, dot: '#0072BC' },
+            { key: 'BUCKET_DRAFT', label: 'Draft / New', count: pipelineSummary.draft, pct: pipelineSummary.draftPct, dot: '#818285' },
+            { key: 'BUCKET_CLOSED', label: 'Closed', count: pipelineSummary.closed, pct: pipelineSummary.closedPct, dot: '#14A850' },
+            { key: 'BUCKET_LOST', label: 'Lost', count: pipelineSummary.lost, pct: pipelineSummary.lostPct, dot: '#B91C1C' },
           ].map((stat) => {
             const active = stageFilter === stat.key;
             return (
@@ -525,8 +525,8 @@ export default function Leads() {
                   alignItems: 'flex-start',
                   padding: '0.75rem 0.9rem',
                   borderRadius: 8,
-                  border: active ? '1px solid #0F172A' : '1px solid #E2E8F0',
-                  background: active ? '#F1F5F9' : '#FFFFFF',
+                  border: active ? '1px solid #0072BC' : '1px solid #E2E8F0',
+                  background: active ? '#E6F2FA' : '#FFFFFF',
                   cursor: 'pointer',
                   textAlign: 'left',
                 }}
@@ -540,7 +540,7 @@ export default function Leads() {
                     marginBottom: '0.35rem',
                   }}
                 >
-                  <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#475569' }}>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#818285' }}>
                     {stat.label}
                   </span>
                 </div>
@@ -552,7 +552,7 @@ export default function Leads() {
                     alignItems: 'baseline',
                   }}
                 >
-                  <strong className="tabular-nums" style={{ fontSize: '1.35rem', color: '#0F172A' }}>{stat.count}</strong>
+                  <strong className="tabular-nums" style={{ fontSize: '1.35rem', color: '#1E293B' }}>{stat.count}</strong>
                   <span className="tabular-nums" style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748B' }}>
                     {stat.pct}%
                   </span>

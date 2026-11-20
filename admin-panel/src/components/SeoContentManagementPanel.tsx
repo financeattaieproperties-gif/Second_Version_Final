@@ -52,12 +52,12 @@ const S = {
   title: {
     fontSize: '1.05rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     margin: '0 0 0.25rem 0',
   } as const,
   sub: {
     fontSize: '0.82rem',
-    color: '#64748B',
+    color: '#818285',
     margin: 0,
     lineHeight: 1.45,
   } as const,
@@ -75,7 +75,7 @@ const S = {
     fontSize: '0.74rem',
     fontWeight: 600,
     background: '#F1F5F9',
-    color: '#0F172A',
+    color: '#1E293B',
     border: '1px solid #E2E8F0',
     fontVariantNumeric: 'tabular-nums',
   } as const,
@@ -86,12 +86,12 @@ const S = {
     borderRadius: 6,
     fontSize: '0.74rem',
     fontWeight: 600,
-    background: syncing ? '#FEF3C7' : hasActive ? '#ECFDF5' : '#F1F5F9',
-    color: syncing ? '#92400E' : hasActive ? '#065F46' : '#475569',
+    background: syncing ? '#E6F2FA' : hasActive ? '#E8F7EE' : '#F1F5F9',
+    color: syncing ? '#0072BC' : hasActive ? '#14A850' : '#818285',
     border: syncing
-      ? '1px solid #FDE68A'
+      ? '1px solid #BAE6FD'
       : hasActive
-        ? '1px solid #A7F3D0'
+        ? '1px solid #BBF7D0'
         : '1px solid #E2E8F0',
   }),
   addRow: {
@@ -112,17 +112,17 @@ const S = {
   input: {
     width: '100%',
     padding: '0.58rem 0.85rem',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #E2E8F0',
     borderRadius: 6,
     fontSize: '0.86rem',
     outline: 'none',
     boxSizing: 'border-box' as const,
-    color: '#0F172A',
+    color: '#1E293B',
     background: '#FFFFFF',
   } as const,
   btnAdd: {
     padding: '0.58rem 1.15rem',
-    background: '#0F172A',
+    background: '#0072BC',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: 6,
@@ -211,7 +211,7 @@ const S = {
     border: 'none',
     padding: 0,
     cursor: 'pointer',
-    background: enabled ? '#0F172A' : '#CBD5E1',
+    background: enabled ? '#0072BC' : '#CBD5E1',
     transition: 'background 0.18s ease',
     flexShrink: 0,
     display: 'inline-flex',
@@ -231,7 +231,7 @@ const S = {
   kwLabel: (enabled: boolean): React.CSSProperties => ({
     fontSize: '0.84rem',
     fontWeight: 600,
-    color: enabled ? '#0F172A' : '#64748B',
+    color: enabled ? '#1E293B' : '#818285',
     textDecoration: enabled ? 'none' : 'line-through',
     overflowWrap: 'anywhere' as const,
   }),
@@ -246,16 +246,16 @@ const S = {
     fontWeight: 600,
     padding: '0.16rem 0.45rem',
     borderRadius: 6,
-    background: enabled ? '#ECFDF5' : '#F1F5F9',
-    color: enabled ? '#065F46' : '#64748B',
-    border: enabled ? '1px solid #A7F3D0' : '1px solid #CBD5E1',
+    background: enabled ? '#E8F7EE' : '#F1F5F9',
+    color: enabled ? '#14A850' : '#818285',
+    border: enabled ? '1px solid #BBF7D0' : '1px solid #E2E8F0',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.3,
   }),
   btnRemove: {
     padding: '0.26rem 0.5rem',
     background: '#FFFFFF',
-    color: '#DC2626',
+    color: '#B91C1C',
     border: '1px solid #FECACA',
     borderRadius: 6,
     fontSize: '0.73rem',
@@ -573,7 +573,7 @@ export default function SeoContentManagementPanel({
         )}
 
         <div style={S.metaPreview} data-testid="seo-keywords-preview">
-          <strong style={{ color: '#0F172A' }}>Live Global Meta Tag Preview:</strong>{' '}
+          <strong style={{ color: '#1E293B' }}>Live Global Meta Tag Preview:</strong>{' '}
           {activePreview
             ? `<meta name="keywords" content="${activePreview}" />`
             : '(no active keywords — meta name="keywords" omitted)'}

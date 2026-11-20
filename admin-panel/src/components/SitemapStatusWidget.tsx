@@ -23,7 +23,7 @@ const S = {
     background: '#FFFFFF',
     borderRadius: 10,
     padding: '1.35rem 1.5rem',
-    color: '#0F172A',
+    color: '#1E293B',
     border: '1px solid #E2E8F0',
     marginBottom: '1.5rem',
   } as const,
@@ -45,7 +45,7 @@ const S = {
   overline: {
     fontSize: '0.7rem',
     fontWeight: 700,
-    color: '#64748B',
+    color: '#818285',
     textTransform: 'uppercase' as const,
     letterSpacing: 1.1,
     margin: 0,
@@ -58,19 +58,19 @@ const S = {
     fontWeight: 700,
     padding: '0.18rem 0.6rem',
     borderRadius: 6,
-    background: ok ? '#ECFDF5' : '#FEF2F2',
-    color: ok ? '#065F46' : '#991B1B',
-    border: ok ? '1px solid #A7F3D0' : '1px solid #FECACA',
+    background: ok ? '#E8F7EE' : '#FEF2F2',
+    color: ok ? '#14A850' : '#B91C1C',
+    border: ok ? '1px solid #BBF7D0' : '1px solid #FECACA',
   }),
   heading: {
     fontSize: '1.05rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     margin: 0,
   } as const,
   subText: {
     fontSize: '0.8rem',
-    color: '#64748B',
+    color: '#818285',
     marginTop: '0.2rem',
     marginBottom: 0,
   } as const,
@@ -83,7 +83,7 @@ const S = {
   btnGhost: {
     padding: '0.45rem 0.85rem',
     background: '#FFFFFF',
-    color: '#334155',
+    color: '#1E293B',
     border: '1px solid #E2E8F0',
     borderRadius: 8,
     fontSize: '0.78rem',
@@ -96,7 +96,7 @@ const S = {
   } as const,
   btnGold: {
     padding: '0.48rem 0.95rem',
-    background: '#0F172A',
+    background: '#0072BC',
     color: '#FFFFFF',
     border: 'none',
     borderRadius: 8,
@@ -123,7 +123,7 @@ const S = {
   kpiLabel: {
     fontSize: '0.7rem',
     fontWeight: 700,
-    color: '#64748B',
+    color: '#818285',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.7,
     marginBottom: '0.35rem',
@@ -131,7 +131,7 @@ const S = {
   kpiMainValue: {
     fontSize: '1.65rem',
     fontWeight: 800,
-    color: '#0F172A',
+    color: '#1E293B',
     lineHeight: 1.15,
     display: 'flex',
     alignItems: 'baseline',
@@ -141,12 +141,12 @@ const S = {
   kpiTimestampValue: {
     fontSize: '1.05rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     lineHeight: 1.3,
   } as const,
   kpiMeta: {
     fontSize: '0.74rem',
-    color: '#64748B',
+    color: '#818285',
     marginTop: '0.3rem',
   } as const,
   progressWrap: {
@@ -166,9 +166,9 @@ const S = {
   breakdownChip: (active: boolean): React.CSSProperties => ({
     padding: '0.55rem 0.75rem',
     borderRadius: 8,
-    background: active ? '#F1F5F9' : '#FFFFFF',
+    background: active ? '#E6F2FA' : '#FFFFFF',
     border: active
-      ? '1px solid #0F172A'
+      ? '1px solid #0072BC'
       : '1px solid #E2E8F0',
     cursor: 'pointer',
     display: 'flex',
@@ -179,7 +179,7 @@ const S = {
   chipLabel: {
     fontSize: '0.74rem',
     fontWeight: 600,
-    color: '#334155',
+    color: '#1E293B',
     display: 'flex',
     alignItems: 'center',
     gap: '0.4rem',
@@ -187,13 +187,13 @@ const S = {
   chipCount: {
     fontSize: '0.88rem',
     fontWeight: 800,
-    color: '#0F172A',
+    color: '#1E293B',
     fontVariantNumeric: 'tabular-nums',
   } as const,
   errorBox: {
     background: '#FEF2F2',
     border: '1px solid #FECACA',
-    color: '#991B1B',
+    color: '#B91C1C',
     padding: '0.65rem 0.9rem',
     borderRadius: 8,
     fontSize: '0.8rem',
@@ -293,31 +293,31 @@ export default function SitemapStatusWidget({
       key: 'properties',
       label: 'Properties',
       count: statusData?.counts?.properties ?? 0,
-      color: '#0F172A',
+      color: '#0072BC',
     },
     {
       key: 'projects',
       label: 'Projects',
       count: statusData?.counts?.projects ?? 0,
-      color: '#38BDF8',
+      color: '#14A850',
     },
     {
       key: 'careers',
       label: 'Careers',
       count: statusData?.counts?.careers ?? 0,
-      color: '#34D399',
+      color: '#005E9B',
     },
     {
       key: 'agents',
       label: 'Agents',
       count: statusData?.counts?.agents ?? 0,
-      color: '#A78BFA',
+      color: '#818285',
     },
     {
       key: 'static',
       label: 'Core Pages',
       count: statusData?.counts?.static ?? 0,
-      color: '#94A3B8',
+      color: '#CBD5E1',
     },
   ];
 
@@ -389,7 +389,7 @@ export default function SitemapStatusWidget({
             cursor: onSelectCategory ? 'pointer' : 'default',
             border:
               selectedCategory === 'all'
-                ? '1px solid #0F172A'
+                ? '1px solid #0072BC'
                 : '1px solid #E2E8F0',
           }}
           onClick={() => onSelectCategory?.('all')}
@@ -419,10 +419,10 @@ export default function SitemapStatusWidget({
           <div style={S.kpiMeta}>
             {statusData?.generated_at ? (
               <>
-                <span style={{ color: '#047857', fontWeight: 600 }}>
+                <span style={{ color: '#14A850', fontWeight: 600 }}>
                   {formatRelativeTime(statusData.generated_at)}
                 </span>{' '}
-                • <code style={{ fontSize: '0.7rem', color: '#64748B' }}>{statusData.generated_at}</code>
+                • <code style={{ fontSize: '0.7rem', color: '#818285' }}>{statusData.generated_at}</code>
               </>
             ) : (
               'Awaiting initial crawl'
@@ -437,7 +437,7 @@ export default function SitemapStatusWidget({
             style={{
               fontSize: '0.84rem',
               fontWeight: 600,
-              color: '#0F172A',
+              color: '#1E293B',
               wordBreak: 'break-all',
               lineHeight: 1.35,
               fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',

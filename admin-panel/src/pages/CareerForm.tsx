@@ -1,28 +1,30 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, type CareerJobInput } from '../api';
+import { V1, V1_STYLES } from '../components/variant1';
 
 const S = {
   page:     { maxWidth: 820 } as const,
   topBar:   { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' } as const,
-  title:    { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#0F172A' } as const,
-  card:     { background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' } as const,
+  title:    V1_STYLES.title,
+  card:     V1_STYLES.card,
   section:  { padding: '1.5rem 1.75rem' } as const,
-  divider:  { borderTop: '1px solid #F1F5F9' } as const,
-  secTitle: { fontSize: '0.72rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: '1rem' } as const,
+  divider:  { borderTop: `1px solid ${V1.slateSoft}` } as const,
+  secTitle: { fontSize: '0.72rem', fontWeight: 600, color: V1.slate, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: '1rem' } as const,
   grid:     { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' } as const,
   full:     { gridColumn: '1 / -1' } as const,
-  label:    { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' } as const,
-  input:    { width: '100%', padding: '0.58rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' as const, color: '#0F172A' } as const,
-  select:   { width: '100%', padding: '0.58rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.88rem', outline: 'none', background: '#FFFFFF', boxSizing: 'border-box' as const, color: '#0F172A' } as const,
-  textarea: { width: '100%', padding: '0.58rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.88rem', minHeight: 130, resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const, color: '#0F172A' } as const,
-  footer:   { padding: '1.25rem 1.75rem', borderTop: '1px solid #F1F5F9', display: 'flex', gap: '0.75rem', alignItems: 'center' } as const,
-  save:     { padding: '0.62rem 1.5rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.88rem' } as const,
-  cancel:   { padding: '0.62rem 1.2rem', background: '#FFFFFF', color: '#334155', border: '1px solid #E2E8F0', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.88rem' } as const,
+  label:    { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: V1.ink, marginBottom: '0.3rem' } as const,
+  input:    { width: '100%', padding: '0.58rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.88rem', outline: 'none', boxSizing: 'border-box' as const, color: V1.ink, background: V1.surface } as const,
+  select:   { width: '100%', padding: '0.58rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.88rem', outline: 'none', background: V1.surface, boxSizing: 'border-box' as const, color: V1.ink } as const,
+  textarea: { width: '100%', padding: '0.58rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.88rem', minHeight: 130, resize: 'vertical' as const, outline: 'none', boxSizing: 'border-box' as const, color: V1.ink, background: V1.surface } as const,
+  footer:   { padding: '1.25rem 1.75rem', borderTop: `1px solid ${V1.slateSoft}`, display: 'flex', gap: '0.75rem', alignItems: 'center' } as const,
+  save:     { ...V1_STYLES.primaryBtn, padding: '0.62rem 1.5rem', fontSize: '0.88rem' } as const,
+  cancel:   { ...V1_STYLES.secondaryBtn, padding: '0.62rem 1.2rem', fontSize: '0.88rem' } as const,
   toast:    (ok: boolean) => ({
     padding: '0.65rem 1rem', borderRadius: 8, fontSize: '0.85rem', fontWeight: 600,
-    background: ok ? '#d1fae5' : '#fee2e2',
-    color:      ok ? '#065f46' : '#dc2626',
+    background: ok ? V1.greenSoft : V1.dangerSoft,
+    color:      ok ? '#0F7A3A' : V1.danger,
+    border:     `1px solid ${ok ? '#BDE8CE' : V1.dangerBorder}`,
   }),
 };
 
@@ -99,7 +101,7 @@ export default function CareerForm() {
     }
   };
 
-  if (loading) return <p style={{ padding: '2rem' }}>Loading…</p>;
+  if (loading) return <p style={{ padding: '2rem', color: V1.slate }}>Loading…</p>;
 
   return (
     <div style={S.page}>

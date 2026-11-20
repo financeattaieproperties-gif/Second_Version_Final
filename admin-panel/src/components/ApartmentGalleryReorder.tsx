@@ -123,7 +123,7 @@ export function ApartmentGalleryReorder({
               width: 20,
               height: 20,
               borderRadius: 4,
-              background: '#0F172A',
+              background: '#0072BC',
               color: '#FFFFFF',
               fontSize: '0.75rem',
               fontWeight: 700,
@@ -131,15 +131,15 @@ export function ApartmentGalleryReorder({
           >
             ⠿
           </span>
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0F172A' }}>
+          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1E293B' }}>
             Drag & Drop Photos to Reorder
           </span>
-          <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+          <span style={{ fontSize: '0.75rem', color: '#818285' }}>
             · Position 1 is always the primary Cover Photo
           </span>
         </div>
 
-        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#818285', fontVariantNumeric: 'tabular-nums' }}>
           {allPhotos.length} of {maxPhotos} Photos ({allPhotos.length > 0 ? '1 Cover' : '0 Cover'} + {galleryCount} Gallery)
         </div>
       </div>
@@ -172,18 +172,18 @@ export function ApartmentGalleryReorder({
                 background: '#FFFFFF',
                 borderRadius: 10,
                 border: isOver
-                  ? '2px dashed #0F172A'
+                  ? '2px dashed #0072BC'
                   : isCover
-                  ? '2px solid #0F172A'
-                  : '1px solid #CBD5E1',
+                  ? '2px solid #0072BC'
+                  : '1px solid #E2E8F0',
                 padding: '0.55rem',
                 opacity: isDragging ? 0.35 : 1,
                 transform: isOver ? 'translateY(-3px)' : 'none',
                 transition: 'transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
                 boxShadow: isCover
-                  ? '0 2px 8px rgba(15, 23, 42, 0.12)'
+                  ? '0 2px 8px rgba(0, 114, 188, 0.12)'
                   : isOver
-                  ? '0 6px 14px rgba(15, 23, 42, 0.15)'
+                  ? '0 6px 14px rgba(0, 114, 188, 0.15)'
                   : '0 1px 3px rgba(0, 0, 0, 0.05)',
                 cursor: 'grab',
                 userSelect: 'none',
@@ -210,12 +210,12 @@ export function ApartmentGalleryReorder({
                         fontWeight: 700,
                         padding: '0.15rem 0.5rem',
                         borderRadius: 4,
-                        background: '#0F172A',
+                        background: '#0072BC',
                         color: '#FFFFFF',
                         letterSpacing: '0.02em',
                       }}
                     >
-                      <span style={{ color: '#F59E0B' }}>★</span> Cover Photo
+                      <span style={{ color: '#E6F2FA' }}>★</span> Cover Photo
                     </span>
                   ) : (
                     <span
@@ -228,7 +228,7 @@ export function ApartmentGalleryReorder({
                         padding: '0.15rem 0.45rem',
                         borderRadius: 4,
                         background: '#F1F5F9',
-                        color: '#475569',
+                        color: '#818285',
                       }}
                     >
                       Gallery #{i}
@@ -276,7 +276,7 @@ export function ApartmentGalleryReorder({
                   height: 140,
                   borderRadius: 6,
                   overflow: 'hidden',
-                  background: '#0F172A',
+                  background: '#F1F5F9',
                 }}
               >
                 <img
@@ -296,7 +296,7 @@ export function ApartmentGalleryReorder({
                     style={{
                       position: 'absolute',
                       inset: 0,
-                      background: 'rgba(15, 23, 42, 0.75)',
+                      background: 'rgba(0, 114, 188, 0.78)',
                       color: '#FFFFFF',
                       display: 'flex',
                       flexDirection: 'column',
@@ -380,9 +380,9 @@ export function ApartmentGalleryReorder({
                       title="Make this photo the primary apartment cover"
                       style={{
                         padding: '0.2rem 0.5rem',
-                        background: '#FEF3C7',
-                        color: '#92400E',
-                        border: '1px solid #FCD34D',
+                        background: '#E6F2FA',
+                        color: '#0072BC',
+                        border: '1px solid #BAE6FD',
                         borderRadius: 4,
                         cursor: 'pointer',
                         fontSize: '0.7rem',
@@ -398,9 +398,9 @@ export function ApartmentGalleryReorder({
                     title="Remove this photo"
                     style={{
                       padding: '0.2rem 0.45rem',
-                      background: '#FEE2E2',
-                      color: '#DC2626',
-                      border: '1px solid #FCA5A5',
+                      background: '#FEF2F2',
+                      color: '#B91C1C',
+                      border: '1px solid #FECACA',
                       borderRadius: 4,
                       cursor: 'pointer',
                       fontSize: '0.7rem',

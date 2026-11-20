@@ -1,24 +1,22 @@
 import { useState, useEffect } from 'react';
 import LandingBackgroundSettings from '../components/visual/LandingBackgroundSettings';
 import LoginBackgroundSettings from '../components/visual/LoginBackgroundSettings';
+import { V1, V1_STYLES, v1BadgeStyle } from '../components/variant1';
 
 const S = {
   page: { maxWidth: 640 } as const,
-  title: { fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.25rem', color: '#0F172A' } as const,
-  sub: { color: '#64748B', fontSize: '0.85rem', marginBottom: '1.5rem' } as const,
+  title: { ...V1_STYLES.title, marginBottom: '0.25rem' } as const,
+  sub: { color: V1.slate, fontSize: '0.85rem', marginBottom: '1.5rem' } as const,
   card: {
-    background: '#FFFFFF',
-    borderRadius: 8,
-    border: '1px solid #E2E8F0',
-    overflow: 'hidden',
+    ...V1_STYLES.card,
     marginBottom: '1.25rem',
   } as const,
   section: { padding: '1.35rem 1.5rem' } as const,
-  divider: { borderTop: '1px solid #F1F5F9' } as const,
+  divider: { borderTop: `1px solid ${V1.slateSoft}` } as const,
   secHdr: {
     fontSize: '0.7rem',
     fontWeight: 600,
-    color: '#64748B',
+    color: V1.slate,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.8,
     marginBottom: '1rem',
@@ -27,60 +25,35 @@ const S = {
     display: 'block',
     fontSize: '0.8rem',
     fontWeight: 600,
-    color: '#334155',
+    color: V1.ink,
     marginBottom: '0.3rem',
   } as const,
   input: {
     width: '100%',
     padding: '0.58rem 0.8rem',
-    border: '1px solid #CBD5E1',
+    border: `1px solid ${V1.borderSoft}`,
     borderRadius: 6,
     fontSize: '0.86rem',
     outline: 'none',
     boxSizing: 'border-box' as const,
-    color: '#0F172A',
-    background: '#FFFFFF',
+    color: V1.ink,
+    background: V1.surface,
   } as const,
   row: { display: 'flex', flexWrap: 'wrap' as const, gap: '0.75rem', marginTop: '1rem', alignItems: 'center' } as const,
-  btnPrimary: {
-    padding: '0.55rem 1.15rem',
-    background: '#0F172A',
-    color: '#FFFFFF',
-    border: 'none',
-    borderRadius: 6,
-    fontWeight: 600,
-    cursor: 'pointer',
-    fontSize: '0.84rem',
-  } as const,
-  btnSecondary: {
-    padding: '0.55rem 1.15rem',
-    background: '#FFFFFF',
-    color: '#334155',
-    border: '1px solid #E2E8F0',
-    borderRadius: 6,
-    fontWeight: 600,
-    cursor: 'pointer',
-    fontSize: '0.84rem',
-  } as const,
-  badge: (ok: boolean | null): React.CSSProperties => ({
-    display: 'inline-block',
-    padding: '0.25rem 0.75rem',
-    borderRadius: 6,
-    fontSize: '0.76rem',
-    fontWeight: 600,
-    background: ok === null ? '#F1F5F9' : ok ? '#ECFDF5' : '#FEF2F2',
-    color: ok === null ? '#64748B' : ok ? '#065F46' : '#DC2626',
-  }),
+  btnPrimary: V1_STYLES.primaryBtn,
+  btnSecondary: V1_STYLES.secondaryBtn,
+  badge: (ok: boolean | null): React.CSSProperties =>
+    v1BadgeStyle(ok === null ? 'slate' : ok ? 'green' : 'danger'),
   verRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '0.75rem 0',
-    borderBottom: '1px solid #F1F5F9',
+    borderBottom: `1px solid ${V1.slateSoft}`,
     fontVariantNumeric: 'tabular-nums',
   } as const,
-  verKey: { fontSize: '0.875rem', color: '#334155', fontWeight: 500 } as const,
-  verVal: { fontSize: '0.875rem', color: '#64748B', fontVariantNumeric: 'tabular-nums' } as const,
+  verKey: { fontSize: '0.875rem', color: V1.ink, fontWeight: 500 } as const,
+  verVal: { fontSize: '0.875rem', color: V1.slate, fontVariantNumeric: 'tabular-nums' } as const,
 };
 
 export default function SettingsPage() {
@@ -140,7 +113,7 @@ export default function SettingsPage() {
             placeholder="https://your-server.com/api"
             spellCheck={false}
           />
-          <p style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '0.4rem' }}>
+          <p style={{ fontSize: '0.75rem', color: V1.slate, marginTop: '0.4rem' }}>
             This is baked at build time via <code>VITE_API_URL</code>. Shown here for reference.
           </p>
 

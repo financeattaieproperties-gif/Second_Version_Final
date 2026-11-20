@@ -32,8 +32,8 @@ interface TooltipPayloadItem {
 }
 
 const COLORS = {
-  sold: '#0F172A',
-  available: '#10B981',
+  sold: '#0072BC',
+  available: '#14A850',
 };
 
 function ChartTooltip({
@@ -57,13 +57,13 @@ function ChartTooltip({
           padding: '0.5rem 0.7rem',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
           fontSize: '0.78rem',
-          color: '#0F172A',
+          color: '#1E293B',
           fontVariantNumeric: 'tabular-nums',
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: '0.15rem' }}>{item.label}</div>
-        <div style={{ color: '#475569' }}>
-          <strong style={{ color: '#0F172A' }}>{item.pct}%</strong> ({item.count} units)
+        <div style={{ color: '#818285' }}>
+          <strong style={{ color: '#1E293B' }}>{item.pct}%</strong> ({item.count} units)
         </div>
       </div>
     );
@@ -79,18 +79,18 @@ function ChartTooltip({
           padding: '0.55rem 0.75rem',
           boxShadow: '0 4px 12px rgba(15, 23, 42, 0.08)',
           fontSize: '0.78rem',
-          color: '#0F172A',
+          color: '#1E293B',
           fontVariantNumeric: 'tabular-nums',
         }}
       >
         <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{item.fullName}</div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#334155' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#0072BC' }}>
           <span>Sold</span>
           <strong>
             {item.soldPct}% ({item.sold})
           </strong>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#047857' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', color: '#14A850' }}>
           <span>Available</span>
           <strong>
             {item.availablePct}% ({item.available})
@@ -188,12 +188,12 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
               margin: 0,
               fontSize: '0.98rem',
               fontWeight: 700,
-              color: '#0F172A',
+              color: '#1E293B',
             }}
           >
             Project Unit Occupancy Status
           </h2>
-          <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
+          <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#818285' }}>
             Percentage of sold vs. available apartments across project inventory
           </p>
         </div>
@@ -230,10 +230,10 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
               />
               Sold
             </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0F172A' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B' }}>
               {stats.soldPct}%
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+            <div style={{ fontSize: '0.72rem', color: '#818285' }}>
               {stats.soldUnits} / {stats.totalUnits} units
             </div>
           </div>
@@ -255,7 +255,7 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
                 gap: '0.35rem',
                 fontSize: '0.72rem',
                 fontWeight: 600,
-                color: '#64748B',
+                color: '#818285',
               }}
             >
               <span
@@ -269,10 +269,10 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
               />
               Available
             </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#059669' }}>
+            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#14A850' }}>
               {stats.availablePct}%
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+            <div style={{ fontSize: '0.72rem', color: '#818285' }}>
               {stats.availableUnits} / {stats.totalUnits} units
             </div>
           </div>
@@ -361,10 +361,10 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
                   fontVariantNumeric: 'tabular-nums',
                 }}
               >
-                <strong style={{ fontSize: '1.1rem', color: '#0F172A', lineHeight: 1.1 }}>
+                <strong style={{ fontSize: '1.1rem', color: '#1E293B', lineHeight: 1.1 }}>
                   {stats.availablePct}%
                 </strong>
-                <span style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600 }}>
+                <span style={{ fontSize: '0.68rem', color: '#818285', fontWeight: 600 }}>
                   Available
                 </span>
               </div>
@@ -417,7 +417,7 @@ export function ProjectOccupancyCard({ projects }: ProjectOccupancyCardProps) {
                     type="category"
                     dataKey="name"
                     width={105}
-                    tick={{ fontSize: 11, fill: '#0F172A', fontWeight: 600 }}
+                    tick={{ fontSize: 11, fill: '#1E293B', fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />

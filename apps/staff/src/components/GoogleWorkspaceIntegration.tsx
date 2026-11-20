@@ -209,9 +209,9 @@ function StaffConfirmDialog({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <AlertCircle size={20} color={prompt.danger ? '#DC2626' : '#0F172A'} />
+          <AlertCircle size={20} color={prompt.danger ? '#B91C1C' : '#0072BC'} />
           <div style={{ flex: 1 }}>
-            <h3 style={{ margin: 0, fontSize: 15, color: '#0F172A' }}>{prompt.title}</h3>
+            <h3 style={{ margin: 0, fontSize: 15, color: '#1E293B' }}>{prompt.title}</h3>
             <p style={{ marginTop: 6, fontSize: 13, color: '#64748B', lineHeight: 1.5 }}>
               {prompt.description}
             </p>
@@ -1145,7 +1145,7 @@ export function StaffCalendarSyncConfirmModal({
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <Calendar size={18} />
-          <h3 style={{ margin: 0, fontSize: 15.5, color: '#0F172A' }}>
+          <h3 style={{ margin: 0, fontSize: 15.5, color: '#1E293B' }}>
             Confirm Google Calendar Synchronization
           </h3>
         </div>

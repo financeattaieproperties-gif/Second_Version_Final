@@ -308,7 +308,7 @@ const S = {
     borderRadius: 6,
     border: '1px solid #CBD5E1',
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#0072BC',
     display: 'grid',
     placeItems: 'center',
     marginBottom: 20,
@@ -349,7 +349,7 @@ const S = {
   drawerTitle: {
     fontSize: 13.5,
     fontWeight: 600,
-    color: '#0F172A',
+    color: '#1E293B',
     lineHeight: 1.35,
   } as const,
   navScroll: {
@@ -380,8 +380,8 @@ const S = {
     justifyContent: 'space-between',
     padding: '6px 8px',
     borderRadius: 5,
-    background: active ? '#F8FAFC' : 'transparent',
-    color: active ? '#0F172A' : '#64748B',
+    background: active ? '#E6F2FA' : 'transparent',
+    color: active ? '#0072BC' : '#818285',
     fontSize: 11.5,
     fontWeight: active ? 600 : 500,
     textDecoration: 'none',
@@ -413,7 +413,7 @@ const S = {
     minWidth: 0,
     display: 'flex',
     flexDirection: 'column' as const,
-    background: '#F7F8FA',
+    background: '#F8FAFC',
     overflow: 'hidden',
   } as const,
   topBar: {
@@ -470,7 +470,7 @@ const S = {
     width: 340,
     maxWidth: 'calc(100vw - 2rem)',
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
     border: '1px solid #E2E8F0',
     borderRadius: 8,
     boxShadow: '0 10px 28px rgba(15, 23, 42, 0.12)',
@@ -699,14 +699,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
-              color: '#0F172A',
+              color: '#0072BC',
               fontSize: '0.72rem',
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
             }}
           >
-            <Icon name="bell" size={14} color="#0F172A" />
+            <Icon name="bell" size={14} color="#0072BC" />
             New Customer Message
           </span>
           <button
@@ -724,7 +724,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <Icon name="x" size={14} />
           </button>
         </div>
-        <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#0F172A', marginBottom: '0.2rem' }}>
+        <div style={{ fontWeight: 600, fontSize: '0.86rem', color: '#1E293B', marginBottom: '0.2rem' }}>
           {globalAlert.customerName} {globalAlert.customerPhone && `(${globalAlert.customerPhone})`}
         </div>
         <div
@@ -748,7 +748,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           style={{
             width: '100%',
             padding: '0.5rem 0.75rem',
-            background: '#0F172A',
+            background: '#0072BC',
             color: '#FFFFFF',
             border: 'none',
             borderRadius: 6,
@@ -942,7 +942,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           <div style={S.footer}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#64748B' }}>
-              <span style={{ fontWeight: 600, color: '#0F172A' }}>Admin CRM</span>
+              <span style={{ fontWeight: 600, color: '#1E293B' }}>Admin CRM</span>
               {version && <span className="tabular-nums">v{version}</span>}
             </div>
             <div style={{ fontSize: 10.5, color: '#94A3B8', marginTop: 2 }}>
@@ -1008,7 +1008,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               style={{
                 fontSize: 13.5,
                 fontWeight: 600,
-                color: '#0F172A',
+                color: '#1E293B',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',

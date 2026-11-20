@@ -262,16 +262,16 @@ export default function Visits() {
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: '1.02rem', color: '#0F172A' }}>{item.name}</strong>
+                    <strong style={{ fontSize: '1.02rem', color: '#1E293B' }}>{item.name}</strong>
                     <span style={{ padding: '0.2rem 0.55rem', borderRadius: 6, fontSize: '0.72rem', fontWeight: 600, textTransform: 'uppercase', background: badge.bg, color: badge.color }}>
                       {item.status}
                     </span>
                   </div>
-                  <p style={{ margin: '0.35rem 0', color: '#475569', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
-                    {item.listing_name} · <a href={`tel:+${item.phone}`} style={{ color: '#0F172A', fontWeight: 600, textDecoration: 'underline' }}>+{item.phone}</a>
+                  <p style={{ margin: '0.35rem 0', color: '#818285', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+                    {item.listing_name} · <a href={`tel:+${item.phone}`} style={{ color: '#0072BC', fontWeight: 600, textDecoration: 'underline' }}>+{item.phone}</a>
                   </p>
-                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748B', fontVariantNumeric: 'tabular-nums' }}>
-                    Requested for (Kabul time): <strong style={{ color: '#0F172A' }}>{reqDate.toLocaleString('en-US', { timeZone: 'Asia/Kabul', dateStyle: 'medium', timeStyle: 'short' })}</strong>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#818285', fontVariantNumeric: 'tabular-nums' }}>
+                    Requested for (Kabul time): <strong style={{ color: '#1E293B' }}>{reqDate.toLocaleString('en-US', { timeZone: 'Asia/Kabul', dateStyle: 'medium', timeStyle: 'short' })}</strong>
                   </p>
                 </div>
 

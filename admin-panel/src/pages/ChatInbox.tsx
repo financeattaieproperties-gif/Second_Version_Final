@@ -62,7 +62,7 @@ const S = {
   title: {
     fontSize: '1.35rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     margin: 0,
     display: 'flex',
     alignItems: 'center',
@@ -83,7 +83,7 @@ const S = {
   } as const,
   alertBanner: {
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
     borderRadius: 8,
     border: '1px solid #E2E8F0',
     padding: '0.8rem 1.1rem',
@@ -133,7 +133,7 @@ const S = {
   kpiValue: {
     fontSize: '1.35rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     lineHeight: 1.2,
     fontVariantNumeric: 'tabular-nums',
   } as const,
@@ -169,7 +169,7 @@ const S = {
     boxSizing: 'border-box' as const,
     marginBottom: '0.6rem',
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
   } as const,
   tabsRow: {
     display: 'flex',
@@ -179,9 +179,9 @@ const S = {
   tabBtn: (active: boolean): React.CSSProperties => ({
     padding: '0.3rem 0.6rem',
     borderRadius: 6,
-    border: active ? '1px solid #0F172A' : '1px solid #E2E8F0',
-    background: active ? '#0F172A' : '#FFFFFF',
-    color: active ? '#FFFFFF' : '#475569',
+    border: active ? '1px solid #0072BC' : '1px solid #E2E8F0',
+    background: active ? '#0072BC' : '#FFFFFF',
+    color: active ? '#FFFFFF' : '#818285',
     fontSize: '0.72rem',
     fontWeight: 600,
     cursor: 'pointer',
@@ -207,7 +207,7 @@ const S = {
     width: 34,
     height: 34,
     borderRadius: 999,
-    background: selected ? '#0F172A' : '#334155',
+    background: selected ? '#0072BC' : '#818285',
     color: '#FFFFFF',
     fontSize: '0.76rem',
     fontWeight: 700,
@@ -219,7 +219,7 @@ const S = {
   convName: {
     fontSize: '0.86rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
   } as const,
   unreadBadge: {
     background: '#DC2626',
@@ -768,7 +768,7 @@ export default function ChatInbox() {
                   <span style={S.alertPill}>
                     New Customer Message
                   </span>
-                  <strong style={{ fontSize: '0.9rem', color: '#0F172A' }}>
+                  <strong style={{ fontSize: '0.9rem', color: '#1E293B' }}>
                     {alert.customerName}
                   </strong>
                   <span style={{ fontSize: '0.76rem', color: '#475569', fontVariantNumeric: 'tabular-nums' }}>
@@ -833,21 +833,21 @@ export default function ChatInbox() {
 
       {/* KPI Summary Cards */}
       <div style={S.kpiGrid}>
-        <div style={S.kpiCard('#0F172A')}>
+        <div style={S.kpiCard('#0072BC')}>
           <span style={S.kpiLabel}>Active Conversations</span>
           <span style={S.kpiValue}>{openCount}</span>
         </div>
-        <div style={S.kpiCard('#DC2626')}>
+        <div style={S.kpiCard('#B91C1C')}>
           <span style={S.kpiLabel}>Unread Customer Messages</span>
-          <span style={{ ...S.kpiValue, color: totalUnread > 0 ? '#DC2626' : '#0F172A' }}>
+          <span style={{ ...S.kpiValue, color: totalUnread > 0 ? '#B91C1C' : '#1E293B' }}>
             {totalUnread}
           </span>
         </div>
-        <div style={S.kpiCard('#0F172A')}>
+        <div style={S.kpiCard('#0072BC')}>
           <span style={S.kpiLabel}>Total Messages Exchanged</span>
           <span style={S.kpiValue}>{totalMessages}</span>
         </div>
-        <div style={S.kpiCard('#059669')}>
+        <div style={S.kpiCard('#14A850')}>
           <span style={S.kpiLabel}>Resolved Threads</span>
           <span style={S.kpiValue}>{resolvedCount}</span>
         </div>
@@ -1021,7 +1021,7 @@ export default function ChatInbox() {
               <div style={S.threadHeader}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                    <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#1E293B', margin: 0 }}>
                       {activeConv.customer_name}
                     </h2>
                     <span style={S.statusTag(activeConv.status === 'resolved')}>
@@ -1139,8 +1139,8 @@ export default function ChatInbox() {
                           lineHeight: 1.5,
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-word',
-                          background: isAdmin ? '#0F172A' : '#FFFFFF',
-                          color: isAdmin ? '#FFFFFF' : '#0F172A',
+                          background: isAdmin ? '#0072BC' : '#FFFFFF',
+                          color: isAdmin ? '#FFFFFF' : '#1E293B',
                           border: isAdmin ? 'none' : '1px solid #E2E8F0',
                           textAlign: rtl ? 'right' : 'left',
                         }}
@@ -1154,9 +1154,9 @@ export default function ChatInbox() {
                           marginTop: '0.22rem',
                           color: isAdmin
                             ? msg.read_status === 'read'
-                              ? '#0F172A'
-                              : '#64748B'
-                            : '#059669',
+                              ? '#0072BC'
+                              : '#818285'
+                            : '#14A850',
                         }}
                       >
                         {isAdmin

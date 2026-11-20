@@ -172,9 +172,9 @@ export default function ImageUpload({ value, onChange, purpose }: Props) {
   };
 
   const dropZone: React.CSSProperties = {
-    border: `2px dashed ${dragging ? '#0F172A' : value ? '#10b981' : '#CBD5E1'}`,
+    border: `2px dashed ${dragging ? '#0072BC' : value ? '#14A850' : '#E2E8F0'}`,
     borderRadius: 10,
-    background: dragging ? '#F1F5F9' : value ? '#F0FDF4' : '#F8FAFC',
+    background: dragging ? '#E6F2FA' : value ? '#E8F7EE' : '#F8FAFC',
     transition: 'all .2s',
     overflow: 'hidden',
   };
@@ -229,17 +229,17 @@ export default function ImageUpload({ value, onChange, purpose }: Props) {
         />
 
         {uploading ? (
-          <p style={{ color: '#6B7280', fontSize: '0.9rem', margin: 0 }}>Optimizing & uploading… {progress}%</p>
+          <p style={{ color: '#818285', fontSize: '0.9rem', margin: 0 }}>Optimizing & uploading… {progress}%</p>
         ) : (
           <>
-            <p style={{ color: '#6B7280', fontSize: '0.85rem', marginBottom: '0.6rem' }}>
+            <p style={{ color: '#818285', fontSize: '0.85rem', marginBottom: '0.6rem' }}>
               {value ? 'Drag a new image to replace, or' : 'Drag & drop an image here, or'}
             </p>
             <button
               type="button"
               onClick={isElectron ? openNativeDialog : () => inputRef.current?.click()}
               style={{
-                padding: '0.5rem 1.4rem', background: '#0F172A', color: '#FFFFFF',
+                padding: '0.5rem 1.4rem', background: '#0072BC', color: '#FFFFFF',
                 border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
               }}
             >
@@ -247,14 +247,14 @@ export default function ImageUpload({ value, onChange, purpose }: Props) {
                 ? (value ? 'Replace Image' : 'Browse Files')
                 : (value ? 'Choose Different Image' : 'Browse Files')}
             </button>
-            <p style={{ color: '#9CA3AF', fontSize: '0.75rem', marginTop: '0.5rem' }}>
+            <p style={{ color: '#818285', fontSize: '0.75rem', marginTop: '0.5rem' }}>
               {isBlueprint ? 'JPEG · PNG · WebP · auto-optimized (up to 15 MB)' : 'JPEG · PNG · WebP · GIF · auto-optimized (up to 15 MB)'}
             </p>
           </>
         )}
 
         {error && (
-          <p style={{ color: '#DC2626', fontSize: '0.8rem', marginTop: '0.5rem', marginBottom: 0 }}>{error}</p>
+          <p style={{ color: '#B91C1C', fontSize: '0.8rem', marginTop: '0.5rem', marginBottom: 0 }}>{error}</p>
         )}
       </div>
     </div>

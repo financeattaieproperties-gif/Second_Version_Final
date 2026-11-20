@@ -13,7 +13,7 @@ export function inquiryTime(value?: string | null): string {
   return value ? value.replace(' ', 'T') + (value.endsWith('Z') ? '' : 'Z') : '';
 }
 
-const inputStyle = { width:'100%', minHeight:44, padding:'0.65rem', border:'1px solid #E2E8F0', borderRadius:6, background:'#FFFFFF', color:'#0F172A', font:'inherit', boxSizing:'border-box' as const };
+const inputStyle = { width:'100%', minHeight:44, padding:'0.65rem', border:'1px solid #E2E8F0', borderRadius:6, background:'#FFFFFF', color:'#1E293B', font:'inherit', boxSizing:'border-box' as const };
 
 export default function InquiryFollowupEditor({
   inquiry,
@@ -62,7 +62,7 @@ export default function InquiryFollowupEditor({
     finally { setSaving(false); }
   }
   return <form onSubmit={submit} dir={localStorage.getItem('lang') === 'fa' ? 'rtl' : 'ltr'} style={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,padding:'1rem',marginBlock:'1rem',display:'grid',gap:'0.85rem'}} aria-label={t('title')}>
-    <h2 style={{margin:0,fontSize:'1.1rem',color:'#0F172A'}}>{t('title')}: {inquiry.name}</h2>
+    <h2 style={{margin:0,fontSize:'1.1rem',color:'#1E293B'}}>{t('title')}: {inquiry.name}</h2>
     {inquiry.receipt_reference && <p dir="ltr" style={{overflowWrap:'anywhere',margin:0}}>{inquiry.receipt_reference}</p>}
     <label>{t('status')}<select value={status} onChange={event=>setStatus(event.target.value as typeof status)} style={inputStyle}>
       {(['new','in_progress','resolved'] as const).map(value=><option key={value} value={value}>{t(value)}</option>)}
@@ -87,7 +87,7 @@ export default function InquiryFollowupEditor({
     )}
     {error && <p role="alert" style={{color:'#B91C1C',margin:0}}>{error} {t('conflictHint')}</p>}
     <div style={{display:'flex',gap:12,flexWrap:'wrap'}}>
-      <button type="submit" disabled={saving} style={{...inputStyle,width:'auto',background:'#0F172A',color:'#FFFFFF',cursor:'pointer'}}>{t(saving?'saving':'save')}</button>
+      <button type="submit" disabled={saving} style={{...inputStyle,width:'auto',background:'#0072BC',borderColor:'#0072BC',color:'#FFFFFF',cursor:'pointer'}}>{t(saving?'saving':'save')}</button>
       <button type="button" onClick={onClose} disabled={saving} style={{...inputStyle,width:'auto',cursor:'pointer'}}>{t('close')}</button>
     </div>
   </form>;

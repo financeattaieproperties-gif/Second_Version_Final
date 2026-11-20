@@ -450,7 +450,7 @@ export default function ProjectForm() {
                 <tbody>
                   {isEdit ? units.map(u => (
                     <tr key={u.id} style={{ borderBottom: '1px solid #f1f5f9', fontVariantNumeric: 'tabular-nums' }}>
-                      <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#0F172A', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>{u.unit_number}</td>
+                      <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#1E293B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>{u.unit_number}</td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>{u.title || '—'}</td>
                       <td style={{ padding: '0.6rem 0.75rem', color: '#475569' }}>
                         {[
@@ -510,7 +510,7 @@ export default function ProjectForm() {
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           <button
                             type="button"
-                            style={{ padding: '0.25rem 0.65rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem' }}
+                            style={{ padding: '0.25rem 0.65rem', background: '#0072BC', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem' }}
                             onClick={() => startEditUnit(u)}
                           >
                             Edit
@@ -527,7 +527,7 @@ export default function ProjectForm() {
                     </tr>
                   )) : stagedUnits.map(su => (
                     <tr key={su._tempId} style={{ borderBottom: '1px solid #f1f5f9', fontVariantNumeric: 'tabular-nums' }}>
-                      <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#0F172A', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>{su.unit_number}</td>
+                      <td style={{ padding: '0.6rem 0.75rem', fontWeight: 600, color: '#1E293B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}>{su.unit_number}</td>
                       <td style={{ padding: '0.6rem 0.75rem' }}>{su.title || '—'}</td>
                       <td style={{ padding: '0.6rem 0.75rem', color: '#475569' }}>
                         {[
@@ -587,7 +587,7 @@ export default function ProjectForm() {
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           <button
                             type="button"
-                            style={{ padding: '0.25rem 0.65rem', background: '#0f172a', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem' }}
+                            style={{ padding: '0.25rem 0.65rem', background: '#0072BC', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem' }}
                             onClick={() => startEditStagedUnit(su)}
                           >
                             Edit
@@ -753,8 +753,8 @@ export default function ProjectForm() {
                   )}
                 </div>
                 {unitForm.video_url && (
-                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#0F172A', borderRadius: 8, color: '#fff' }}>
-                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#D4E1FD', fontWeight: 600 }}>
+                  <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, color: '#1E293B' }}>
+                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.75rem', color: '#0072BC', fontWeight: 600 }}>
                       Interior Video Preview:
                     </p>
                     {unitForm.video_url.includes('youtube.com') || unitForm.video_url.includes('youtu.be') ? (

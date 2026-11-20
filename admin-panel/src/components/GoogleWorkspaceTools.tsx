@@ -166,15 +166,15 @@ const STYLES = {
     borderRadius: 10,
     padding: '1.25rem',
     boxShadow: '0 20px 50px rgba(15, 23, 42, 0.22)',
-    color: '#0F172A',
+    color: '#1E293B',
   }),
   input: {
     width: '100%',
     padding: '0.52rem 0.75rem',
     borderRadius: 6,
-    border: '1px solid #CBD5E1',
+    border: '1px solid #E2E8F0',
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
     fontSize: '0.84rem',
     boxSizing: 'border-box' as const,
   },
@@ -182,14 +182,14 @@ const STYLES = {
     display: 'block',
     fontSize: '0.75rem',
     fontWeight: 600,
-    color: '#475569',
+    color: '#818285',
     marginBottom: 4,
   },
   primaryBtn: {
     padding: '0.52rem 1rem',
     borderRadius: 6,
     border: 'none',
-    background: '#0F172A',
+    background: '#0072BC',
     color: '#FFFFFF',
     fontWeight: 600,
     fontSize: '0.82rem',
@@ -203,7 +203,7 @@ const STYLES = {
     borderRadius: 6,
     border: '1px solid #E2E8F0',
     background: '#FFFFFF',
-    color: '#0F172A',
+    color: '#1E293B',
     fontWeight: 600,
     fontSize: '0.82rem',
     cursor: 'pointer',
@@ -216,7 +216,7 @@ const STYLES = {
     padding: '0.45rem 0.85rem',
     borderRadius: 6,
     border: 'none',
-    background: '#DC2626',
+    background: '#B91C1C',
     color: '#FFFFFF',
     fontWeight: 600,
     fontSize: '0.8rem',
@@ -228,7 +228,7 @@ const STYLES = {
     textAlign: 'left' as const,
     fontSize: '0.7rem',
     fontWeight: 600,
-    color: '#64748B',
+    color: '#818285',
     textTransform: 'uppercase' as const,
     letterSpacing: 0.4,
     borderBottom: '1px solid #E2E8F0',
@@ -237,7 +237,7 @@ const STYLES = {
     padding: '0.65rem 0.75rem',
     borderBottom: '1px solid #F1F5F9',
     fontSize: '0.82rem',
-    color: '#0F172A',
+    color: '#1E293B',
     fontVariantNumeric: 'tabular-nums' as const,
   },
 };
@@ -264,10 +264,10 @@ function AdminConfirmDialog({
   return (
     <div role="dialog" aria-modal="true" style={{ ...STYLES.overlay, zIndex: 1100 }}>
       <div style={STYLES.modal(440)}>
-        <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#0F172A' }}>
+        <h3 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#1E293B' }}>
           {prompt.title}
         </h3>
-        <p style={{ margin: 0, fontSize: '0.84rem', color: '#64748B', lineHeight: 1.5 }}>
+        <p style={{ margin: 0, fontSize: '0.84rem', color: '#818285', lineHeight: 1.5 }}>
           {prompt.description}
         </p>
         <div
@@ -472,9 +472,9 @@ export function AdminDriveFolderModal({
           <div
             role="alert"
             style={{
-              background: '#FEE2E2',
+              background: '#FEF2F2',
               border: '1px solid #FECACA',
-              color: '#991B1B',
+              color: '#B91C1C',
               padding: '0.65rem 0.9rem',
               borderRadius: 6,
               fontSize: '0.82rem',
@@ -601,9 +601,9 @@ export function AdminDriveFolderModal({
                     style={{
                       padding: '0.35rem 0.7rem',
                       borderRadius: 6,
-                      border: categoryFilter === key ? '1px solid #0F172A' : '1px solid #E2E8F0',
-                      background: categoryFilter === key ? '#F1F5F9' : '#FFFFFF',
-                      color: '#0F172A',
+                      border: categoryFilter === key ? '1px solid #0072BC' : '1px solid #E2E8F0',
+                      background: categoryFilter === key ? '#E6F2FA' : '#FFFFFF',
+                      color: categoryFilter === key ? '#0072BC' : '#1E293B',
                       fontSize: '0.78rem',
                       fontWeight: 600,
                       cursor: 'pointer',
@@ -945,9 +945,9 @@ export function AdminSheetsExportModal({
           <div
             role="alert"
             style={{
-              background: '#FEE2E2',
+              background: '#FEF2F2',
               border: '1px solid #FECACA',
-              color: '#991B1B',
+              color: '#B91C1C',
               padding: '0.6rem 0.85rem',
               borderRadius: 6,
               fontSize: '0.8rem',
@@ -1144,10 +1144,10 @@ export function AdminCalendarSyncConfirmModal({
   return (
     <div role="dialog" aria-modal="true" style={STYLES.overlay}>
       <div style={STYLES.modal(480)}>
-        <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: '#0F172A' }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: '1.05rem', color: '#1E293B' }}>
           Confirm Google Calendar Synchronization
         </h3>
-        <p style={{ margin: '0 0 12px', fontSize: '0.84rem', color: '#64748B', lineHeight: 1.5 }}>
+        <p style={{ margin: '0 0 12px', fontSize: '0.84rem', color: '#818285', lineHeight: 1.5 }}>
           Confirm creating a{' '}
           <strong>
             {pending.scheduleType === 'visit' ? 'Property Visit' : 'Lead Follow-up'}
@@ -1219,9 +1219,9 @@ export function AdminCalendarSyncConfirmModal({
           <div
             role="alert"
             style={{
-              background: '#FEE2E2',
+              background: '#FEF2F2',
               border: '1px solid #FECACA',
-              color: '#991B1B',
+              color: '#B91C1C',
               padding: '0.55rem 0.8rem',
               borderRadius: 6,
               fontSize: '0.8rem',

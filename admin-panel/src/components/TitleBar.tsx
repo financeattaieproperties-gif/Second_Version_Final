@@ -7,7 +7,7 @@ const S = {
     alignItems: 'center',
     justifyContent: 'space-between',
     background: '#ffffff',
-    borderBottom: '1px solid #E5E7EB',
+    borderBottom: '1px solid #E2E8F0',
     WebkitAppRegion: 'drag',
     flexShrink: 0,
     userSelect: 'none',
@@ -19,14 +19,14 @@ const S = {
     gap: '0.5rem',
     fontSize: '0.78rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: '#1E293B',
     letterSpacing: 0.3,
   } as const,
   dot: {
     width: 8,
     height: 8,
     borderRadius: 3,
-    background: '#0F172A',
+    background: '#0072BC',
     display: 'inline-block',
   } as const,
   controls: {
@@ -39,9 +39,9 @@ const S = {
     height: '100%',
     border: 'none',
     background: hover
-      ? type === 'close' ? '#E81123' : '#E5E7EB'
+      ? type === 'close' ? '#B91C1C' : '#F1F5F9'
       : 'transparent',
-    color: hover && type === 'close' ? '#fff' : '#6B7280',
+    color: hover && type === 'close' ? '#fff' : '#818285',
     cursor: 'pointer',
     fontSize: type === 'close' ? '0.75rem' : '0.9rem',
     display: 'flex',
@@ -70,7 +70,7 @@ export default function TitleBar() {
     <div style={S.bar}>
       <div style={S.left}>
         <span style={S.dot} />
-        ATTAIE <span style={{ color: '#64748B', marginLeft: 2 }}>ADMIN</span>
+        ATTAIE <span style={{ color: '#818285', marginLeft: 2 }}>ADMIN</span>
       </div>
 
       <div style={S.controls}>

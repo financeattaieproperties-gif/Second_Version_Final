@@ -1,17 +1,22 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api, type BranchInput } from '../api';
+import { V1, V1_STYLES } from '../components/variant1';
 
 const blank: BranchInput = { name: '', address: '', phone: null, email: null };
 const S = {
-  page: { maxWidth: 760 }, top: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' as const },
-  title: { fontSize: '1.35rem', margin: 0, color: '#0F172A' }, card: { background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1rem' }, full: { gridColumn: '1 / -1' },
-  section: { padding: '1.5rem' }, label: { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.3rem' },
-  input: { width: '100%', padding: '0.58rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.88rem', boxSizing: 'border-box' as const, color: '#0F172A' },
-  footer: { padding: '1.25rem 1.5rem', borderTop: '1px solid #F1F5F9', display: 'flex', gap: '0.75rem' },
-  save: { padding: '0.62rem 1.4rem', background: '#0F172A', color: '#FFFFFF', border: 0, borderRadius: 6, fontWeight: 600, cursor: 'pointer' },
-  cancel: { padding: '0.62rem 1rem', background: '#FFFFFF', color: '#334155', border: '1px solid #E2E8F0', borderRadius: 6, fontWeight: 600, cursor: 'pointer' },
+  page: { maxWidth: 760 },
+  top: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' as const },
+  title: V1_STYLES.title,
+  card: V1_STYLES.card,
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: '1rem' },
+  full: { gridColumn: '1 / -1' },
+  section: { padding: '1.5rem' },
+  label: { display: 'block', fontSize: '0.8rem', fontWeight: 600, color: V1.ink, marginBottom: '0.3rem' },
+  input: { width: '100%', padding: '0.58rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.88rem', boxSizing: 'border-box' as const, color: V1.ink, background: V1.surface },
+  footer: { padding: '1.25rem 1.5rem', borderTop: `1px solid ${V1.slateSoft}`, display: 'flex', gap: '0.75rem' },
+  save: { ...V1_STYLES.primaryBtn, padding: '0.62rem 1.4rem' },
+  cancel: { ...V1_STYLES.secondaryBtn, padding: '0.62rem 1rem' },
 };
 
 export default function BranchForm() {
@@ -37,10 +42,10 @@ export default function BranchForm() {
     catch (e) { setError((e as Error).message || 'Could not save branch.'); }
     finally { setBusy(false); }
   };
-  if (loading) return <p>Loading branch…</p>;
+  if (loading) return <p style={{ color: V1.slate }}>Loading branch…</p>;
   return <div style={S.page}>
-    <div style={S.top}><h1 style={S.title}>{editing ? 'Edit Branch' : 'Add Branch'}</h1><button style={S.cancel} onClick={() => navigate('/branches')}>Back to list</button></div>
-    {error && <p role="alert" style={{ color: '#b91c1c', background: '#fef2f2', padding: '0.75rem', borderRadius: 8 }}>{error}</p>}
+    <div style={S.top}><h1 style={S.title}>{editing ? 'Edit Branch' : 'Add Branch'}</h1><button style={S.cancel} type="button" onClick={() => navigate('/branches')}>Back to list</button></div>
+    {error && <p role="alert" style={{ color: V1.danger, background: V1.dangerSoft, border: `1px solid ${V1.dangerBorder}`, padding: '0.75rem', borderRadius: 8 }}>{error}</p>}
     <form onSubmit={submit}><div style={S.card}><section style={S.section}><div style={S.grid}>
       <div style={S.full}><label htmlFor="branch-name" style={S.label}>Branch name *</label><input id="branch-name" style={S.input} value={form.name} onChange={e => set('name', e.target.value)} required maxLength={255} /></div>
       <div style={S.full}><label htmlFor="branch-address" style={S.label}>Address *</label><input id="branch-address" style={S.input} value={form.address} onChange={e => set('address', e.target.value)} required maxLength={500} /></div>

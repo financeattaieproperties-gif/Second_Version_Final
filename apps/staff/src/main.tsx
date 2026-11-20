@@ -2076,7 +2076,7 @@ function App() {
                         <div
                           style={{
                             width: `${Math.max(4, leadsPipelineSummary.percentages.activePct)}%`,
-                            background: "#0F172A",
+                            background: "#0072BC",
                           }}
                           title={`Active: ${leadsPipelineSummary.active} (${leadsPipelineSummary.percentages.activePct}%)`}
                         />

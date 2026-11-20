@@ -17,62 +17,64 @@ import {
   getActiveSeoKeywordsString,
   toggleSeoKeywordRecord,
 } from '../lib/seoKeywords';
+import { V1, V1_STYLES } from '../components/variant1';
 
 const S = {
   page:         { maxWidth: 1020 } as const,
   headerRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap' as const, gap: '1rem', marginBottom: '1.75rem' } as const,
-  title:        { fontSize: '1.35rem', fontWeight: 700, color: '#0F172A', marginBottom: '0.25rem' } as const,
-  sub:          { color: '#64748B', fontSize: '0.85rem', margin: 0 } as const,
+  title:        { ...V1_STYLES.title, marginBottom: '0.25rem' } as const,
+  sub:          { color: V1.slate, fontSize: '0.85rem', margin: 0 } as const,
   grid:         { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '1.25rem', alignItems: 'start' } as const,
-  card:         { background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden', marginBottom: '1.25rem' } as const,
+  card:         { ...V1_STYLES.card, marginBottom: '1.25rem' } as const,
   section:      { padding: '1.35rem 1.5rem' } as const,
-  divider:      { borderTop: '1px solid #F1F5F9' } as const,
-  secHdr:       { fontSize: '0.7rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: '1rem' } as const,
+  divider:      { borderTop: `1px solid ${V1.slateSoft}` } as const,
+  secHdr:       { fontSize: '0.7rem', fontWeight: 600, color: V1.slate, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: '1rem' } as const,
   fieldGroup:   { marginBottom: '1.1rem' } as const,
   labelRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' } as const,
-  label:        { fontSize: '0.8rem', fontWeight: 600, color: '#334155' } as const,
+  label:        { fontSize: '0.8rem', fontWeight: 600, color: V1.ink } as const,
   counter:      (len: number, min: number, max: number): React.CSSProperties => ({
     fontSize: '0.73rem',
     fontWeight: 600,
-    color: len >= min && len <= max ? '#059669' : len > max ? '#DC2626' : '#D97706',
+    fontVariantNumeric: 'tabular-nums',
+    color: len >= min && len <= max ? V1.green : len > max ? V1.danger : V1.slate,
   }),
-  input:        { width: '100%', padding: '0.58rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.86rem', outline: 'none', boxSizing: 'border-box' as const, color: '#0F172A', background: '#FFFFFF' } as const,
-  textarea:     { width: '100%', padding: '0.6rem 0.8rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.86rem', outline: 'none', boxSizing: 'border-box' as const, minHeight: 92, resize: 'vertical' as const, fontFamily: 'inherit', color: '#0F172A', background: '#FFFFFF' } as const,
-  help:         { fontSize: '0.74rem', color: '#64748B', marginTop: '0.35rem', lineHeight: 1.4 } as const,
+  input:        { width: '100%', padding: '0.58rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.86rem', outline: 'none', boxSizing: 'border-box' as const, color: V1.ink, background: V1.surface } as const,
+  textarea:     { width: '100%', padding: '0.6rem 0.8rem', border: `1px solid ${V1.borderSoft}`, borderRadius: 6, fontSize: '0.86rem', outline: 'none', boxSizing: 'border-box' as const, minHeight: 92, resize: 'vertical' as const, fontFamily: 'inherit', color: V1.ink, background: V1.surface } as const,
+  help:         { fontSize: '0.74rem', color: V1.slate, marginTop: '0.35rem', lineHeight: 1.4 } as const,
   row:          { display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' as const } as const,
-  btnPrimary:   { padding: '0.55rem 1.25rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.84rem' } as const,
-  btnNavy:      { padding: '0.55rem 1.15rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.84rem' } as const,
-  btnSecondary: { padding: '0.55rem 1.1rem', background: '#FFFFFF', color: '#334155', border: '1px solid #E2E8F0', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.82rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' } as const,
-  alertSuccess: { padding: '0.75rem 1rem', background: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.25rem' } as const,
-  alertError:   { padding: '0.75rem 1rem', background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.25rem' } as const,
+  btnPrimary:   { ...V1_STYLES.primaryBtn, padding: '0.55rem 1.25rem' } as const,
+  btnNavy:      V1_STYLES.primaryBtn,
+  btnSecondary: { ...V1_STYLES.secondaryBtn, padding: '0.55rem 1.1rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' } as const,
+  alertSuccess: { padding: '0.75rem 1rem', background: V1.greenSoft, border: '1px solid #BDE8CE', color: '#0F7A3A', borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.25rem' } as const,
+  alertError:   { padding: '0.75rem 1rem', background: V1.dangerSoft, border: `1px solid ${V1.dangerBorder}`, color: V1.danger, borderRadius: 6, fontSize: '0.85rem', fontWeight: 600, marginBottom: '1.25rem' } as const,
   tagWrap:      { display: 'flex', flexWrap: 'wrap' as const, gap: '0.35rem', marginTop: '0.5rem' } as const,
-  tag:          { fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.55rem', borderRadius: 6, background: '#F1F5F9', color: '#334155', border: '1px solid #E2E8F0' } as const,
-  serpBox:      { background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '1rem 1.15rem' } as const,
-  serpUrl:      { fontSize: '0.78rem', color: '#475569', marginBottom: '0.2rem', wordBreak: 'break-all' as const } as const,
-  serpTitle:    { fontSize: '1.05rem', color: '#1D4ED8', fontWeight: 600, marginBottom: '0.25rem', lineHeight: 1.3 } as const,
-  serpDesc:     { fontSize: '0.83rem', color: '#475569', lineHeight: 1.45, margin: 0 } as const,
-  socialCard:   { border: '1px solid #E2E8F0', borderRadius: 8, overflow: 'hidden', background: '#FFFFFF' } as const,
-  socialImgBox: { height: 180, background: '#F1F5F9', position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as const,
-  socialBody:   { padding: '0.85rem 1rem', borderTop: '1px solid #E2E8F0', background: '#F8FAFC' } as const,
-  socialDomain: { fontSize: '0.7rem', color: '#64748B', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: '0.2rem' } as const,
-  socialTitle:  { fontSize: '0.92rem', fontWeight: 600, color: '#0F172A', marginBottom: '0.2rem', lineHeight: 1.3 } as const,
-  socialDesc:   { fontSize: '0.78rem', color: '#475569', lineHeight: 1.4, margin: 0 } as const,
+  tag:          { fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.55rem', borderRadius: 6, background: V1.slateSoft, color: V1.ink, border: `1px solid ${V1.border}` } as const,
+  serpBox:      { background: V1.canvas, border: `1px solid ${V1.border}`, borderRadius: 8, padding: '1rem 1.15rem' } as const,
+  serpUrl:      { fontSize: '0.78rem', color: V1.slate, marginBottom: '0.2rem', wordBreak: 'break-all' as const } as const,
+  serpTitle:    { fontSize: '1.05rem', color: V1.blue, fontWeight: 600, marginBottom: '0.25rem', lineHeight: 1.3 } as const,
+  serpDesc:     { fontSize: '0.83rem', color: V1.slate, lineHeight: 1.45, margin: 0 } as const,
+  socialCard:   { border: `1px solid ${V1.border}`, borderRadius: 8, overflow: 'hidden', background: V1.surface } as const,
+  socialImgBox: { height: 180, background: V1.slateSoft, position: 'relative' as const, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' } as const,
+  socialBody:   { padding: '0.85rem 1rem', borderTop: `1px solid ${V1.border}`, background: V1.canvas } as const,
+  socialDomain: { fontSize: '0.7rem', color: V1.slate, textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: '0.2rem' } as const,
+  socialTitle:  { fontSize: '0.92rem', fontWeight: 600, color: V1.ink, marginBottom: '0.2rem', lineHeight: 1.3 } as const,
+  socialDesc:   { fontSize: '0.78rem', color: V1.slate, lineHeight: 1.4, margin: 0 } as const,
   statGrid:     { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: '0.75rem', marginBottom: '1.25rem' } as const,
   statBox:      (active: boolean): React.CSSProperties => ({
     padding: '0.85rem 1rem',
     borderRadius: 8,
-    background: active ? '#F1F5F9' : '#FFFFFF',
-    border: active ? '1px solid #0F172A' : '1px solid #E2E8F0',
+    background: active ? V1.blueSoft : V1.surface,
+    border: active ? `1px solid ${V1.blue}` : `1px solid ${V1.border}`,
     cursor: 'pointer',
     transition: 'all 0.15s ease',
   }),
-  statLabel:    { fontSize: '0.7rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: '0.25rem' } as const,
-  statValue:    { fontSize: '1.35rem', fontWeight: 700, color: '#0F172A', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' } as const,
-  xmlPre:       { background: '#F8FAFC', color: '#0F172A', border: '1px solid #E2E8F0', padding: '1rem 1.15rem', borderRadius: 8, fontSize: '0.76rem', lineHeight: 1.55, overflowX: 'auto' as const, maxHeight: 320, margin: 0, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' } as const,
-  urlTableWrap: { border: '1px solid #E2E8F0', borderRadius: 8, overflow: 'hidden', maxHeight: 300, overflowY: 'auto' as const } as const,
+  statLabel:    { fontSize: '0.7rem', fontWeight: 600, color: V1.slate, textTransform: 'uppercase' as const, letterSpacing: 0.5, marginBottom: '0.25rem' } as const,
+  statValue:    { fontSize: '1.35rem', fontWeight: 700, color: V1.ink, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' } as const,
+  xmlPre:       { background: V1.canvas, color: V1.ink, border: `1px solid ${V1.border}`, padding: '1rem 1.15rem', borderRadius: 8, fontSize: '0.76rem', lineHeight: 1.55, overflowX: 'auto' as const, maxHeight: 320, margin: 0, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' } as const,
+  urlTableWrap: { border: `1px solid ${V1.border}`, borderRadius: 8, overflow: 'hidden', maxHeight: 300, overflowY: 'auto' as const } as const,
   urlTable:     { width: '100%', borderCollapse: 'collapse' as const, fontSize: '0.8rem' } as const,
-  th:           { textAlign: 'left' as const, padding: '0.6rem 0.85rem', background: '#F8FAFC', color: '#64748B', fontWeight: 600, fontSize: '0.72rem', textTransform: 'uppercase' as const, borderBottom: '1px solid #E2E8F0', position: 'sticky' as const, top: 0 } as const,
-  td:           { padding: '0.55rem 0.85rem', borderBottom: '1px solid #F1F5F9', color: '#0F172A', fontVariantNumeric: 'tabular-nums' } as const,
+  th:           { ...V1_STYLES.th, padding: '0.6rem 0.85rem', fontSize: '0.72rem', position: 'sticky' as const, top: 0 } as const,
+  td:           { ...V1_STYLES.td, padding: '0.55rem 0.85rem' } as const,
 };
 
 export default function SeoPage() {
@@ -520,14 +522,14 @@ export default function SeoPage() {
                     {filteredSitemapUrls.map(item => (
                       <tr key={item.loc}>
                         <td style={S.td}>
-                          <div style={{ fontWeight: 600, color: '#111827', marginBottom: '0.1rem' }}>
+                          <div style={{ fontWeight: 600, color: V1.ink, marginBottom: '0.1rem' }}>
                             {item.title}
                           </div>
                           <a
                             href={item.loc}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ fontSize: '0.74rem', color: '#2563EB', textDecoration: 'none', wordBreak: 'break-all' }}
+                            style={{ fontSize: '0.74rem', color: V1.blue, textDecoration: 'none', wordBreak: 'break-all' }}
                           >
                             {item.loc}
                           </a>
@@ -538,7 +540,7 @@ export default function SeoPage() {
                         <td style={{ ...S.td, fontWeight: 700 }}>{item.priority}</td>
                         <td style={S.td}>{item.changefreq}</td>
                         <td style={S.td}>{item.image_count > 0 ? `${item.image_count} img` : '—'}</td>
-                        <td style={{ ...S.td, color: '#6B7280', fontSize: '0.75rem' }}>{item.lastmod}</td>
+                        <td style={{ ...S.td, color: V1.slate, fontSize: '0.75rem' }}>{item.lastmod}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -651,12 +653,12 @@ export default function SeoPage() {
                 <p style={S.help}>Base origin used to resolve canonical URLs, <code>sitemap.xml</code> entries, and absolute OpenGraph image URLs.</p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#F9FAFB', borderRadius: 8, border: '1px solid #E5E7EB' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: V1.canvas, borderRadius: 8, border: `1px solid ${V1.border}` }}>
                 <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#111827' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: V1.ink }}>
                     Allow Search Engine Indexing
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>
+                  <div style={{ fontSize: '0.75rem', color: V1.slate }}>
                     When enabled, sets <code>index, follow, max-image-preview:large</code>. Disable on staging subdomains if needed.
                   </div>
                 </div>
@@ -664,7 +666,7 @@ export default function SeoPage() {
                   type="checkbox"
                   checked={form.robots_index}
                   onChange={e => setForm(f => ({ ...f, robots_index: e.target.checked }))}
-                  style={{ width: 18, height: 18, accentColor: '#0F172A', cursor: 'pointer' }}
+                  style={{ width: 18, height: 18, accentColor: V1.blue, cursor: 'pointer' }}
                 />
               </div>
             </div>
@@ -747,7 +749,7 @@ export default function SeoPage() {
               <p style={S.secHdr}>Live Google Search & Social Card Preview</p>
 
               <div style={{ marginBottom: '1.25rem' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.4rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: V1.slate, marginBottom: '0.4rem' }}>
                   Google Search Result Snippet
                 </div>
                 <div style={S.serpBox}>
@@ -758,7 +760,7 @@ export default function SeoPage() {
               </div>
 
               <div>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6B7280', marginBottom: '0.4rem' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: V1.slate, marginBottom: '0.4rem' }}>
                   OpenGraph / WhatsApp / Social Share Card
                 </div>
                 <div style={S.socialCard}>

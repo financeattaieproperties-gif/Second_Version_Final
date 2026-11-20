@@ -169,8 +169,8 @@ export default function Careers() {
                   return (
                     <tr key={job.id}>
                       <td style={S.td}>
-                        <div style={{ fontWeight: 600, color: '#0F172A' }}>{job.title}</div>
-                        <div style={{ fontSize: '0.78rem', color: '#64748B' }}>{job.location}</div>
+                        <div style={{ fontWeight: 600, color: '#1E293B' }}>{job.title}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#818285' }}>{job.location}</div>
                       </td>
                       <td style={S.td}>{job.employment_type}</td>
                       <td style={S.td}>
@@ -183,7 +183,7 @@ export default function Careers() {
                       </td>
                       <td style={S.td}>
                         <button
-                          style={S.actBtn('#F1F5F9', '#0F172A', '1px solid #E2E8F0')}
+                          style={S.actBtn('#E6F2FA', '#0072BC', '1px solid #BAE6FD')}
                           onClick={() => navigate(`/careers/${job.id}/applications`)}
                         >
                           {job.application_count ?? 0} Applicants →

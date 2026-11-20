@@ -33,7 +33,7 @@ const S = {
     alignItems: 'center',
     flexWrap: 'wrap' as const,
     gap: '0.75rem',
-    color: '#0F172A',
+    color: '#1E293B',
     fontSize: '0.84rem',
   } as const,
   filterRow: {
@@ -53,7 +53,7 @@ const S = {
   serialBadge: {
     display: 'inline-block',
     background: '#F1F5F9',
-    color: '#0F172A',
+    color: '#1E293B',
     border: '1px solid #E2E8F0',
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontWeight: 700,
@@ -121,10 +121,10 @@ const S = {
   } as const,
   input: {
     padding: '0.45rem 0.7rem',
-    border: '1px solid #CBD5E1',
+    border: '1px solid #E2E8F0',
     borderRadius: 6,
     fontSize: '0.82rem',
-    color: '#0F172A',
+    color: '#1E293B',
   } as const,
 };
 
@@ -212,7 +212,7 @@ export default function PublishingTasks() {
             borderRadius: 6,
             border: '1px solid #E2E8F0',
             background: '#FFFFFF',
-            color: '#0F172A',
+            color: '#1E293B',
             fontWeight: 600,
             fontSize: '0.8rem',
             cursor: 'pointer',
@@ -231,7 +231,7 @@ export default function PublishingTasks() {
         <span
           style={{
             background: '#F1F5F9',
-            color: '#0F172A',
+            color: '#1E293B',
             border: '1px solid #E2E8F0',
             padding: '0.25rem 0.65rem',
             borderRadius: 6,
@@ -318,7 +318,7 @@ export default function PublishingTasks() {
                     Platform: {item.social_platform}
                   </span>
                 </div>
-                <h3 style={{ margin: '0.5rem 0 0.2rem', fontSize: '1.05rem', color: '#0F172A', fontWeight: 700 }}>
+                <h3 style={{ margin: '0.5rem 0 0.2rem', fontSize: '1.05rem', color: '#1E293B', fontWeight: 700 }}>
                   {item.property_type} — {item.address}
                 </h3>
                 <div style={{ fontSize: '0.82rem', color: '#475569', fontVariantNumeric: 'tabular-nums' }}>

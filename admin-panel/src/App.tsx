@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -22,7 +22,6 @@ import CareerForm from './pages/CareerForm';
 import CareerApplications from './pages/CareerApplications';
 import ChatInbox from './pages/ChatInbox';
 import PublishingTasks from './pages/PublishingTasks';
-import { AttaieLogoEntrance } from './components/AttaieLogoEntrance';
 
 const FullscreenCalendar = lazy(() => import('./components/ui/FullscreenCalendar').then(m => ({ default: m.default })));
 
@@ -43,25 +42,10 @@ function MenuNavigator() {
 
 function ProtectedRoutes() {
   const { loggedIn } = useAuth();
-  const [playEntrance, setPlayEntrance] = useState(false);
-
-  useEffect(() => {
-    if (loggedIn && sessionStorage.getItem('attaie_admin_play_entrance') === '1') {
-      sessionStorage.removeItem('attaie_admin_play_entrance');
-      setPlayEntrance(true);
-    }
-  }, [loggedIn]);
 
   if (!loggedIn) return <Login />;
   return (
     <Layout>
-      {playEntrance && (
-        <AttaieLogoEntrance
-          mode="login-transition"
-          variant="navy"
-          onComplete={() => setPlayEntrance(false)}
-        />
-      )}
       <MenuNavigator />
       <Routes>
         <Route path="/" element={<Navigate to="/overview" replace />} />
