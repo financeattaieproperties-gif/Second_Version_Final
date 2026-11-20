@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MotionCarousel } from '../components/ui/MotionCarousel';
 import {
   MapPin,
   Phone,
@@ -37,7 +34,7 @@ import categoryCommercialImg from '../assets/images/category_commercial_plaza_17
 import categoryProjectsImg from '../assets/images/category_master_projects_1794037429266.jpg';
 import stitchVillaImg from '../assets/images/stitch_villa_exterior.jpg';
 
-gsap.registerPlugin(ScrollTrigger);
+// Brand story chapters driven by motion/react whileInView
 
 const stats = [
   { icon: Home, value: '500+', label: 'Verified Properties Listed' },
@@ -169,39 +166,7 @@ export default function AboutPage() {
       .finally(() => setBranchesLoading(false));
   }, []);
 
-  // GSAP Pinned / Scroll-Triggered Brand Story Choreography
-  useEffect(() => {
-    if (!pinnedStorySectionRef.current) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
-    const ctx = gsap.context(() => {
-      const chapters = pinnedStorySectionRef.current?.querySelectorAll('[data-brand-chapter]');
-      if (!chapters || chapters.length === 0) return;
-
-      chapters.forEach((chapterEl, idx) => {
-        gsap.fromTo(
-          chapterEl,
-          { opacity: 0.35, y: 24 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.55,
-            ease: 'power2.out',
-            scrollTrigger: {
-              trigger: chapterEl,
-              start: 'top 75%',
-              end: 'bottom 45%',
-              onEnter: () => setActiveStoryIdx(idx),
-              onEnterBack: () => setActiveStoryIdx(idx),
-            },
-          }
-        );
-      });
-    }, pinnedStorySectionRef);
-
-    return () => ctx.revert();
-  }, []);
+  // Brand Story chapters use motion/react whileInView + onViewportEnter
 
   return (
     <main className="min-h-screen bg-brand-cream flex flex-col">
@@ -367,9 +332,13 @@ export default function AboutPage() {
             {BRAND_STORY_CHAPTERS.map((ch, idx) => {
               const isCurrent = idx === activeStoryIdx;
               return (
-                <div
+                <motion.div
                   key={ch.year}
-                  data-brand-chapter
+                  initial={{ opacity: 0.35, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  onViewportEnter={() => setActiveStoryIdx(idx)}
                   onMouseEnter={() => setActiveStoryIdx(idx)}
                   className={`rounded-2xl p-7 md:p-8 bg-white transition-all duration-300 border ${
                     isCurrent
@@ -391,7 +360,7 @@ export default function AboutPage() {
                   <p className="text-neutral-600 text-sm md:text-base leading-relaxed">
                     {ch.summary}
                   </p>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -414,44 +383,35 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={24}
-            slidesPerView={1}
-            navigation
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 5000, disableOnInteraction: true }}
-            breakpoints={{
-              640: { slidesPerView: 1.4 },
-              1024: { slidesPerView: 2.2 },
-            }}
-            className="pb-12"
+          <MotionCarousel
+            slidesPerView={{ base: 1, sm: 1.4, lg: 2.2 }}
+            gap={24}
+            autoplayDelay={5000}
+            className="pb-4"
           >
             {MILESTONE_SLIDES.map((slide) => (
-              <SwiperSlide key={slide.title}>
-                <div className="group rounded-2xl overflow-hidden bg-brand-navy border border-brand-navy/10 shadow-brand-md">
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img
-                      src={slide.image}
-                      alt={slide.title}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/90 via-brand-navy/30 to-transparent" />
-                    <div className="absolute bottom-4 left-5 right-5 text-white">
-                      <span className="text-xs font-bold uppercase tracking-wider text-brand-gold">
-                        {slide.year}
-                      </span>
-                      <h3 className="text-xl font-display font-bold text-white mt-0.5">
-                        {slide.title}
-                      </h3>
-                      <p className="text-xs text-white/75 mt-1 line-clamp-2">{slide.caption}</p>
-                    </div>
+              <div key={slide.title} className="group rounded-2xl overflow-hidden bg-brand-navy border border-brand-navy/10 shadow-brand-md">
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-brand-navy/90 via-brand-navy/30 to-transparent" />
+                  <div className="absolute bottom-4 left-5 right-5 text-white">
+                    <span className="text-xs font-bold uppercase tracking-wider text-brand-gold">
+                      {slide.year}
+                    </span>
+                    <h3 className="text-xl font-display font-bold text-white mt-0.5">
+                      {slide.title}
+                    </h3>
+                    <p className="text-xs text-white/75 mt-1 line-clamp-2">{slide.caption}</p>
                   </div>
                 </div>
-              </SwiperSlide>
+              </div>
             ))}
-          </Swiper>
+          </MotionCarousel>
         </div>
       </section>
 

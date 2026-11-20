@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { MotionCarousel } from '../components/ui/MotionCarousel';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Calendar, Home, ArrowRight, Building2 } from 'lucide-react';
 import { Navbar } from '../components/layout/Navbar';
@@ -20,8 +17,6 @@ import defaultExteriorImg from '../assets/images/project_exterior_elevation_1793
 import defaultFurnishedPlanImg from '../assets/images/floorplan_furnished_3d_1793995968986.jpg';
 import categoryProjectsImg from '../assets/images/category_master_projects_1794037429266.jpg';
 import categoryCommercialImg from '../assets/images/category_commercial_plaza_1794037429778.jpg';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const FILTER_STATUSES = ['All', 'Coming Soon', 'In Progress', 'Sold Out'] as const;
 
@@ -54,35 +49,7 @@ export default function ProjectsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // GSAP Scroll Reveals on project cards
-  useEffect(() => {
-    if (loading || !gridRef.current) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
-    const ctx = gsap.context(() => {
-      const cards = gridRef.current?.querySelectorAll('[data-project-card]');
-      if (cards && cards.length > 0) {
-        gsap.fromTo(
-          cards,
-          { opacity: 0, y: 28 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.65,
-            stagger: 0.1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: gridRef.current,
-              start: 'top 85%',
-            },
-          }
-        );
-      }
-    }, gridRef);
-
-    return () => ctx.revert();
-  }, [loading, filter]);
+  // Project cards animate via motion/react AnimatePresence & whileInView
 
   const visible =
     filter === 'All'
@@ -131,18 +98,14 @@ export default function ProjectsPage() {
           {loading ? (
             <ProjectSpotlightSkeleton />
           ) : (
-            <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={24}
-            slidesPerView={1}
-            navigation
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 6000, disableOnInteraction: true }}
-            className="rounded-2xl overflow-hidden shadow-brand-lg"
-          >
-            {projects.map((proj) => (
-              <SwiperSlide key={`spotlight-${proj.id}`}>
-                <div className="relative min-h-[340px] md:min-h-[380px] bg-brand-navy text-white grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+            <MotionCarousel
+              slidesPerView={{ base: 1 }}
+              gap={24}
+              autoplayDelay={6000}
+              className="rounded-2xl overflow-hidden shadow-brand-lg"
+            >
+              {projects.map((proj) => (
+                <div key={`spotlight-${proj.id}`} className="relative min-h-[340px] md:min-h-[380px] bg-brand-navy text-white grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
                   <div className="lg:col-span-6 p-8 md:p-12 flex flex-col justify-between relative z-10">
                     <div>
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-brand-gold text-white text-xs font-bold mb-4">
@@ -198,9 +161,8 @@ export default function ProjectsPage() {
                     <div className="absolute inset-0 bg-gradient-to-r from-brand-navy via-brand-navy/30 to-transparent hidden lg:block" />
                   </div>
                 </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+              ))}
+            </MotionCarousel>
           )}
         </section>
       )}

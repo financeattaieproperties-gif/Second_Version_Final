@@ -1,7 +1,6 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import gsap from 'gsap';
 import { SlidersHorizontal, Bed, Bath, Maximize2, Layers, MapPin, Building2, Eye, LayoutGrid, Map as MapIcon, Columns2, X, RotateCcw, Camera, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '../components/layout/Navbar';
@@ -252,20 +251,7 @@ function PropertiesContent() {
     [searchParams, setSearchParams]
   );
 
-  // Minimal GSAP header entrance
-  useEffect(() => {
-    if (!heroHeaderRef.current) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        heroHeaderRef.current,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }
-      );
-    }, heroHeaderRef);
-    return () => ctx.revert();
-  }, []);
+  // Header entrance handled via motion/react
 
   const loadData = useCallback(() => {
     setLoading(true);

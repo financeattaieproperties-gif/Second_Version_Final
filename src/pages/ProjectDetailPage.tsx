@@ -2,9 +2,8 @@ import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { motion } from 'motion/react';
+import { MotionCarousel } from '../components/ui/MotionCarousel';
 import {
   MapPin,
   ArrowLeft,
@@ -267,32 +266,23 @@ export function ProjectDetailPage() {
                   <h2 className="text-lg font-bold text-brand-navy mb-4">
                     Architectural Render Gallery
                   </h2>
-                  <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
-                    <Swiper
-                      modules={[Navigation, Pagination, Autoplay]}
-                      spaceBetween={16}
-                      slidesPerView={1}
-                      navigation
-                      pagination={{ clickable: true }}
-                      autoplay={{ delay: 4500, disableOnInteraction: true }}
-                      breakpoints={{
-                        640: { slidesPerView: 2 },
-                      }}
-                      className="p-2 bg-gray-50"
+                  <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm p-2 bg-gray-50">
+                    <MotionCarousel
+                      slidesPerView={{ base: 1, sm: 2 }}
+                      gap={16}
+                      autoplayDelay={4500}
                     >
                       {project.gallery_images.map((imgUrl, idx) => (
-                        <SwiperSlide key={idx}>
-                          <div className="aspect-video rounded-xl overflow-hidden bg-gray-200">
-                            <img
-                              src={imgUrl}
-                              alt={`${name} render ${idx + 1}`}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                              loading="lazy"
-                            />
-                          </div>
-                        </SwiperSlide>
+                        <div key={idx} className="aspect-video rounded-xl overflow-hidden bg-gray-200">
+                          <img
+                            src={imgUrl}
+                            alt={`${name} render ${idx + 1}`}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                          />
+                        </div>
                       ))}
-                    </Swiper>
+                    </MotionCarousel>
                   </div>
                 </div>
               )}

@@ -19,7 +19,7 @@ import {
   DollarSign,
   Info,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 
 export interface BlueprintUnitHotspot {

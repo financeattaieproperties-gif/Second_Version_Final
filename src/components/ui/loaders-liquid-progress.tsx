@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring, useTransform } from "motion/react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -69,7 +69,7 @@ export function LoaderLiquidProgress({
     springProgress.set(clamped);
   }, [clamped, springProgress]);
 
-  const width = useTransform(springProgress, (val) => `${Math.max(0, Math.min(100, val))}%`);
+  const width = useTransform(springProgress, (val: number) => `${Math.max(0, Math.min(100, val))}%`);
 
   return (
     <div className={cn("w-full space-y-2 select-none", className)} {...props}>

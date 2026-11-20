@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import defaultExteriorImg from '../../assets/images/project_exterior_elevation_1793995966183.jpg';
 import categoryProjectsImg from '../../assets/images/category_master_projects_1794037429266.jpg';

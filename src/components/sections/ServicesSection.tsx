@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { ArrowRight, Home, KeyRound, Building2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { SectionHeader } from '../ui/SectionHeader';

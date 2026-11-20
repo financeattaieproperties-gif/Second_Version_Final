@@ -19,13 +19,12 @@ import {
   RotateCcw,
   Check,
 } from 'lucide-react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { PromoBanner } from './PromoBanner';
 import { PopularLocationsSection } from './PopularLocationsSection';
 import { ServicesSection } from './ServicesSection';
 import { HotDealsSection } from './HotDealsSection';
 import { PropertyCard } from '../ui/PropertyCard';
+import { MotionCarousel } from '../ui/MotionCarousel';
 import { PropertyCardSkeleton } from '../ui/PropertyCardSkeleton';
 import { SectionHeader } from '../ui/SectionHeader';
 import { ClickToCallButton } from '../ui/ClickToCallButton';
@@ -606,26 +605,20 @@ export const LandingPageContent = () => {
                   ))}
                 </div>
               ) : filteredProperties.length > 0 ? (
-                <Swiper
-                  modules={[Navigation, Pagination, Autoplay]}
-                  spaceBetween={24}
-                  slidesPerView={1}
-                  navigation
-                  pagination={{ clickable: true }}
-                  autoplay={{ delay: 5500, disableOnInteraction: true }}
-                  breakpoints={{
-                    640: { slidesPerView: 1.5 },
-                    768: { slidesPerView: 2 },
-                    1024: { slidesPerView: 3 },
-                  }}
+                <MotionCarousel
+                  gap={24}
+                  slidesPerView={{ base: 1, sm: 2, lg: 3 }}
+                  autoplayDelay={5500}
+                  showNavigation
+                  showPagination
                   className="pb-12"
                 >
                   {filteredProperties.map((prop) => (
-                    <SwiperSlide key={prop.id} className="h-auto">
+                    <div key={prop.id} className="h-auto">
                       <PropertyCard {...prop} />
-                    </SwiperSlide>
+                    </div>
                   ))}
-                </Swiper>
+                </MotionCarousel>
               ) : (
                 <div className="py-16 text-center text-neutral-400 text-sm">
                   No properties match this filter.

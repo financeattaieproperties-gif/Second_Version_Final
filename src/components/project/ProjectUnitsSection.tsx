@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, type MouseEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Bed,
   Bath,
@@ -85,7 +85,7 @@ export function ApartmentFullInfoModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.25 }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: MouseEvent<HTMLDivElement>) => e.stopPropagation()}
         className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden my-6 max-h-[92vh] flex flex-col"
       >
         {/* Modal Header & Main Photo Stage */}
@@ -518,7 +518,7 @@ export function ProjectUnitsSection({ projectId, projectName }: ProjectUnitsSect
                   role="button"
                   tabIndex={0}
                   onClick={() => setSelectedUnit(unit)}
-                  onKeyDown={(e) => {
+                  onKeyDown={(e: ReactKeyboardEvent<HTMLDivElement>) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       setSelectedUnit(unit);

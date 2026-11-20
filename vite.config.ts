@@ -1490,7 +1490,6 @@ export default defineConfig(({ mode }) => {
         'react-i18next',
         'i18next',
         'lucide-react',
-        'framer-motion',
         'motion/react',
         'firebase/app',
         'firebase/auth',
@@ -1500,10 +1499,6 @@ export default defineConfig(({ mode }) => {
         'react-hook-form',
         '@hookform/resolvers/zod',
         'zod',
-        'swiper/react',
-        'swiper/modules',
-        'gsap',
-        'gsap/ScrollTrigger',
         'recharts',
         '@vis.gl/react-google-maps',
       ],
@@ -1523,13 +1518,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/@vis.gl/react-google-maps')) {
               return 'vendor-maps';
             }
-            if (id.includes('node_modules/swiper')) {
-              return 'vendor-swiper';
-            }
-            if (id.includes('node_modules/gsap')) {
-              return 'vendor-gsap';
-            }
-            if (id.includes('node_modules/framer-motion') || id.includes('node_modules/motion')) {
+            if (id.includes('node_modules/motion')) {
               return 'vendor-animations';
             }
             if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/zod')) {

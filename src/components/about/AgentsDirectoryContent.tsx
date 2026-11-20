@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
 import { ArrowUpRight, Phone, Mail, MessageCircle, ShieldCheck, Award } from 'lucide-react';
+import { MotionCarousel } from '../ui/MotionCarousel';
 import { getAgents, type Agent } from '../../lib/dbService';
 import defaultExteriorImg from '../../assets/images/project_exterior_elevation_1793995966183.jpg';
 import stitchInteriorImg from '../../assets/images/stitch_apartment_interior.jpg';
@@ -79,7 +78,7 @@ export const AgentsDirectoryContent: React.FC = () => {
 
   return (
     <div data-testid="about-agents-section">
-      {/* Swiper Agent Highlights Spotlight */}
+      {/* MotionCarousel Agent Highlights Spotlight */}
       {!loading && agents.length > 0 && (
         <section className="container-custom pt-12">
           <div className="mb-5">
@@ -89,18 +88,19 @@ export const AgentsDirectoryContent: React.FC = () => {
             </h2>
           </div>
 
-          <Swiper
-            modules={[Navigation, Pagination, Autoplay]}
-            spaceBetween={24}
-            slidesPerView={1}
-            navigation
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 5500, disableOnInteraction: true }}
-            className="rounded-2xl overflow-hidden shadow-brand-md bg-white border border-brand-navy/8"
+          <MotionCarousel
+            gap={24}
+            slidesPerView={{ base: 1 }}
+            autoplayDelay={5500}
+            showNavigation
+            showPagination
+            className="rounded-2xl overflow-hidden shadow-brand-md bg-white border border-brand-navy/8 pb-4"
           >
             {agents.map((agent) => (
-              <SwiperSlide key={`highlight-${agent.id}`}>
-                <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[300px]">
+              <div
+                key={`highlight-${agent.id}`}
+                className="grid grid-cols-1 lg:grid-cols-12 items-stretch min-h-[300px]"
+              >
                   <div className="lg:col-span-4 relative min-h-[240px] bg-brand-navy">
                     <img
                       src={agent.portrait_url || defaultExteriorImg}
@@ -167,9 +167,8 @@ export const AgentsDirectoryContent: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </SwiperSlide>
             ))}
-          </Swiper>
+          </MotionCarousel>
         </section>
       )}
 

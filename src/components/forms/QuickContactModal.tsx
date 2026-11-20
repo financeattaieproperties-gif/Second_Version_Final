@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -179,7 +179,7 @@ export const QuickContactModal: React.FC<QuickContactModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
             className="w-full max-w-lg rounded-2xl bg-white shadow-2xl border border-brand-navy/10 overflow-hidden my-auto"
           >
             {/* Header */}

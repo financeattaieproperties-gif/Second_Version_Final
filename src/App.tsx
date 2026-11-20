@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState } from 'react';
+import { MotionConfig } from 'motion/react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { SeoSettingsProvider } from './components/seo/SeoHead';
@@ -62,6 +63,7 @@ export default function App() {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <FirebaseErrorBoundary>
       <FirebaseProvider>
         <HelmetProvider>
@@ -90,6 +92,7 @@ export default function App() {
         </HelmetProvider>
       </FirebaseProvider>
     </FirebaseErrorBoundary>
+    </MotionConfig>
   );
 }
 

@@ -5,7 +5,7 @@ import {
   useMotionValue,
   useSpring,
   useTransform,
-} from 'framer-motion';
+} from 'motion/react';
 import {
   SlidersHorizontal,
   RotateCcw,
@@ -298,8 +298,8 @@ export const PremiumProjectExplorer: React.FC<PremiumProjectExplorerProps> = ({
   const [isDraggingSplit, setIsDraggingSplit] = useState(false);
   const splitMotion = useMotionValue(50);
   const smoothSplit = useSpring(splitMotion, { stiffness: 320, damping: 32 });
-  const clipPathRight = useTransform(smoothSplit, (v) => `inset(0 ${100 - v}% 0 0)`);
-  const splitHandleLeft = useTransform(smoothSplit, (v) => `${v}%`);
+  const clipPathRight = useTransform(smoothSplit, (v: number) => `inset(0 ${100 - v}% 0 0)`);
+  const splitHandleLeft = useTransform(smoothSplit, (v: number) => `${v}%`);
 
   useEffect(() => {
     splitMotion.set(splitPct);

@@ -1,14 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ShieldCheck, Layers, Sun, Compass, ArrowRight } from 'lucide-react';
 import exteriorImg from '../../assets/images/project_exterior_elevation_1793995966183.jpg';
 import furnishedPlanImg from '../../assets/images/floorplan_furnished_3d_1793995968986.jpg';
 import technicalBlueprintImg from '../../assets/images/floorplan_technical_blueprint_1793995969202.jpg';
-
-gsap.registerPlugin(ScrollTrigger);
 
 const STORY_CHAPTERS = [
   {
@@ -53,88 +49,22 @@ const STORY_CHAPTERS = [
 ] as const;
 
 export function ArchitecturalStorytellingSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const cardsContainerRef = useRef<HTMLDivElement>(null);
-  const visualFrameRef = useRef<HTMLDivElement>(null);
   const [activeChapterIdx, setActiveChapterIdx] = useState(0);
-
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion || !sectionRef.current) return;
-
-    const ctx = gsap.context(() => {
-      if (headerRef.current) {
-        gsap.fromTo(
-          headerRef.current.children,
-          { opacity: 0, y: 24 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.7,
-            stagger: 0.1,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: headerRef.current,
-              start: 'top 85%',
-            },
-          }
-        );
-      }
-
-      if (cardsContainerRef.current) {
-        const chapterNodes = cardsContainerRef.current.querySelectorAll('[data-story-chapter]');
-        gsap.fromTo(
-          chapterNodes,
-          { opacity: 0, x: -24 },
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.65,
-            stagger: 0.14,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: cardsContainerRef.current,
-              start: 'top 82%',
-            },
-          }
-        );
-      }
-
-      if (visualFrameRef.current) {
-        gsap.fromTo(
-          visualFrameRef.current,
-          { opacity: 0, scale: 0.96, y: 20 },
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: visualFrameRef.current,
-              start: 'top 82%',
-            },
-          }
-        );
-      }
-    }, sectionRef);
-
-    return () => ctx.revert();
-  }, []);
 
   const currentChapter = STORY_CHAPTERS[activeChapterIdx] ?? STORY_CHAPTERS[0];
 
   return (
     <section
-      ref={sectionRef}
       className="py-20 bg-brand-navy text-white relative overflow-hidden"
     >
       <div className="absolute inset-0 islamic-pattern opacity-15 pointer-events-none" />
       <div className="container-custom relative z-10">
         {/* Section Header */}
-        <div
-          ref={headerRef}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12"
         >
           <div className="max-w-2xl">
@@ -149,21 +79,25 @@ export function ArchitecturalStorytellingSection() {
             Explore how every signature development in our portfolio combines structural resilience,
             authentic Afghan spatial privacy, and self-sustaining infrastructure.
           </p>
-        </div>
+        </motion.div>
 
         {/* 2-Column Interactive Storytelling Split */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Left Column: 3 Interactive Architectural Chapters */}
-          <div ref={cardsContainerRef} className="lg:col-span-6 flex flex-col justify-between gap-4">
+          <div className="lg:col-span-6 flex flex-col justify-between gap-4">
             {STORY_CHAPTERS.map((chapter, index) => {
               const Icon = chapter.icon;
               const isActive = index === activeChapterIdx;
 
               return (
-                <button
+                <motion.button
                   key={chapter.id}
                   type="button"
                   data-story-chapter
+                  initial={{ opacity: 0, x: -24 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.65, delay: index * 0.14, ease: [0.16, 1, 0.3, 1] }}
                   onClick={() => setActiveChapterIdx(index)}
                   onMouseEnter={() => setActiveChapterIdx(index)}
                   className={`text-left w-full rounded-2xl p-6 transition-all duration-300 cursor-pointer border ${
@@ -202,14 +136,17 @@ export function ArchitecturalStorytellingSection() {
                   <p className="text-sm text-white/70 leading-relaxed pl-12">
                     {chapter.description}
                   </p>
-                </button>
+                </motion.button>
               );
             })}
           </div>
 
           {/* Right Column: Interactive Architectural Layer Viewport */}
-          <div
-            ref={visualFrameRef}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            whileInView={{ opacity: 1, scale: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-6 relative rounded-2xl overflow-hidden border border-white/15 bg-brand-navy-deep min-h-[420px] flex flex-col justify-between"
           >
             <AnimatePresence mode="wait">
@@ -271,7 +208,7 @@ export function ArchitecturalStorytellingSection() {
                 <ArrowRight size={14} />
               </Link>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

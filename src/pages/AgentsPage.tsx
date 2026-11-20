@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import React from 'react';
+import { motion } from 'motion/react';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { SeoHead } from '../components/seo/SeoHead';
@@ -9,21 +9,6 @@ import { useTranslation } from 'react-i18next';
 
 export default function AgentsPage() {
   const { t } = useTranslation();
-  const headerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        headerRef.current,
-        { opacity: 0, y: 14 },
-        { opacity: 1, y: 0, duration: 0.55, ease: 'power2.out' }
-      );
-    }, headerRef);
-    return () => ctx.revert();
-  }, []);
 
   return (
     <main className="min-h-screen bg-brand-ivory flex flex-col">
@@ -32,7 +17,12 @@ export default function AgentsPage() {
 
       <header className="relative bg-brand-navy pt-36 pb-16 overflow-hidden">
         <div className="absolute inset-0 islamic-pattern opacity-20" />
-        <div ref={headerRef} className="container-custom relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
+          className="container-custom relative z-10"
+        >
           <Breadcrumbs
             variant="light"
             items={[
@@ -51,7 +41,7 @@ export default function AgentsPage() {
             Multilingual specialists in Dari, Pashto, and English guiding buyers, diaspora families,
             and institutional investors across Kabul’s prime districts.
           </p>
-        </div>
+        </motion.div>
       </header>
 
       <div className="flex-grow">

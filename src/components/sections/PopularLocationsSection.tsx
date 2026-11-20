@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { MapPin, ArrowUpRight } from 'lucide-react';
 import { SectionHeader } from '../ui/SectionHeader';
 const wazirAkbarKhanAttachedImg = '/assets/aistudio/image_2026-11-07_145116957_784694df.png';

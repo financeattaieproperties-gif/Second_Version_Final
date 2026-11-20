@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
+import { MotionCarousel } from './MotionCarousel';
 import {
   MapPin,
   Bed,
@@ -84,7 +83,7 @@ export const PropertyCard = ({
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
       >
-        {/* Image / Swiper Photo Carousel */}
+        {/* Image / MotionCarousel Photo Slider */}
         <motion.div
           className="relative aspect-[4/3] w-full overflow-hidden bg-brand-navy"
           whileHover="hovered"
@@ -95,25 +94,22 @@ export const PropertyCard = ({
               onClick={(e) => {
                 // Allow clicking pagination/arrows without navigating away
                 const target = e.target as HTMLElement;
-                if (
-                  target.closest('.swiper-button-prev') ||
-                  target.closest('.swiper-button-next') ||
-                  target.closest('.swiper-pagination')
-                ) {
+                if (target.closest('button')) {
                   e.preventDefault();
                   e.stopPropagation();
                 }
               }}
             >
-              <Swiper
-                modules={[Navigation, Pagination]}
-                navigation
-                pagination={{ clickable: true, dynamicBullets: true }}
-                loop={photoList.length > 2}
-                className="w-full h-full property-card-swiper"
+              <MotionCarousel
+                gap={0}
+                slidesPerView={{ base: 1 }}
+                autoplayDelay={0}
+                showNavigation
+                showPagination
+                className="w-full h-full [&>div:last-child]:absolute [&>div:last-child]:bottom-2.5 [&>div:last-child]:left-1/2 [&>div:last-child]:-translate-x-1/2 [&>div:last-child]:mt-0 [&>div:last-child]:z-20"
               >
                 {photoList.map((src, idx) => (
-                  <SwiperSlide key={`${id}-photo-${idx}`}>
+                  <div key={`${id}-photo-${idx}`} className="w-full h-full aspect-[4/3]">
                     <img
                       src={src}
                       alt={`${title} — photo ${idx + 1}`}
@@ -122,9 +118,9 @@ export const PropertyCard = ({
                       decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
-                  </SwiperSlide>
+                  </div>
                 ))}
-              </Swiper>
+              </MotionCarousel>
               <span className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/65 backdrop-blur-sm border border-white/20 text-[11px] font-bold text-white pointer-events-none tabular-nums shadow-sm">
                 <Images size={13} strokeWidth={2.2} />
                 {photoList.length}

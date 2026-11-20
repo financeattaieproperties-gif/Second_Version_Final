@@ -1,8 +1,6 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
@@ -48,7 +46,7 @@ const AttaieGoogleMap = lazy(() =>
   import('../components/map/AttaieGoogleMap').then((m) => ({ default: m.AttaieGoogleMap }))
 );
 
-gsap.registerPlugin(ScrollTrigger);
+// Detail panels use motion/react entrance animations
 
 const FALLBACK_DETAIL_PROPERTY: Property = {
   id: 101,
@@ -106,31 +104,7 @@ export default function PropertyDetailPage() {
       .finally(() => setLoading(false));
   }, [propertyId]);
 
-  // GSAP Image & Detail Panel Reveal
-  useEffect(() => {
-    if (!property || !detailPanelsRef.current) return;
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-
-    const ctx = gsap.context(() => {
-      const blocks = detailPanelsRef.current?.querySelectorAll('[data-gsap-detail]');
-      if (blocks && blocks.length > 0) {
-        gsap.fromTo(
-          blocks,
-          { opacity: 0, y: 20 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.6,
-            stagger: 0.1,
-            ease: 'power3.out',
-          }
-        );
-      }
-    }, detailPanelsRef);
-
-    return () => ctx.revert();
-  }, [property]);
+  // Detail panels reveal handled via motion/react
 
   const allImages: string[] = property
     ? property.gallery_images && property.gallery_images.length > 0

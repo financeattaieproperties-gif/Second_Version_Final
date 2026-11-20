@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { MessageCircle, Mail, MapPin, Phone, ExternalLink } from 'lucide-react';
 
 export const FacebookIcon: React.FC<{ size?: number; className?: string }> = ({

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { BadgeDollarSign, ShieldCheck, Users, Landmark, Clock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
