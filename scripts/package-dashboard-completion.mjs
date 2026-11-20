@@ -9,7 +9,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const isProduction = process.argv.includes('--production');
+const isProduction = !process.argv.includes('--staging');
 const targetOrigin = isProduction ? 'https://attaieproperties.com' : 'https://website.attaieproperties.com';
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
 const posArgs = process.argv.slice(2).filter(a => !a.startsWith('--'));
