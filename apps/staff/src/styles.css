@@ -707,33 +707,33 @@ td small {
 .badge.due,
 .badge.active,
 .badge.in_progress {
-  background: #edf4fc;
-  color: #487ba8;
+  background: #E6F2FA;
+  color: #005E9B;
 }
 .badge.overtime,
 .badge.overdue,
 .badge.urgent,
 .badge.lost {
-  background: #fceff0;
-  color: #b85762;
+  background: #FEF2F2;
+  color: #B91C1C;
 }
 .badge.upcoming,
 .badge.normal,
 .badge.low,
 .badge.todo {
-  background: #f3f4f7;
-  color: #8c94a2;
+  background: #F1F5F9;
+  color: #475569;
 }
 .badge.completed,
 .badge.closed {
-  background: #eaf6ef;
-  color: #4b8d68;
+  background: #E8F7EE;
+  color: #14A850;
 }
 .badge.completed_late,
 .badge.high,
 .badge.draft {
-  background: #faf3e6;
-  color: #ab873e;
+  background: #F1F5F9;
+  color: #818285;
 }
 .muted {
   color: #9a9faa;

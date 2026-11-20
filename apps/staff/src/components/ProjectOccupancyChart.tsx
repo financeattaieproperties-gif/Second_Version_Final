@@ -44,9 +44,9 @@ interface CustomTooltipProps {
 }
 
 const COLORS = {
-  sold: '#0F172A',
-  available: '#10B981',
-  reserved: '#F59E0B',
+  sold: '#0072BC',
+  available: '#14A850',
+  reserved: '#818285',
 };
 
 const isApartmentUnit = (u: InventoryApartment): boolean => !u.kind || u.kind === 'apartment';
@@ -337,7 +337,7 @@ export function ProjectOccupancyChart({ projects, language = 'en' }: ProjectOccu
                     type="number"
                     domain={[0, 100]}
                     tickFormatter={(v) => `${v}%`}
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 11, fill: '#818285' }}
                     axisLine={{ stroke: '#E2E8F0' }}
                     tickLine={false}
                   />
@@ -345,7 +345,7 @@ export function ProjectOccupancyChart({ projects, language = 'en' }: ProjectOccu
                     type="category"
                     dataKey="name"
                     width={92}
-                    tick={{ fontSize: 12, fill: '#0F172A', fontWeight: 600 }}
+                    tick={{ fontSize: 12, fill: '#1E293B', fontWeight: 600 }}
                     axisLine={false}
                     tickLine={false}
                   />

@@ -59,9 +59,8 @@ interface ConversionTooltipProps {
 }
 
 function getBarColor(rate: number): string {
-  if (rate >= 50) return "#059669";
-  if (rate > 0) return "#0145F2";
-  return "#CBD5E1";
+  if (rate > 0) return "#14A850";
+  return "#818285";
 }
 
 function ConversionTooltip({ active, payload, isFa }: ConversionTooltipProps) {
@@ -70,7 +69,16 @@ function ConversionTooltip({ active, payload, isFa }: ConversionTooltipProps) {
   if (!row) return null;
 
   return (
-    <div className="conversion-tooltip" dir={isFa ? "rtl" : "ltr"}>
+    <div
+      className="conversion-tooltip"
+      dir={isFa ? "rtl" : "ltr"}
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        color: "#1E293B",
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
       <div className="conversion-tooltip-title">{row.agentName}</div>
       <div className="conversion-tooltip-row">
         <span>
@@ -144,21 +152,26 @@ export function AgentConversionChart({
       className="panel conversion-card"
       data-testid="sales-leader-conversion-chart"
       dir={isFa ? "rtl" : "ltr"}
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        fontVariantNumeric: "tabular-nums",
+      }}
     >
       <div className="conversion-header">
         <div className="conversion-title-group">
-          <div className="eyebrow">
+          <div className="eyebrow" style={{ color: "#818285" }}>
             <TrendingUp size={12} aria-hidden="true" />
             <span>
               {isFa ? "عملکرد تیم فروش" : "SALES TEAM PERFORMANCE"}
             </span>
           </div>
-          <h2 className="conversion-title">
+          <h2 className="conversion-title" style={{ color: "#1E293B" }}>
             {isFa
               ? "نرخ تبدیل سرنخ به معامله بر اساس کارمند"
               : "Agent Lead-to-Deal Conversion"}
           </h2>
-          <p className="conversion-subtitle">
+          <p className="conversion-subtitle" style={{ color: "#818285" }}>
             {isFa
               ? "نسبت درصدی تبدیل سرنخ‌های فعال به معاملات بسته‌شده برای هر کارمند فروش"
               : "Conversion rate of active leads into closed deals per sales agent"}
@@ -167,34 +180,37 @@ export function AgentConversionChart({
 
         <div className="conversion-kpis">
           <div className="conversion-kpi">
-            <span className="conversion-kpi-label">
+            <span className="conversion-kpi-label" style={{ color: "#818285" }}>
               {isFa ? "نرخ تبدیل تیم" : "Team Conversion"}
             </span>
             <strong
               className="conversion-kpi-value"
               data-testid="conversion-team-rate"
+              style={{ color: "#14A850", fontVariantNumeric: "tabular-nums" }}
             >
               {summary.totals.teamConversionRate}%
             </strong>
           </div>
           <div className="conversion-kpi">
-            <span className="conversion-kpi-label">
+            <span className="conversion-kpi-label" style={{ color: "#818285" }}>
               {isFa ? "سرنخ‌های فعال" : "Active Leads"}
             </span>
             <strong
               className="conversion-kpi-value"
               data-testid="conversion-total-active"
+              style={{ color: "#818285", fontVariantNumeric: "tabular-nums" }}
             >
               {summary.totals.active}
             </strong>
           </div>
           <div className="conversion-kpi">
-            <span className="conversion-kpi-label">
+            <span className="conversion-kpi-label" style={{ color: "#818285" }}>
               {isFa ? "معاملات بسته‌شده" : "Closed Deals"}
             </span>
             <strong
               className="conversion-kpi-value"
               data-testid="conversion-total-closed"
+              style={{ color: "#14A850", fontVariantNumeric: "tabular-nums" }}
             >
               {summary.totals.closed}
             </strong>
@@ -291,7 +307,7 @@ export function AgentConversionChart({
                 />
                 <XAxis
                   dataKey="shortName"
-                  tick={{ fontSize: 12, fill: "#0F172A", fontWeight: 600 }}
+                  tick={{ fontSize: 12, fill: "#1E293B", fontWeight: 600 }}
                   axisLine={{ stroke: "#E2E8F0" }}
                   tickLine={false}
                   interval={0}
@@ -299,7 +315,7 @@ export function AgentConversionChart({
                 <YAxis
                   domain={[0, 100]}
                   tickFormatter={(v) => `${v}%`}
-                  tick={{ fontSize: 11, fill: "#64748B" }}
+                  tick={{ fontSize: 11, fill: "#818285" }}
                   axisLine={false}
                   tickLine={false}
                   width={44}
@@ -343,12 +359,22 @@ export function AgentConversionChart({
                   />
                   <span>{row.agentName}</span>
                 </div>
-                <div className="conversion-agent-metrics">
+                <div
+                  className="conversion-agent-metrics"
+                  style={{ fontVariantNumeric: "tabular-nums" }}
+                >
                   <span>
-                    {row.closedCount} {isFa ? "بسته‌شده" : "closed"} ·{" "}
-                    {row.activeCount} {isFa ? "فعال" : "active"}
+                    <span style={{ color: "#14A850" }}>
+                      {row.closedCount} {isFa ? "بسته‌شده" : "closed"}
+                    </span>{" "}
+                    ·{" "}
+                    <span style={{ color: "#818285" }}>
+                      {row.activeCount} {isFa ? "فعال" : "active"}
+                    </span>
                   </span>
-                  <strong>{row.conversionRate}%</strong>
+                  <strong style={{ color: "#1E293B" }}>
+                    {row.conversionRate}%
+                  </strong>
                 </div>
               </div>
             ))}

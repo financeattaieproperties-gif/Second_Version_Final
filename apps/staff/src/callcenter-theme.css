@@ -1,17 +1,17 @@
 /* Option 2 Alabaster Architectural Split-Rail Palette across all Staff Dashboards (Call Center, Management, Sales, HR, Finance, Marketing, Engineering) */
 html[data-staff-role] {
-  --primary: #0F172A;
-  --accent: #334155;
-  --secondary: #F1F5F9;
+  --primary: #0072BC;
+  --accent: #005E9B;
+  --secondary: #E6F2FA;
   --surface: #FFFFFF;
   --rail-bg: #FBFBFD;
-  --background: #F7F8FA;
-  --navy: #0F172A;
-  --gold: #0F172A;
-  --gold-light: #F1F5F9;
-  --muted: #64748B;
+  --background: #F8FAFC;
+  --navy: #1E293B;
+  --gold: #0072BC;
+  --gold-light: #E6F2FA;
+  --muted: #818285;
   --line: #E2E8F0;
-  color: var(--primary);
+  color: var(--navy);
   background: var(--background);
 }
 html[data-staff-role="callcenter"],
@@ -69,8 +69,8 @@ html[data-staff-role] .button:not(.secondary) {
   color: #FFFFFF;
 }
 html[data-staff-role] .button:not(.secondary):hover {
-  background: #1E293B;
-  border-color: #1E293B;
+  background: #005E9B;
+  border-color: #005E9B;
 }
 html[data-staff-role] :is(button, a, input, textarea, select):focus-visible {
   outline-color: var(--primary);
@@ -84,7 +84,7 @@ html[data-staff-role] :is(.brand > span, .workspace-tag small, .nav-caption, .na
   color: var(--muted);
 }
 html[data-staff-role] :is(.eyebrow, .breadcrumbs strong, td strong, .task-mini strong, .text-button, .preview-link, .customer-footer strong, .task-row-title strong, .field > label, .stat-number, .panel-heading h2, .page-heading h1) {
-  color: var(--primary);
+  color: var(--navy);
 }
 html[data-staff-role] :is(td small, .serial) {
   color: var(--muted) !important;

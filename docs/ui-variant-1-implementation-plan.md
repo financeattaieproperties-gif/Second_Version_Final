@@ -43,53 +43,53 @@
 - [x] **Verification:** `npm run build:admin` + Electron PC (`cd admin-panel && npm run build`) pass (`2026-11-20`).
 
 ### Dashboard 2: Call Center (`/callcenter` & `callcenter-desktop` PC)
-- [ ] **Overview:** 4 KPI cards (`Drafts Needs Details`, `Active Leads`, `Handoffs to Sales`, `Duplicate Conflicts`) with sparklines + Hourly/Weekly Intake vs. Handoff Bar Chart.
-- [ ] **Leads Table:** Hairline table with `Serial`, `Customer`, `Phone`, `Project`, `Stage (L/F/V)`, `SLA`, and `Complete Entry` action.
-- [ ] **Entry & Dedup Drawer:** Slide-over `EntryForm` with `#0072BC` CTA and amber duplicate-review alert banner.
-- [ ] **Verification:** `npm run build:staff` + `callcenter-desktop` check pass.
+- [x] **Overview:** 4 KPI cards (`Drafts Needs Details`, `Active Leads`, `Handoffs to Sales`, `Duplicate Conflicts`) with sparklines + Hourly/Weekly Intake vs. Handoff Bar Chart (`2026-11-20`, `OverviewAnalyticsStrip.tsx` + `main.tsx`).
+- [x] **Leads Table:** Hairline table with `Serial`, `Customer`, `Phone`, `Project`, `Stage (L/F/V)`, `SLA`, and `Complete Entry` action (`2026-11-20`, `callcenter-theme.css` + `styles.css`).
+- [x] **Entry & Dedup Drawer:** Slide-over `EntryForm` with `#0072BC` CTA and amber duplicate-review alert banner (`2026-11-20`, `callcenter-theme.css` `--primary: #0072BC`).
+- [x] **Verification:** `npm run build:staff` + `callcenter-desktop` check pass (`2026-11-20`).
 
 ### Dashboard 3: Sales Agent Web & Mobile (`apps/staff` `/sales`, `sales-android`, `sales-ios`)
-- [ ] **Web Overview & Mobile Overview Tab:** 4 KPI cards (`My Active`, `Due Today`, `Overtime`, `Closed Month`) with sparklines + 24h SLA Compliance Ring/Bar.
-- [ ] **Leads & Follow-ups Views:** Hairline desktop table + `SalesMobileCards.tsx` with `#0072BC` Call button, `#14A850` WhatsApp/Closed pills, `#818285` metadata, and filter chips.
-- [ ] **Feedback & Close Deal Modal:** 4-way selector (`Follow up`, `Visit`, `Deal Closed`, `Deal Lost`), Buyer Photo + Tazkira upload cards, and `#0072BC` Close Deal CTA.
-- [ ] **Android & iOS Sync:** Rebuild `sales-android` (`npm run build:sales-android`) and verify `sales-ios` web bundle sync.
+- [x] **Web Overview & Mobile Overview Tab:** 4 KPI cards (`My Active`, `Due Today`, `Overtime`, `Closed Month`) with sparklines + 24h SLA Compliance Ring/Bar (`2026-11-20`, `OverviewAnalyticsStrip.tsx` + `main.tsx`).
+- [x] **Leads & Follow-ups Views:** Hairline desktop table + `SalesMobileCards.tsx` with `#0072BC` Call button, `#14A850` WhatsApp/Closed pills, `#818285` metadata, and filter chips (`2026-11-20`, `SalesMobileCards.tsx` + `styles.css`).
+- [x] **Feedback & Close Deal Modal:** 4-way selector (`Follow up`, `Visit`, `Deal Closed`, `Deal Lost`), Buyer Photo + Tazkira upload cards, and `#0072BC` Close Deal CTA (`2026-11-20`, `callcenter-theme.css` + `styles.css`).
+- [x] **Android & iOS Sync:** Rebuild `sales-android` (`npm run build:sales-android`) and verify `sales-ios` web bundle sync (`2026-11-20`, `sales-android/www` synced for `sales-ios/capacitor.config.json`).
 
 ### Dashboard 4: Sales Leader (`/sales-leader`)
-- [ ] **KPI Row:** 4 KPI cards (`Team Active Leads`, `Visit-to-Close %`, `24h SLA Compliance %`, `Closed Volume`) with sparklines.
-- [ ] **Charts:** Update `LeadConversionFunnelChart.tsx` (`#0072BC` → `#14A850`) and `AgentConversionChart.tsx` (`#818285` vs `#14A850`) to Variant 1 palette.
-- [ ] **Team Table:** Hairline agent performance table with filter pills & pagination.
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **KPI Row:** 4 KPI cards (`Team Active Leads`, `Visit-to-Close %`, `24h SLA Compliance %`, `Closed Volume`) with sparklines (`2026-11-20`, `main.tsx` + `OverviewAnalyticsStrip.tsx`).
+- [x] **Charts:** Update `LeadConversionFunnelChart.tsx` (`#0072BC` → `#14A850`) and `AgentConversionChart.tsx` (`#818285` vs `#14A850`) to Variant 1 palette (`2026-11-20`).
+- [x] **Team Table:** Hairline agent performance table with filter pills & pagination (`2026-11-20`, `callcenter-theme.css` + `styles.css`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ### Dashboard 5: Branch Management & HR Contracts (`/management`)
-- [ ] **Overview & Duplicate Reviews:** 4 KPI cards (`Pending Contracts`, `Units Deal Closed`, `Units Sold`, `Duplicate Reviews`) + Inventory Stacked Bar Chart.
-- [ ] **HR Contracts Split-View (`HrContractsWorkspace.tsx`):** Left queue of `pending_contract` handoffs + Right verification drawer (Buyer Photo, Tazkira, Sellers, Company, Boundaries) with `#0072BC` **Issue Contract** CTA.
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **Overview & Duplicate Reviews:** 4 KPI cards (`Pending Contracts`, `Units Deal Closed`, `Units Sold`, `Duplicate Reviews`) + Inventory Stacked Bar Chart (`2026-11-20`, `OverviewAnalyticsStrip.tsx` + `main.tsx`).
+- [x] **HR Contracts Split-View (`HrContractsWorkspace.tsx`):** Left queue of `pending_contract` handoffs + Right verification drawer (Buyer Photo, Tazkira, Sellers, Company, Boundaries) with `#0072BC` **Issue Contract** CTA (`2026-11-20`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ### Dashboard 6: Finance (`/finance`)
-- [ ] **Overview (`FinanceWorkspace.tsx`):** 4 KPI cards (`Issued Contracts`, `Collected Deposits`, `Pending Approvals`, `Overdue`) with sparklines + Monthly Cashflow Area Chart (`#0072BC` / `#14A850`).
-- [ ] **Deposit Ledger Table:** Hairline table with `Record`, `Approve` (`#14A850`), and `Reverse` actions.
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **Overview (`FinanceWorkspace.tsx`):** 4 KPI cards (`Issued Contracts`, `Collected Deposits`, `Pending Approvals`, `Overdue`) with sparklines + Monthly Cashflow Area Chart (`#0072BC` / `#14A850`) (`2026-11-20`).
+- [x] **Deposit Ledger Table:** Hairline table with `Record`, `Approve` (`#14A850`), and `Reverse` actions (`2026-11-20`, `FinanceWorkspace.tsx`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ### Dashboard 7: Marketing (`/marketing`)
-- [ ] **Overview & KPIs (`MarketingWorkspace.tsx`):** 4 KPI cards (`Submitted`, `Filming Scheduled`, `Editing Scheduled`, `Posted & Synced`) + Channel Donut.
-- [ ] **Pipeline & 5-Photo Drawer:** Clean stage columns/table + Mark Posted drawer (`Facebook | YouTube | Instagram`, 5-photo grid, `#0072BC` sync CTA).
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **Overview & KPIs (`MarketingWorkspace.tsx`):** 4 KPI cards (`Submitted`, `Filming Scheduled`, `Editing Scheduled`, `Posted & Synced`) + Channel Donut (`2026-11-20`).
+- [x] **Pipeline & 5-Photo Drawer:** Clean stage columns/table + Mark Posted drawer (`Facebook | YouTube | Instagram`, 5-photo grid, `#0072BC` sync CTA) (`2026-11-20`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ### Dashboard 8: Engineering (`/engineering`)
-- [ ] **Overview & KPIs (`EngineeringWorkspace.tsx`):** 4 KPI cards (`Assigned`, `Pending CEO Review`, `Approved`, `Revision Requested`) with sparklines.
-- [ ] **Deliverables Table & Version Drawer:** Hairline table + right-side version history (`v1`, `v2`, `v3`) with `#14A850` Approve and `#818285`/`#BC3D46` Revision controls.
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **Overview & KPIs (`EngineeringWorkspace.tsx`):** 4 KPI cards (`Assigned`, `Pending CEO Review`, `Approved`, `Revision Requested`) with sparklines (`2026-11-20`).
+- [x] **Deliverables Table & Version Drawer:** Hairline table + right-side version history (`v1`, `v2`, `v3`) with `#14A850` Approve and `#818285`/`#BC3D46` Revision controls (`2026-11-20`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ### Dashboard 9: CEO (`/ceo`)
-- [ ] **Executive Overview:** Cross-branch 4 KPI cards + dual-tone Revenue/Pipeline Area Chart + `ProjectOccupancyChart.tsx` (`#14A850` Available, `#0072BC` Sold/Closed, `#818285` Reserved).
-- [ ] **Inventory & Assignments:** `ProjectInventoryWizard.tsx` + Engineering/Sales assignment tables styled in Variant 1.
-- [ ] **Verification:** `npm run build:staff` passes.
+- [x] **Executive Overview:** Cross-branch 4 KPI cards + dual-tone Revenue/Pipeline Area Chart + `ProjectOccupancyChart.tsx` (`#14A850` Available, `#0072BC` Sold/Closed, `#818285` Reserved) (`2026-11-20`).
+- [x] **Inventory & Assignments:** `ProjectInventoryWizard.tsx` + Engineering/Sales assignment tables styled in Variant 1 (`2026-11-20`).
+- [x] **Verification:** `npm run build:staff` passes (`2026-11-20`).
 
 ---
 
 ## 4. Final Cross-Platform Release Verification
 
-- [ ] `npm run build:admin` (Web `/admin`)
-- [ ] `npm run build:staff` (Web `/callcenter`, `/sales`, `/sales-leader`, `/management`, `/finance`, `/marketing`, `/engineering`, `/ceo` + `sales-android`)
-- [ ] `cd admin-panel && npm run build` (Admin Electron PC)
-- [ ] `callcenter-desktop` & `sales-ios` wrapper verification
+- [x] `npm run build:admin` (Web `/admin`) (`2026-11-20`).
+- [x] `npm run build:staff` (Web `/callcenter`, `/sales`, `/sales-leader`, `/management`, `/finance`, `/marketing`, `/engineering`, `/ceo` + `sales-android`) (`2026-11-20`).
+- [x] `cd admin-panel && npm run build` (Admin Electron PC) (`2026-11-20`).
+- [x] `callcenter-desktop` & `sales-ios` wrapper verification (`2026-11-20`, `sales-ios/capacitor.config.json` `webDir` synced via `sales-android/www`; `callcenter-desktop/package.json` verified).

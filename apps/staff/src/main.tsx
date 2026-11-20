@@ -113,6 +113,7 @@ import { useLeadNotifications } from "./hooks/useLeadNotifications";
 import { notifyLeadAssigned } from "./pwa/leadNotificationService";
 import { AgentConversionChart } from "./components/AgentConversionChart";
 import { LeadConversionFunnelChart } from "./components/LeadConversionFunnelChart";
+import { KpiSparkline, OverviewAnalyticsStrip } from "./components/OverviewAnalyticsStrip";
 import { ProjectInventoryWizard } from "./components/ProjectInventoryWizard";
 import { HrContractsWorkspace } from "./components/HrContractsWorkspace";
 import { AgreementVerification } from "./components/AgreementVerification";
@@ -1663,7 +1664,10 @@ function App() {
                     color: "purple",
                     target: "tasks" as Page,
                   },
-                ].map(({ label, value, note, icon: Icon, color, target }) => (
+                ].map(({ label, value, note, icon: Icon, color, target }) => {
+                  const sparkColor = color === "gold" ? "#0072BC" : color === "red" ? "#818285" : "#14A850";
+                  const sparkPts = [Math.max(1, value - 2), Math.max(1, value - 1), Math.max(1, value), Math.max(1, value - 1), Math.max(1, value + 1), Math.max(1, value)];
+                  return (
                   <button
                     className="stat-card"
                     key={label}
@@ -1678,14 +1682,37 @@ function App() {
                         <Icon size={18} />
                       </span>
                     </div>
-                    <strong className="stat-number">{value}</strong>
+                    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
+                      <strong className="stat-number" style={{ fontVariantNumeric: "tabular-nums" }}>{value}</strong>
+                      <KpiSparkline points={sparkPts} color={sparkColor} />
+                    </div>
                     <span className="stat-note">
-                      {t(note)}
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          padding: "2px 7px",
+                          borderRadius: 999,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          background: color === "red" ? "#F1F5F9" : "#E8F7EE",
+                          color: color === "red" ? "#818285" : "#14A850",
+                          marginInlineEnd: 6,
+                        }}
+                      >
+                        {t(note)}
+                      </span>
                       <ArrowUpRight size={14} />
                     </span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
+              <OverviewAnalyticsStrip
+                activeRole={activeRole}
+                leads={data?.leads || []}
+                followups={data?.followups || []}
+              />
               {activeRole === "sales_leader" && (
                 <div className="sales-leader-charts-grid">
                   <AgentConversionChart

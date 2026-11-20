@@ -65,6 +65,28 @@ export function HrContractsWorkspace({
   const [selectedContract, setSelectedContract] = useState<HrContract | null>(
     contracts[0] || null
   );
+  const [selectedHandoffId, setSelectedHandoffId] = useState<number | null>(
+    closedDeals[0]?.id ?? null
+  );
+
+  useEffect(() => {
+    if (closedDeals.length === 0) {
+      setSelectedHandoffId(null);
+    } else if (!closedDeals.some((d) => d.id === selectedHandoffId)) {
+      setSelectedHandoffId(closedDeals[0].id);
+    }
+  }, [closedDeals, selectedHandoffId]);
+
+  const selectedHandoff =
+    closedDeals.find((d) => d.id === selectedHandoffId) || closedDeals[0] || null;
+  const handoffProject = selectedHandoff
+    ? projects.find((p) => p.id === (selectedHandoff.projectId || selectedHandoff.deal?.projectId))
+    : undefined;
+  const handoffApartment = handoffProject
+    ? handoffProject.apartments.find(
+        (a) => a.id === (selectedHandoff?.apartmentId || selectedHandoff?.deal?.apartmentId)
+      )
+    : undefined;
 
   // Wizard state
   const [projectId, setProjectId] = useState<number>(projects[0]?.id || 1);
@@ -168,13 +190,72 @@ export function HrContractsWorkspace({
     } finally { setBusy(false); }
   };
 
+  const verificationChecks = selectedHandoff
+    ? [
+        {
+          key: 'buyerPhoto',
+          label: t('Buyer Photo (3×4)', 'عکس خریدار (۳×۴)'),
+          verified: Boolean(selectedHandoff.deal?.buyerPhotoUrl),
+          detail: selectedHandoff.deal?.buyerPhotoUrl
+            ? t('Portrait attached from Sales handoff', 'عکس از بخش فروش ضمیمه شده است')
+            : t('Upload 3×4 portrait in Step 2', 'عکس ۳×۴ را در مرحله دوم بارگذاری کنید'),
+          previewUrl: selectedHandoff.deal?.buyerPhotoUrl,
+        },
+        {
+          key: 'tazkira',
+          label: t('Tazkira', 'تذکره'),
+          verified: Boolean(selectedHandoff.deal?.tazkiraPhotoUrl),
+          detail: selectedHandoff.deal?.tazkiraPhotoUrl
+            ? t('Tazkira document attached', 'سند تذکره ضمیمه شده است')
+            : t('Tazkira scan pending attachment', 'اسکن تذکره در انتظار ضمیمه'),
+          previewUrl: selectedHandoff.deal?.tazkiraPhotoUrl,
+        },
+        {
+          key: 'sellers',
+          label: t('Sellers', 'فروشندگان'),
+          verified: Boolean(handoffProject?.sellers?.length),
+          detail: handoffProject?.sellers?.length
+            ? handoffProject.sellers.map((s) => s.name).join(', ')
+            : t('Save project sellers in preparation', 'فروشندگان پروژه را در آماده‌سازی ثبت کنید'),
+        },
+        {
+          key: 'company',
+          label: t('Company', 'شرکت ساختمانی'),
+          verified: Boolean(handoffProject?.constructionCompany?.representativeName),
+          detail: handoffProject?.constructionCompany?.representativeName
+            ? `${handoffProject.constructionCompany.companyName} (${handoffProject.constructionCompany.representativeName})`
+            : t('Save construction representative', 'نماینده شرکت ساختمانی را ثبت کنید'),
+        },
+        {
+          key: 'boundaries',
+          label: t('Boundaries', 'حدود اربعه'),
+          verified: Boolean(
+            handoffApartment?.boundaryNorth &&
+              handoffApartment?.boundarySouth &&
+              handoffApartment?.boundaryEast &&
+              handoffApartment?.boundaryWest
+          ),
+          detail: handoffApartment
+            ? `N: ${handoffApartment.boundaryNorth || '—'} · S: ${handoffApartment.boundarySouth || '—'} · E: ${handoffApartment.boundaryEast || '—'} · W: ${handoffApartment.boundaryWest || '—'}`
+            : t('Unit boundaries pending selection', 'حدود اربعه واحد در انتظار انتخاب'),
+        },
+      ]
+    : [];
+
   return (
-    <section className="panel" data-testid="hr-contracts-workspace" dir={lang === 'fa' ? 'rtl' : 'ltr'}>
+    <section
+      className="panel"
+      data-testid="hr-contracts-workspace"
+      dir={lang === 'fa' ? 'rtl' : 'ltr'}
+      style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10 }}
+    >
       {canIssue && onSavePreparation && <HrProjectPreparation projects={projects} onSave={onSavePreparation} onUpload={onUpload} onError={onError} onNotice={onNotice} lang={lang} />}
-      <div className="panel-heading">
+      <div className="panel-heading" style={{ borderBottom: '1px solid #E2E8F0', paddingBottom: 14, marginBottom: 16 }}>
         <div>
-          <p className="eyebrow">HR Department • Bilingual Pre-Sale Apartment Contracts</p>
-          <h2>{t('Deal agreements and installments','قرارداد معاملات و اقساط')}</h2>
+          <p className="eyebrow" style={{ color: '#818285', fontSize: 11, fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            HR Department • Bilingual Pre-Sale Apartment Contracts
+          </p>
+          <h2 style={{ color: '#1E293B', marginTop: 2 }}>{t('Deal agreements and installments','قرارداد معاملات و اقساط')}</h2>
         </div>
         {canIssue && (
           <div className="heading-actions">
@@ -182,6 +263,7 @@ export function HrContractsWorkspace({
               type="button"
               className="button"
               data-testid="open-hr-contract-wizard-btn"
+              style={{ background: '#0072BC', color: '#FFFFFF', border: '1px solid #0072BC', borderRadius: 8 }}
               onClick={() => {
                 setStep(1);
                 setDraftContract(null);
@@ -194,31 +276,176 @@ export function HrContractsWorkspace({
         )}
       </div>
 
-      {/* Pending Deal Closed Handoffs from Sales */}
+      {/* Dashboard 5: Pending Contract Handoffs Split-View (Left Queue + Right Verification Drawer) */}
       {closedDeals.length > 0 && (
         <div
-          className="integration-note"
-          style={{ marginTop: 12, marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}
+          data-testid="hr-handoffs-split-view"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+            gap: 16,
+            marginBottom: 18,
+            alignItems: 'start',
+          }}
         >
-          <div>
-            <strong>Pending Sales Deal Closed Handoffs ({closedDeals.length})</strong>
-            <p style={{ margin: '2px 0 0', fontSize: 13 }}>
-              {closedDeals
-                .map(
-                  (d) =>
-                    `${d.deal?.dealSerial || d.serial} • ${d.customerName} (${d.projectName || ''} ${d.apartmentNumber || ''})`
-                )
-                .join(' | ')}
-            </p>
+          {/* Left Queue: pending_contract handoffs */}
+          <div
+            style={{
+              background: '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              borderRadius: 10,
+              padding: 14,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #E2E8F0' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818285' }}>
+                {t('Pending Contract Queue', 'صف قراردادهای در انتظار')}
+              </span>
+              <span
+                style={{
+                  background: '#F1F5F9',
+                  color: '#818285',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {closedDeals.length} pending_contract
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {closedDeals.map((d) => {
+                const isSelected = selectedHandoff?.id === d.id;
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setSelectedHandoffId(d.id)}
+                    style={{
+                      textAlign: lang === 'fa' ? 'right' : 'left',
+                      width: '100%',
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      background: isSelected ? '#E6F2FA' : '#FFFFFF',
+                      border: isSelected ? '1px solid #0072BC' : '1px solid #E2E8F0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                      <strong style={{ color: '#1E293B', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
+                        {d.deal?.dealSerial || d.serial}
+                      </strong>
+                      <span
+                        style={{
+                          background: '#F1F5F9',
+                          color: '#818285',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          padding: '2px 7px',
+                          borderRadius: 999,
+                        }}
+                      >
+                        pending_contract
+                      </span>
+                    </div>
+                    <div style={{ color: '#1E293B', fontSize: 13, fontWeight: 500, marginTop: 3 }}>
+                      {d.customerName}
+                    </div>
+                    <div style={{ color: '#818285', fontSize: 12, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+                      {d.projectName || d.deal?.projectCode || '—'} {d.apartmentNumber || d.deal?.apartmentNumber || ''}
+                      {d.deal?.amount ? ` · ${d.deal.amount} ${d.deal.currency || 'USD'}` : ''}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          {canIssue && (
-            <button
-              type="button"
-              className="button secondary"
-              onClick={() => handleSelectDealHandoff(closedDeals[0])}
+
+          {/* Right Verification Drawer */}
+          {selectedHandoff && (
+            <div
+              data-testid="hr-verification-drawer"
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: 10,
+                padding: 16,
+              }}
             >
-              Load Deal into Contract Wizard
-            </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, paddingBottom: 12, borderBottom: '1px solid #E2E8F0', flexWrap: 'wrap' }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818285' }}>
+                    {t('Verification Drawer', 'بررسی مدارک قرارداد')}
+                  </span>
+                  <h3 style={{ margin: '2px 0 0', color: '#1E293B', fontSize: 15 }}>
+                    {selectedHandoff.customerName} — {selectedHandoff.deal?.dealSerial || selectedHandoff.serial}
+                  </h3>
+                  <small style={{ color: '#818285', fontSize: 12 }}>
+                    {selectedHandoff.phone} · {t('Sales Advisor', 'مشاور فروش')}: {selectedHandoff.deal?.salesAgent || '—'}
+                  </small>
+                </div>
+                {canIssue && (
+                  <button
+                    type="button"
+                    className="button"
+                    data-testid="drawer-issue-contract-btn"
+                    style={{ background: '#0072BC', color: '#FFFFFF', border: '1px solid #0072BC', borderRadius: 8, fontWeight: 600 }}
+                    onClick={() => handleSelectDealHandoff(selectedHandoff)}
+                  >
+                    {t('Issue Contract', 'صدور قرارداد')}
+                  </button>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                {verificationChecks.map((item) => (
+                  <div
+                    key={item.key}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '8px 10px',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: 8,
+                      background: '#FFFFFF',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      {item.previewUrl && (
+                        <img
+                          src={item.previewUrl}
+                          alt={item.label}
+                          style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover', border: '1px solid #E2E8F0' }}
+                        />
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B' }}>{item.label}</div>
+                        <div style={{ fontSize: 12, color: '#818285', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {item.detail}
+                        </div>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        flexShrink: 0,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        background: item.verified ? '#E8F7EE' : '#F1F5F9',
+                        color: item.verified ? '#14A850' : '#818285',
+                      }}
+                    >
+                      {item.verified ? t('Verified', 'تأیید شده') : t('Pending', 'در انتظار')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -226,7 +453,7 @@ export function HrContractsWorkspace({
       {showWizard && canIssue && (
         <div
           className="panel"
-          style={{ marginBottom: 18, borderStyle: 'dashed' }}
+          style={{ marginBottom: 18, background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 10 }}
           data-testid="hr-contract-wizard"
         >
           <div className="wizard-steps">
@@ -483,6 +710,7 @@ export function HrContractsWorkspace({
                   type="button"
                   className="button"
                   data-testid="issue-hr-contract-btn"
+                  style={{ background: '#0072BC', color: '#FFFFFF', border: '1px solid #0072BC', borderRadius: 8 }}
                   onClick={() => void handleIssue()}
                   disabled={busy || totalPct !== 100 || !selectedApartment}
                 >
@@ -496,43 +724,68 @@ export function HrContractsWorkspace({
       )}
 
       {/* Issued Contracts List */}
-      <div className="table-scroll">
-        <table>
+      <div
+        className="table-scroll"
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: 10,
+          overflowX: 'auto',
+        }}
+      >
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr>
-              <th>Contract Serial</th>
-              <th>Project & Apartment</th>
-              <th>Buyer(s)</th>
-              <th>Total Price</th>
-              <th>Installments</th>
-              <th>Status</th>
-              <th>Action</th>
+            <tr style={{ borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contract Serial</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Project & Apartment</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Buyer(s)</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Price</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Installments</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {contracts.map((c) => (
-              <tr key={c.id}>
-                <td>
-                  <strong>{c.contractSerial}</strong>
-                  <small>{c.gregorianDate} ({c.jalaliDate})</small>
+            {contracts.map((c) => {
+              const isIssuedOrAmended = c.status === 'issued' || c.status === 'amended';
+              const isCancelled = c.status === 'cancelled';
+              return (
+              <tr key={c.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
+                <td style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <strong style={{ color: '#1E293B' }}>{c.contractSerial}</strong>
+                  <small style={{ color: '#818285' }}>{c.gregorianDate} ({c.jalaliDate})</small>
                 </td>
                 <td>
-                  <strong>{c.projectName} — {c.apartmentNumber}</strong>
-                  <small>Floor {c.floor} • {c.areaSqm} m² • {c.direction}</small>
+                  <strong style={{ color: '#1E293B' }}>{c.projectName} — {c.apartmentNumber}</strong>
+                  <small style={{ color: '#818285' }}>Floor {c.floor} • {c.areaSqm} m² • {c.direction}</small>
                 </td>
                 <td>
-                  <strong>{c.buyers.map((b) => b.name).join(', ')}</strong>
-                  <small>Tazkira: {c.buyers.map((b) => b.tazkiraNumber).join(', ')}</small>
+                  <strong style={{ color: '#1E293B' }}>{c.buyers.map((b) => b.name).join(', ')}</strong>
+                  <small style={{ color: '#818285' }}>Tazkira: {c.buyers.map((b) => b.tazkiraNumber).join(', ')}</small>
                 </td>
-                <td>
-                  <strong>${c.totalPrice.toLocaleString()} {c.currency}</strong>
-                  <small>${c.pricePerSqm}/m²</small>
+                <td style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <strong style={{ color: '#1E293B' }}>${c.totalPrice.toLocaleString()} {c.currency}</strong>
+                  <small style={{ color: '#818285' }}>${c.pricePerSqm}/m²</small>
                 </td>
-                <td>
+                <td style={{ fontVariantNumeric: 'tabular-nums', color: '#1E293B' }}>
                   {c.installments.filter((i) => i.status === 'paid').length}/{c.installments.length} Paid
                 </td>
                 <td>
-                  <span className={`badge ${c.status}`}>{c.status} (v{c.amendmentVersion})</span>
+                  <span
+                    className={`badge ${c.status}`}
+                    style={{
+                      background: isIssuedOrAmended ? '#E8F7EE' : isCancelled ? '#FEF2F2' : '#F1F5F9',
+                      color: isIssuedOrAmended ? '#14A850' : isCancelled ? '#B91C1C' : '#818285',
+                      border: isCancelled ? '1px solid #FECACA' : '1px solid transparent',
+                      borderRadius: 999,
+                      padding: '2px 8px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    {c.status} (v{c.amendmentVersion})
+                  </span>
                 </td>
                 <td>
                   {canIssue && c.status === 'draft' && <button type="button" className="button" onClick={() => {
@@ -550,7 +803,8 @@ export function HrContractsWorkspace({
                   </button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

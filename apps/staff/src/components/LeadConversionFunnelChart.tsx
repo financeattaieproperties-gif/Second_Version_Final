@@ -48,9 +48,9 @@ export interface LeadConversionFunnelChartProps {
 }
 
 const FUNNEL_COLORS = {
-  closed: "#059669",
-  active: "#0145F2",
-  lost: "#DC2626",
+  closed: "#14A850",
+  active: "#0072BC",
+  lost: "#B91C1C",
 } as const;
 
 interface TooltipPayloadEntry {
@@ -69,7 +69,16 @@ function FunnelTooltip({ active, payload, isFa }: FunnelTooltipProps) {
   if (!row) return null;
 
   return (
-    <div className="funnel-tooltip" dir={isFa ? "rtl" : "ltr"}>
+    <div
+      className="funnel-tooltip"
+      dir={isFa ? "rtl" : "ltr"}
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        color: "#1E293B",
+        fontVariantNumeric: "tabular-nums",
+      }}
+    >
       <div className="funnel-tooltip-title">{row.agentName}</div>
       <div className="funnel-tooltip-row">
         <span>
@@ -140,20 +149,25 @@ export function LeadConversionFunnelChart({
       className="panel funnel-card"
       data-testid="lead-conversion-funnel-chart"
       dir={isFa ? "rtl" : "ltr"}
+      style={{
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E2E8F0",
+        fontVariantNumeric: "tabular-nums",
+      }}
     >
       <div className="funnel-header">
         <div className="funnel-title-group">
-          <div className="funnel-kicker">
+          <div className="funnel-kicker" style={{ color: "#818285" }}>
             <span>{isFa ? "۳۰ روز اخیر" : "Last 30 Days"}</span>
             <span aria-hidden="true">·</span>
             <span>
               {isFa ? "تفکیک وضعیت کارمندان" : "Agent Status Breakdown"}
             </span>
           </div>
-          <h2 className="funnel-title">
+          <h2 className="funnel-title" style={{ color: "#1E293B" }}>
             {isFa ? "قیف تبدیل سرنخ‌ها" : "Lead Conversion Funnel"}
           </h2>
-          <p className="funnel-subtitle">
+          <p className="funnel-subtitle" style={{ color: "#818285" }}>
             {isFa
               ? "مقایسه انباشته سرنخ‌های فعال، معاملات بسته‌شده و از دست‌رفته برای هر کارمند فروش"
               : "Stacked distribution of Active, Closed, and Lost leads per sales agent"}
@@ -162,55 +176,86 @@ export function LeadConversionFunnelChart({
 
         <div className="funnel-kpis">
           <div className="funnel-kpi">
-            <span className="funnel-kpi-label">
+            <span className="funnel-kpi-label" style={{ color: "#818285" }}>
               <i
                 className="funnel-swatch"
                 style={{ background: FUNNEL_COLORS.active }}
               />
               {isFa ? "فعال" : "Active"}
             </span>
-            <strong className="funnel-kpi-value" data-testid="funnel-total-active">
+            <strong
+              className="funnel-kpi-value"
+              data-testid="funnel-total-active"
+              style={{ color: "#0072BC", fontVariantNumeric: "tabular-nums" }}
+            >
               {summary.totals.active}
             </strong>
-            <small className="funnel-kpi-meta">{summary.totals.activePct}%</small>
+            <small
+              className="funnel-kpi-meta"
+              style={{ color: "#818285", fontVariantNumeric: "tabular-nums" }}
+            >
+              {summary.totals.activePct}%
+            </small>
           </div>
           <div className="funnel-kpi">
-            <span className="funnel-kpi-label">
+            <span className="funnel-kpi-label" style={{ color: "#818285" }}>
               <i
                 className="funnel-swatch"
                 style={{ background: FUNNEL_COLORS.closed }}
               />
               {isFa ? "بسته‌شده" : "Closed"}
             </span>
-            <strong className="funnel-kpi-value" data-testid="funnel-total-closed">
+            <strong
+              className="funnel-kpi-value"
+              data-testid="funnel-total-closed"
+              style={{ color: "#14A850", fontVariantNumeric: "tabular-nums" }}
+            >
               {summary.totals.closed}
             </strong>
-            <small className="funnel-kpi-meta">{summary.totals.closedPct}%</small>
+            <small
+              className="funnel-kpi-meta"
+              style={{ color: "#818285", fontVariantNumeric: "tabular-nums" }}
+            >
+              {summary.totals.closedPct}%
+            </small>
           </div>
           <div className="funnel-kpi">
-            <span className="funnel-kpi-label">
+            <span className="funnel-kpi-label" style={{ color: "#818285" }}>
               <i
                 className="funnel-swatch"
                 style={{ background: FUNNEL_COLORS.lost }}
               />
               {isFa ? "از دست‌رفته" : "Lost"}
             </span>
-            <strong className="funnel-kpi-value" data-testid="funnel-total-lost">
+            <strong
+              className="funnel-kpi-value"
+              data-testid="funnel-total-lost"
+              style={{ color: "#B91C1C", fontVariantNumeric: "tabular-nums" }}
+            >
               {summary.totals.lost}
             </strong>
-            <small className="funnel-kpi-meta">{summary.totals.lostPct}%</small>
+            <small
+              className="funnel-kpi-meta"
+              style={{ color: "#818285", fontVariantNumeric: "tabular-nums" }}
+            >
+              {summary.totals.lostPct}%
+            </small>
           </div>
           <div className="funnel-kpi">
-            <span className="funnel-kpi-label">
+            <span className="funnel-kpi-label" style={{ color: "#818285" }}>
               {isFa ? "مجموع قیف" : "30-Day Funnel"}
             </span>
             <strong
               className="funnel-kpi-value"
               data-testid="funnel-total-pipeline"
+              style={{ color: "#1E293B", fontVariantNumeric: "tabular-nums" }}
             >
               {summary.totals.pipelineTotal}
             </strong>
-            <small className="funnel-kpi-meta">
+            <small
+              className="funnel-kpi-meta"
+              style={{ color: "#818285", fontVariantNumeric: "tabular-nums" }}
+            >
               {summary.totals.teamConversionRate}%{" "}
               {isFa ? "تبدیل" : "conv."}
             </small>
@@ -274,14 +319,14 @@ export function LeadConversionFunnelChart({
                 />
                 <XAxis
                   dataKey="shortName"
-                  tick={{ fontSize: 12, fill: "#0F172A", fontWeight: 600 }}
+                  tick={{ fontSize: 12, fill: "#1E293B", fontWeight: 600 }}
                   axisLine={{ stroke: "#E2E8F0" }}
                   tickLine={false}
                   interval={0}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: 11, fill: "#64748B" }}
+                  tick={{ fontSize: 11, fill: "#818285" }}
                   axisLine={false}
                   tickLine={false}
                   width={36}

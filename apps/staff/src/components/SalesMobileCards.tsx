@@ -26,15 +26,45 @@ function initialsOf(name: string) {
 }
 
 const STATUS_DOT_COLOR: Record<string, string> = {
-  active: "#0F172A",
-  due: "#2563EB",
-  draft: "#D97706",
-  overtime: "#DC2626",
-  closed: "#059669",
-  completed: "#059669",
-  completed_late: "#D97706",
-  lost: "#DC2626",
-  upcoming: "#64748B",
+  active: "#0072BC",
+  due: "#0072BC",
+  draft: "#818285",
+  overtime: "#B91C1C",
+  closed: "#14A850",
+  completed: "#14A850",
+  completed_late: "#818285",
+  lost: "#B91C1C",
+  upcoming: "#818285",
+};
+
+const CARD_SURFACE_STYLE: React.CSSProperties = {
+  backgroundColor: "#FFFFFF",
+  border: "1px solid #E2E8F0",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const MUTED_META_STYLE: React.CSSProperties = {
+  color: "#818285",
+  fontVariantNumeric: "tabular-nums",
+};
+
+const CALL_BTN_STYLE: React.CSSProperties = {
+  backgroundColor: "#0072BC",
+  borderColor: "#0072BC",
+  color: "#FFFFFF",
+};
+
+const WHATSAPP_BTN_STYLE: React.CSSProperties = {
+  backgroundColor: "#E8F7EE",
+  borderColor: "#14A850",
+  color: "#14A850",
+};
+
+const CLOSED_PILL_STYLE: React.CSSProperties = {
+  backgroundColor: "#E8F7EE",
+  color: "#14A850",
+  padding: "2px 8px",
+  borderRadius: "9999px",
 };
 
 export function MobileLeadCardList({
@@ -54,12 +84,14 @@ export function MobileLeadCardList({
     <div className="mobile-card-feed" data-testid="mobile-leads-card-feed">
       {leads.map((lead) => {
         const contact = formatMobileContactLinks(lead.phone);
-        const dotColor = STATUS_DOT_COLOR[lead.status] || "#64748B";
+        const dotColor = STATUS_DOT_COLOR[lead.status] || "#818285";
         const isDraft = lead.status === "draft";
+        const isClosed = lead.status === "closed";
         return (
           <article
             key={lead.id}
             className="crm-mobile-card"
+            style={CARD_SURFACE_STYLE}
             data-testid={`mobile-lead-card-${lead.id}`}
           >
             <div className="crm-mobile-card-head">
@@ -68,15 +100,24 @@ export function MobileLeadCardList({
                   {initialsOf(lead.customerName || t("New inquiry"))}
                 </span>
                 <div className="crm-mobile-card-titles">
-                  <strong>{lead.customerName || t("New inquiry")}</strong>
-                  <div className="crm-mobile-card-meta">
-                    <span className="serial">{lead.serial}</span>
+                  <strong style={{ color: "#1E293B" }}>
+                    {lead.customerName || t("New inquiry")}
+                  </strong>
+                  <div className="crm-mobile-card-meta" style={MUTED_META_STYLE}>
+                    <span className="serial" style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {lead.serial}
+                    </span>
                     <span aria-hidden="true">·</span>
-                    <span dir="ltr">{contact.display}</span>
+                    <span dir="ltr" style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {contact.display}
+                    </span>
                   </div>
                 </div>
               </div>
-              <span className="crm-status-inline">
+              <span
+                className="crm-status-inline"
+                style={isClosed ? CLOSED_PILL_STYLE : { color: "#818285" }}
+              >
                 <span
                   className="crm-status-dot"
                   style={{ backgroundColor: dotColor }}
@@ -87,7 +128,7 @@ export function MobileLeadCardList({
             </div>
 
             {lead.projectName && (
-              <div className="crm-mobile-card-project">
+              <div className="crm-mobile-card-project" style={{ color: "#1E293B" }}>
                 {t("Project")}: <strong>{lead.projectName}</strong>{" "}
                 {lead.apartmentNumber || ""}
               </div>
@@ -97,8 +138,10 @@ export function MobileLeadCardList({
               {lead.requirements || t("No requirements recorded yet.")}
             </p>
 
-            <div className="crm-mobile-card-subrow">
-              <span>{format(lead.callAt)}</span>
+            <div className="crm-mobile-card-subrow" style={MUTED_META_STYLE}>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>
+                {format(lead.callAt)}
+              </span>
               <span aria-hidden="true">·</span>
               <span>
                 {t(
@@ -114,6 +157,7 @@ export function MobileLeadCardList({
                 <a
                   href={contact.telHref}
                   className="crm-action-btn"
+                  style={CALL_BTN_STYLE}
                   aria-label={`${t("Call")} ${lead.customerName || lead.phone}`}
                 >
                   <Phone size={15} />
@@ -126,6 +170,7 @@ export function MobileLeadCardList({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="crm-action-btn"
+                  style={WHATSAPP_BTN_STYLE}
                   aria-label={`WhatsApp ${lead.customerName || lead.phone}`}
                 >
                   <MessageCircle size={15} />
@@ -135,6 +180,11 @@ export function MobileLeadCardList({
               <button
                 type="button"
                 className={`crm-action-btn ${isDraft ? "primary" : ""}`}
+                style={
+                  isDraft
+                    ? CALL_BTN_STYLE
+                    : { borderColor: "#E2E8F0", color: "#1E293B" }
+                }
                 onClick={() =>
                   onSelectLead(lead, isDraft ? "entry" : "detail")
                 }
@@ -172,13 +222,15 @@ export function MobileFollowupCardList({
     <div className="mobile-card-feed" data-testid="mobile-followups-card-feed">
       {followups.map((item) => {
         const state = followupState(item, serverTime);
-        const dotColor = STATUS_DOT_COLOR[state] || "#64748B";
+        const dotColor = STATUS_DOT_COLOR[state] || "#818285";
         const contact = formatMobileContactLinks(item.phone);
         const isDone = Boolean(item.completedAt);
+        const isClosedState = state === "closed" || state === "completed";
         return (
           <article
             key={item.id}
             className="crm-mobile-card"
+            style={CARD_SURFACE_STYLE}
             data-testid={`mobile-followup-card-${item.id}`}
           >
             <div className="crm-mobile-card-head">
@@ -187,9 +239,11 @@ export function MobileFollowupCardList({
                   {initialsOf(item.customerName)}
                 </span>
                 <div className="crm-mobile-card-titles">
-                  <strong>{item.customerName}</strong>
-                  <div className="crm-mobile-card-meta">
-                    <span className="serial">{item.serial}</span>
+                  <strong style={{ color: "#1E293B" }}>{item.customerName}</strong>
+                  <div className="crm-mobile-card-meta" style={MUTED_META_STYLE}>
+                    <span className="serial" style={{ fontVariantNumeric: "tabular-nums" }}>
+                      {item.serial}
+                    </span>
                     {item.projectName && (
                       <>
                         <span aria-hidden="true">·</span>
@@ -199,7 +253,10 @@ export function MobileFollowupCardList({
                   </div>
                 </div>
               </div>
-              <span className="crm-status-inline">
+              <span
+                className="crm-status-inline"
+                style={isClosedState ? CLOSED_PILL_STYLE : { color: "#818285" }}
+              >
                 <span
                   className="crm-status-dot"
                   style={{ backgroundColor: dotColor }}
@@ -213,15 +270,18 @@ export function MobileFollowupCardList({
               <p className="crm-mobile-card-body">{item.requirements}</p>
             )}
 
-            <div className="crm-mobile-followup-times">
-              <span>
+            <div className="crm-mobile-followup-times" style={MUTED_META_STYLE}>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>
                 <CalendarClock size={13} />
-                {t("Scheduled")}: <strong>{format(item.scheduledAt)}</strong>
+                {t("Scheduled")}:{" "}
+                <strong style={{ color: "#1E293B" }}>{format(item.scheduledAt)}</strong>
               </span>
-              <span>
+              <span style={{ fontVariantNumeric: "tabular-nums" }}>
                 <Clock3 size={13} />
                 {t("Deadline")}:{" "}
-                <strong>{format(feedbackDeadline(item.scheduledAt))}</strong>
+                <strong style={{ color: "#1E293B" }}>
+                  {format(feedbackDeadline(item.scheduledAt))}
+                </strong>
               </span>
             </div>
 
@@ -230,6 +290,7 @@ export function MobileFollowupCardList({
                 <a
                   href={contact.telHref}
                   className="crm-action-btn"
+                  style={CALL_BTN_STYLE}
                   aria-label={`${t("Call")} ${item.customerName}`}
                 >
                   <PhoneCall size={15} />
@@ -239,6 +300,11 @@ export function MobileFollowupCardList({
               <button
                 type="button"
                 className={`crm-action-btn ${!isDone ? "primary" : ""}`}
+                style={
+                  !isDone
+                    ? CALL_BTN_STYLE
+                    : { borderColor: "#E2E8F0", color: "#1E293B" }
+                }
                 onClick={() =>
                   onSelectFollowup(item, isDone ? "detail" : "feedback")
                 }
