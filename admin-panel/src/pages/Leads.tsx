@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Agent, type Lead } from '../api';
+import { V1, V1Pagination, V1_STYLES, v1BadgeStyle, type V1Tone } from '../components/variant1';
 import { DateRangePicker, type DateRangeValue } from '../components/ui/DateRangePicker';
 import InquiryFollowupEditor, { inquiryLabels, inquiryTime } from '../components/InquiryFollowupEditor';
 import {
@@ -177,15 +178,15 @@ const S = {
     gap: '1rem',
     marginBottom: '1.25rem',
   } as const,
-  title: { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#0F172A' } as const,
-  subtitle: { fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' } as const,
+  title: { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: V1.ink } as const,
+  subtitle: { fontSize: '0.85rem', color: V1.slate, marginTop: '0.2rem' } as const,
   actionsGroup: { display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' as const } as const,
   exportCsvBtn: {
     padding: '0.5rem 0.95rem',
     borderRadius: 6,
-    border: '1px solid #E2E8F0',
-    background: '#FFFFFF',
-    color: '#0F172A',
+    border: `1px solid ${V1.border}`,
+    background: V1.surface,
+    color: V1.ink,
     fontWeight: 600,
     fontSize: '0.8rem',
     cursor: 'pointer',
@@ -197,7 +198,7 @@ const S = {
     padding: '0.5rem 0.95rem',
     borderRadius: 6,
     border: 'none',
-    background: '#0F172A',
+    background: V1.blue,
     color: '#FFFFFF',
     fontWeight: 600,
     fontSize: '0.8rem',
@@ -225,17 +226,7 @@ const S = {
     color: '#0F172A',
   } as const,
   filterPills: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' as const } as const,
-  pill: (active: boolean) =>
-    ({
-      padding: '0.38rem 0.78rem',
-      borderRadius: 6,
-      border: active ? '1px solid #0F172A' : '1px solid #E2E8F0',
-      background: active ? '#F1F5F9' : '#FFFFFF',
-      color: active ? '#0F172A' : '#475569',
-      fontWeight: 600,
-      fontSize: '0.78rem',
-      cursor: 'pointer',
-    }) as const,
+  pill: (active: boolean) => V1_STYLES.filterPill(active),
   table: {
     width: '100%',
     borderCollapse: 'collapse' as const,
@@ -258,12 +249,23 @@ const S = {
   td: { padding: '0.75rem 1rem', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem', color: '#1E293B', fontVariantNumeric: 'tabular-nums' },
 };
 
+const LEAD_PAGE_SIZE = 15;
+
+function leadStageTone(stage: string): V1Tone {
+  const s = (stage || '').toLowerCase();
+  if (s.includes('closed') || s.includes('won') || s.includes('sold') || s.includes('approved')) return 'green';
+  if (s.includes('lost') || s.includes('reject') || s.includes('cancel')) return 'danger';
+  if (s.includes('contact') || s.includes('visit') || s.includes('qualif') || s.includes('progress')) return 'blue';
+  return 'slate';
+}
+
 export default function Leads() {
   const [items, setItems] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [stageFilter, setStageFilter] = useState<string>('ALL');
   const [dateRange, setDateRange] = useState<DateRangeValue>({ from: '', to: '' });
+  const [page, setPage] = useState(1);
   const [exportNotice, setExportNotice] = useState('');
   const [editing, setEditing] = useState<Lead | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -633,6 +635,7 @@ export default function Leads() {
         />
       )}
 
+      <div style={V1_STYLES.card}>
       <div style={{ overflowX: 'auto' }}>
         <table style={S.table} data-testid="admin-leads-table">
           <thead>
@@ -646,25 +649,14 @@ export default function Leads() {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map((l) => (
+            {filteredItems.slice((page - 1) * LEAD_PAGE_SIZE, page * LEAD_PAGE_SIZE).map((l) => (
               <tr key={l.id}>
                 <td style={{ ...S.td, fontWeight: 600 }}>{l.name}</td>
                 <td style={S.td}>{l.email}</td>
                 <td style={S.td}>{l.phone}</td>
                 <td style={S.td}>{l.property_name ?? '—'}</td>
                 <td style={S.td}>
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      padding: '0.2rem 0.55rem',
-                      borderRadius: 6,
-                      fontSize: '0.76rem',
-                      fontWeight: 600,
-                      background: '#F1F5F9',
-                      color: '#0F172A',
-                      border: '1px solid #E2E8F0',
-                    }}
-                  >
+                  <span style={v1BadgeStyle(leadStageTone(l.stage))}>
                     {l.stage}
                   </span>
                 </td>
@@ -673,19 +665,21 @@ export default function Leads() {
                 <td style={S.td}>
                   <p>{t(l.followup_status || 'new')}</p>
                   {l.followup_at && <p>{t('nextTime')}: <time dateTime={inquiryTime(l.followup_at)}>{new Date(inquiryTime(l.followup_at)).toLocaleString()}</time></p>}
-                  <button type="button" onClick={() => setEditing(l)} style={{minHeight:44,padding:'0.5rem 0.75rem',background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:6,cursor:'pointer'}}>{t('edit')}</button>
+                  <button type="button" onClick={() => setEditing(l)} style={{minHeight:36,padding:'0.35rem 0.75rem',background:V1.blue,color:'#FFFFFF',border:'none',borderRadius:6,cursor:'pointer',fontWeight:600,fontSize:'0.78rem'}}>{t('edit')}</button>
                 </td>
               </tr>
             ))}
             {filteredItems.length === 0 && (
               <tr>
-                <td colSpan={8} style={{ ...S.td, textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={8} style={{ ...S.td, textAlign: 'center', color: V1.slate }}>
                   No leads match the current view.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+      <V1Pagination page={page} pageSize={LEAD_PAGE_SIZE} total={filteredItems.length} onPageChange={setPage} />
       </div>
 
       {sheetsOpen && (

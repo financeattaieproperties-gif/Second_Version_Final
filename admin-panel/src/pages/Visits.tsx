@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api, type Agent, type VisitRequest } from '../api';
+import { V1, V1Pagination, V1_STYLES } from '../components/variant1';
 import { extractAgentEmail } from '../../../shared/googleCalendarSyncService';
 import FullscreenCalendar from '../components/ui/FullscreenCalendar';
 import {
@@ -16,22 +17,24 @@ const VALID_TRANSITIONS: Record<VisitRequest['status'], VisitRequest['status'][]
 };
 
 const STATUS_BADGE: Record<VisitRequest['status'], { bg: string; color: string }> = {
-  pending:   { bg: '#fef3c7', color: '#92400e' },
-  confirmed: { bg: '#d1fae5', color: '#065f46' },
-  declined:  { bg: '#fee2e2', color: '#991b1b' },
-  completed: { bg: '#dbeafe', color: '#1e40af' },
-  cancelled: { bg: '#f1f5f9', color: '#475569' },
+  pending:   { bg: V1.slateSoft, color: '#475569' },
+  confirmed: { bg: V1.greenSoft, color: '#0F7A3A' },
+  declined:  { bg: V1.dangerSoft, color: V1.danger },
+  completed: { bg: V1.blueSoft, color: V1.blueHover },
+  cancelled: { bg: V1.slateSoft, color: V1.slate },
 };
 
+const VISIT_PAGE_SIZE = 10;
+
 const S = {
-  title:      { fontSize: '1.35rem', fontWeight: 700, marginBottom: '1rem', color: '#0F172A', fontVariantNumeric: 'tabular-nums' } as const,
-  filterBar:  { display: 'flex', flexWrap: 'wrap' as const, gap: '0.75rem', marginBottom: '1.25rem', background: '#FFFFFF', padding: '1rem 1.25rem', borderRadius: 8, border: '1px solid #E2E8F0' } as const,
-  input:      { padding: '0.5rem 0.75rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.86rem', minWidth: 180, color: '#0F172A' } as const,
-  select:     { padding: '0.5rem 0.75rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.86rem', background: '#FFFFFF', color: '#0F172A' } as const,
-  card:       { background: '#FFFFFF', borderRadius: 8, padding: '1.25rem 1.5rem', border: '1px solid #E2E8F0', marginBottom: '1rem' } as const,
-  noteInput:  { width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #CBD5E1', borderRadius: 6, fontSize: '0.86rem', marginTop: '0.5rem', boxSizing: 'border-box' as const, color: '#0F172A' } as const,
-  btn:        { padding: '0.45rem 1rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const } as const,
-  clearBtn:   { padding: '0.45rem 0.9rem', background: '#F8FAFC', color: '#334155', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const } as const,
+  title:      { fontSize: '1.35rem', fontWeight: 700, marginBottom: '1rem', color: V1.ink, fontVariantNumeric: 'tabular-nums' } as const,
+  filterBar:  { display: 'flex', flexWrap: 'wrap' as const, gap: '0.75rem', marginBottom: '1.25rem', background: V1.surface, padding: '1rem 1.25rem', borderRadius: 8, border: `1px solid ${V1.border}` } as const,
+  input:      { padding: '0.5rem 0.75rem', border: `1px solid ${V1.border}`, borderRadius: 6, fontSize: '0.86rem', minWidth: 180, color: V1.ink } as const,
+  select:     { padding: '0.5rem 0.75rem', border: `1px solid ${V1.border}`, borderRadius: 6, fontSize: '0.86rem', background: V1.surface, color: V1.ink } as const,
+  card:       { background: V1.surface, borderRadius: 8, padding: '1.25rem 1.5rem', border: `1px solid ${V1.border}`, marginBottom: '1rem' } as const,
+  noteInput:  { width: '100%', padding: '0.55rem 0.75rem', border: `1px solid ${V1.border}`, borderRadius: 6, fontSize: '0.86rem', marginTop: '0.5rem', boxSizing: 'border-box' as const, color: V1.ink } as const,
+  btn:        { padding: '0.45rem 1rem', background: V1.blue, color: '#FFFFFF', border: 'none', borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const } as const,
+  clearBtn:   { padding: '0.45rem 0.9rem', background: V1.canvas, color: V1.ink, border: `1px solid ${V1.border}`, borderRadius: 6, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' as const } as const,
 };
 
 export default function Visits() {
@@ -49,6 +52,7 @@ export default function Visits() {
   const [draftAgentId, setDraftAgentId] = useState<Record<number, string>>({});
   const [syncFlag, setSyncFlag]         = useState<Record<number, boolean>>({});
   const [viewMode, setViewMode]         = useState<'list' | 'calendar'>('list');
+  const [page, setPage]                 = useState(1);
   const [pendingCalendarSync, setPendingCalendarSync] = useState<PendingAdminCalendarSync | null>(null);
 
   const load = () => {
@@ -242,9 +246,10 @@ export default function Visits() {
           }}
         />
       ) : filteredItems.length === 0 ? (
-        <p style={{ color: '#64748b' }}>No visit requests match the current filters.</p>
+        <p style={{ color: V1.slate }}>No visit requests match the current filters.</p>
       ) : (
-        filteredItems.map(item => {
+        <>
+        {filteredItems.slice((page - 1) * VISIT_PAGE_SIZE, page * VISIT_PAGE_SIZE).map(item => {
           const allowedStatuses = VALID_TRANSITIONS[item.status] ?? [item.status];
           const currentDraftStatus = draftStatus[item.id] ?? item.status;
           const currentDraftNote = draftNotes[item.id] ?? item.staff_note ?? '';
@@ -353,7 +358,11 @@ export default function Visits() {
               </details>
             </article>
           );
-        })
+        })}
+        <div style={{ ...V1_STYLES.card, overflow: 'hidden' }}>
+          <V1Pagination page={page} pageSize={VISIT_PAGE_SIZE} total={filteredItems.length} onPageChange={setPage} />
+        </div>
+        </>
       )}
 
       {pendingCalendarSync && (

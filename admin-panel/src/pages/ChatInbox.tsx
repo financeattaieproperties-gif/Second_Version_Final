@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
 import { api, type ChatConversation } from '../api';
+import { V1 } from '../components/variant1';
 import en from '../../../src/i18n/locales/en.json';
 import fa from '../../../src/i18n/locales/fa.json';
 function chatLabel(key: keyof typeof en.chatDelivery): string { return (localStorage.getItem('lang') === 'fa' ? fa : en).chatDelivery[key]; }
@@ -68,7 +69,7 @@ const S = {
     gap: '0.6rem',
   } as const,
   sub: {
-    color: '#64748B',
+    color: V1.slate,
     fontSize: '0.82rem',
     marginTop: '0.2rem',
     marginBottom: 0,
@@ -96,7 +97,7 @@ const S = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.35rem',
-    background: '#0F172A',
+    background: V1.blue,
     color: '#FFFFFF',
     fontSize: '0.68rem',
     fontWeight: 700,
@@ -125,7 +126,7 @@ const S = {
   kpiLabel: {
     fontSize: '0.7rem',
     fontWeight: 600,
-    color: '#64748B',
+    color: V1.slate,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.6,
   } as const,
@@ -299,7 +300,7 @@ const S = {
   } as const,
   btnGold: {
     padding: '0.6rem 1.25rem',
-    background: '#0F172A',
+    background: V1.blue,
     color: '#FFFFFF',
     border: 'none',
     borderRadius: 8,

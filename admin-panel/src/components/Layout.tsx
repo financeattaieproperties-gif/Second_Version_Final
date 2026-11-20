@@ -239,6 +239,7 @@ const ADMIN_PILLARS: AdminPillarGroup[] = [
     label: 'Command',
     icon: 'command',
     items: [
+      { to: '/overview', label: 'Overview', icon: 'command', sourceTag: 'Core' },
       { to: '/properties', label: 'Properties', icon: 'home', sourceTag: 'Core' },
       { to: '/projects', label: 'Projects', icon: 'layers', sourceTag: 'Core' },
     ],
@@ -281,8 +282,8 @@ const S = {
     flex: 1,
     overflow: 'hidden',
     position: 'relative' as const,
-    background: '#F7F8FA',
-    color: '#0F172A',
+    background: '#F8FAFC',
+    color: '#1E293B',
   } as const,
   splitRail: {
     display: 'flex',
@@ -774,7 +775,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             type="button"
             style={S.brandMark}
             onClick={() => {
-              navigate('/properties');
+              navigate('/overview');
               onNav?.();
             }}
             title="Attaie Properties Admin"

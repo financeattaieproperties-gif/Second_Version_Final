@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Layout from './components/Layout';
 import TitleBar from './components/TitleBar';
 import Properties from './pages/Properties';
+import Overview from './pages/Overview';
 import PropertyForm from './pages/PropertyForm';
 import Projects from './pages/Projects';
 import ProjectForm from './pages/ProjectForm';
@@ -63,7 +64,8 @@ function ProtectedRoutes() {
       )}
       <MenuNavigator />
       <Routes>
-        <Route path="/" element={<Navigate to="/properties" replace />} />
+        <Route path="/" element={<Navigate to="/overview" replace />} />
+        <Route path="/overview" element={<Overview />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/properties/new" element={<PropertyForm />} />
         <Route path="/properties/:id/edit" element={<PropertyForm />} />

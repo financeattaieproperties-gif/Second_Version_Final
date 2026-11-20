@@ -37,10 +37,10 @@
 ## 3. Dashboard-by-Dashboard Implementation Checklist
 
 ### Dashboard 1: Admin CRM (`admin-panel/` — Web `/admin` & Electron PC)
-- [ ] **Overview (`Dashboard` / Analytics):** 4 KPI cards with inline sparklines + `#14A850` delta pills, dual-tone `#0072BC`/`#14A850` Area Chart, Channel Breakdown Donut Chart.
-- [ ] **Tables (`Properties`, `Projects`, `Leads`, `Visits`, `Submissions`, `Careers`):** Hairline table styling, filter pills, search bar, tri-color status badges, and pagination.
-- [ ] **Split-View / Forms (`PropertyForm`, `ProjectForm`, `Chat`):** Unified Variant 1 card borders, `#0072BC` primary CTAs, `#818285` muted labels.
-- [ ] **Verification:** `npm run build:admin` + Electron PC (`cd admin-panel && npm run build`) pass.
+- [x] **Overview (`Dashboard` / Analytics):** 4 KPI cards with inline sparklines + `#14A850` delta pills, dual-tone `#0072BC`/`#14A850` Area Chart, Channel Breakdown Donut Chart (`2026-11-20`, `admin-panel/src/pages/Overview.tsx`).
+- [x] **Tables (`Properties`, `Projects`, `Leads`, `Visits`, `Submissions`, `Careers`):** Hairline table styling, filter pills, search bar, tri-color status badges, and pagination (`2026-11-20`, `admin-panel/src/components/variant1.tsx` + all 6 pages).
+- [x] **Split-View / Forms (`PropertyForm`, `ProjectForm`, `Chat`):** Unified Variant 1 card borders, `#0072BC` primary CTAs, `#818285` muted labels (`2026-11-20`).
+- [x] **Verification:** `npm run build:admin` + Electron PC (`cd admin-panel && npm run build`) pass (`2026-11-20`).
 
 ### Dashboard 2: Call Center (`/callcenter` & `callcenter-desktop` PC)
 - [ ] **Overview:** 4 KPI cards (`Drafts Needs Details`, `Active Leads`, `Handoffs to Sales`, `Duplicate Conflicts`) with sparklines + Hourly/Weekly Intake vs. Handoff Bar Chart.

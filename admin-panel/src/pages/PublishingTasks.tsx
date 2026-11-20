@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api, type SubmissionPost } from '../api';
+import { V1, V1_STYLES, v1BadgeStyle, type V1Tone } from '../components/variant1';
 
 const S = {
   header: {
@@ -13,12 +14,12 @@ const S = {
   title: {
     fontSize: '1.35rem',
     fontWeight: 700,
-    color: '#0F172A',
+    color: V1.ink,
     margin: 0,
   } as const,
   subtitle: {
     fontSize: '0.85rem',
-    color: '#64748B',
+    color: V1.slate,
     marginTop: '0.25rem',
   } as const,
   isolationBanner: {
@@ -41,18 +42,7 @@ const S = {
     flexWrap: 'wrap' as const,
     marginBottom: '1.25rem',
   } as const,
-  pill: (active: boolean) =>
-    ({
-      padding: '0.42rem 0.85rem',
-      borderRadius: 6,
-      border: active ? '1px solid #0F172A' : '1px solid #E2E8F0',
-      background: active ? '#0F172A' : '#FFFFFF',
-      color: active ? '#FFFFFF' : '#475569',
-      fontWeight: 600,
-      fontSize: '0.8rem',
-      cursor: 'pointer',
-      fontVariantNumeric: 'tabular-nums',
-    }) as const,
+  pill: (active: boolean) => V1_STYLES.filterPill(active),
   card: {
     background: '#FFFFFF',
     border: '1px solid #E2E8F0',
@@ -74,23 +64,13 @@ const S = {
     fontVariantNumeric: 'tabular-nums',
   } as const,
   statusBadge: (status: SubmissionPost['submission_status']) => {
-    const map: Record<SubmissionPost['submission_status'], { bg: string; color: string; border: string }> = {
-      Submitted: { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
-      Approved: { bg: '#E0F2FE', color: '#075985', border: '#BAE6FD' },
-      Published: { bg: '#DCFCE7', color: '#166534', border: '#BBF7D0' },
-      Rejected: { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA' },
+    const map: Record<SubmissionPost['submission_status'], V1Tone> = {
+      Submitted: 'slate',
+      Approved: 'blue',
+      Published: 'green',
+      Rejected: 'danger',
     };
-    const c = map[status] || map.Submitted;
-    return {
-      display: 'inline-block',
-      background: c.bg,
-      color: c.color,
-      border: `1px solid ${c.border}`,
-      fontWeight: 600,
-      fontSize: '0.74rem',
-      padding: '0.2rem 0.6rem',
-      borderRadius: 6,
-    } as const;
+    return v1BadgeStyle(map[status] || 'slate');
   },
   photoGrid: {
     display: 'grid',
@@ -108,7 +88,7 @@ const S = {
   } as const,
   btnApprove: {
     padding: '0.5rem 0.95rem',
-    background: '#0F172A',
+    background: V1.blue,
     color: '#FFFFFF',
     border: 'none',
     borderRadius: 6,
@@ -119,7 +99,7 @@ const S = {
   } as const,
   btnPublish: {
     padding: '0.5rem 1rem',
-    background: '#0F172A',
+    background: V1.green,
     color: '#FFFFFF',
     border: 'none',
     borderRadius: 6,

@@ -1,37 +1,48 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type CareerJob } from '../api';
+import { V1, V1Pagination, V1_STYLES, v1BadgeStyle } from '../components/variant1';
 
 const S = {
   header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' as const, gap: '0.75rem' } as const,
-  title:   { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#0F172A' } as const,
+  title:   { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: V1.ink } as const,
   btnRow:  { display: 'flex', gap: '0.6rem', alignItems: 'center' } as const,
-  addBtn:  { padding: '0.55rem 1.1rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.84rem' } as const,
-  appsBtn: { padding: '0.55rem 1.1rem', background: '#FFFFFF', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.84rem' } as const,
-  card:    { background: '#FFFFFF', borderRadius: 8, border: '1px solid #E2E8F0', overflow: 'hidden' } as const,
-  table:   { width: '100%', borderCollapse: 'collapse' as const, fontSize: '0.88rem' } as const,
-  th:      { textAlign: 'left' as const, padding: '0.75rem 1rem', background: '#F8FAFC', color: '#64748B', fontWeight: 600, borderBottom: '1px solid #E2E8F0', fontSize: '0.7rem', textTransform: 'uppercase' as const, letterSpacing: 0.5 } as const,
-  td:      { padding: '0.85rem 1rem', borderBottom: '1px solid #F1F5F9', verticalAlign: 'middle' as const, fontVariantNumeric: 'tabular-nums' } as const,
+  addBtn:  { ...V1_STYLES.primaryBtn, padding: '0.55rem 1.1rem' } as const,
+  appsBtn: { ...V1_STYLES.secondaryBtn, padding: '0.55rem 1.1rem' } as const,
+  card:    V1_STYLES.card,
+  table:   { ...V1_STYLES.table, fontSize: '0.88rem' } as const,
+  th:      V1_STYLES.th,
+  td:      V1_STYLES.td,
   actBtn:  (bg: string, color = '#fff', border = 'none') => ({
     padding: '0.35rem 0.7rem', background: bg, color, border, borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.78rem', whiteSpace: 'nowrap' as const,
   }),
   badge:   (status: string, isExpired?: boolean) => {
-    if (status === 'draft') {
-      return { display: 'inline-block', padding: '0.2rem 0.55rem', borderRadius: 6, fontSize: '0.72rem', fontWeight: 600, background: '#F1F5F9', color: '#475569' };
-    }
-    if (status === 'closed' || isExpired) {
-      return { display: 'inline-block', padding: '0.2rem 0.55rem', borderRadius: 6, fontSize: '0.72rem', fontWeight: 600, background: '#FEE2E2', color: '#DC2626' };
-    }
-    return { display: 'inline-block', padding: '0.2rem 0.55rem', borderRadius: 6, fontSize: '0.72rem', fontWeight: 600, background: '#DCFCE7', color: '#15803D' };
+    if (status === 'draft') return v1BadgeStyle('slate');
+    if (status === 'closed' || isExpired) return v1BadgeStyle('danger');
+    return v1BadgeStyle('green');
   },
-  errBox:  { padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: 8, background: '#FEE2E2', color: '#DC2626', fontSize: '0.85rem', fontWeight: 600 } as const,
+  errBox:  { padding: '0.75rem 1rem', marginBottom: '1rem', borderRadius: 8, background: V1.dangerSoft, color: V1.danger, fontSize: '0.85rem', fontWeight: 600 } as const,
 };
+
+const CAREER_PAGE_SIZE = 12;
 
 export default function Careers() {
   const [jobs, setJobs]       = useState<CareerJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | CareerJob['status']>('all');
+  const [search, setSearch]   = useState('');
+  const [page, setPage]       = useState(1);
   const navigate              = useNavigate();
+
+  const filteredJobs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return jobs.filter((j) => {
+      if (statusFilter !== 'all' && j.status !== statusFilter) return false;
+      if (!q) return true;
+      return (j.title || '').toLowerCase().includes(q) || (j.location || '').toLowerCase().includes(q);
+    });
+  }, [jobs, statusFilter, search]);
 
   const load = () => {
     setLoading(true);
@@ -96,6 +107,33 @@ export default function Careers() {
 
       {error && <div style={S.errBox}>{error}</div>}
 
+      <div style={V1_STYLES.toolbar}>
+        <div style={V1_STYLES.filterRow}>
+          {(['all', 'published', 'draft', 'closed'] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              style={V1_STYLES.filterPill(statusFilter === st)}
+              onClick={() => {
+                setStatusFilter(st);
+                setPage(1);
+              }}
+            >
+              {st === 'all' ? `All (${jobs.length})` : `${st.charAt(0).toUpperCase() + st.slice(1)} (${jobs.filter((j) => j.status === st).length})`}
+            </button>
+          ))}
+        </div>
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search job openings by title or location"
+          style={V1_STYLES.searchInput}
+        />
+      </div>
+
       <div style={S.card}>
         {loading ? (
           <p style={{ padding: '2rem', color: '#64748b' }}>Loading career announcements…</p>
@@ -118,7 +156,7 @@ export default function Careers() {
                 </tr>
               </thead>
               <tbody>
-                {jobs.map(job => {
+                {filteredJobs.slice((page - 1) * CAREER_PAGE_SIZE, page * CAREER_PAGE_SIZE).map(job => {
                   const statusLabel =
                     job.status === 'draft'
                       ? 'Draft'
@@ -154,14 +192,14 @@ export default function Careers() {
                       <td style={S.td}>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                           <button
-                            style={S.actBtn('#0F172A')}
+                            style={S.actBtn(V1.blue)}
                             onClick={() => navigate(`/careers/${job.id}/edit`)}
                           >
                             Edit
                           </button>
                           {job.status !== 'published' && (
                             <button
-                              style={S.actBtn('#15803d')}
+                              style={S.actBtn(V1.green)}
                               onClick={() => quickStatus(job, 'published')}
                             >
                               Publish
@@ -196,6 +234,7 @@ export default function Careers() {
                 })}
               </tbody>
             </table>
+            <V1Pagination page={page} pageSize={CAREER_PAGE_SIZE} total={filteredJobs.length} onPageChange={setPage} />
           </div>
         )}
       </div>

@@ -1,48 +1,56 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type Property } from '../api';
+import { V1, V1Pagination, V1_STYLES, v1BadgeStyle, type V1Tone } from '../components/variant1';
 
 type Status = Property['status'];
 
-const statusColor = (s: Status): React.CSSProperties => ({
-  padding: '0.22rem 0.6rem', borderRadius: 6, fontSize: '0.74rem', fontWeight: 600, cursor: 'pointer',
-  border: '1px solid transparent', outline: 'none',
-  background: s === 'available' ? '#DCFCE7' : s === 'pending' ? '#FEF9C3' : s === 'rented' ? '#DBEAFE' : '#FEE2E2',
-  color:      s === 'available' ? '#166534' : s === 'pending' ? '#854D0E' : s === 'rented' ? '#1E40AF' : '#991B1B',
-});
+const STATUS_TONE: Record<Status, V1Tone> = {
+  available: 'green',
+  sold: 'green',
+  rented: 'blue',
+  pending: 'slate',
+};
 
 const STATUSES: Status[] = ['available', 'pending', 'sold', 'rented'];
 const nextStatus = (s: Status): Status => STATUSES[(STATUSES.indexOf(s) + 1) % STATUSES.length];
-
-const S = {
-  header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap' as const, gap: '0.75rem' } as const,
-  title:   { fontSize: '1.35rem', fontWeight: 700, margin: 0, color: '#0F172A', fontVariantNumeric: 'tabular-nums' } as const,
-  btn:     { padding: '0.55rem 1.15rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: '0.84rem', whiteSpace: 'nowrap' as const } as const,
-  table:   { width: '100%', borderCollapse: 'collapse' as const, background: '#FFFFFF', borderRadius: 8, overflow: 'hidden', border: '1px solid #E2E8F0' },
-  th:      { padding: '0.7rem 1rem', background: '#F8FAFC', textAlign: 'left' as const, fontSize: '0.7rem', fontWeight: 600, color: '#64748B', borderBottom: '1px solid #E2E8F0', textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-  td:      { padding: '0.75rem 1rem', borderBottom: '1px solid #F1F5F9', fontSize: '0.85rem', verticalAlign: 'middle' as const, color: '#0F172A', fontVariantNumeric: 'tabular-nums' },
-  thumb:   { width: 52, height: 40, objectFit: 'cover' as const, borderRadius: 6, display: 'block', border: '1px solid #E2E8F0' },
-  noThumb: { width: 52, height: 40, background: '#F1F5F9', color: '#64748B', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em' } as const,
-  actions: { display: 'flex', gap: '0.4rem' } as const,
-  editBtn: { padding: '0.32rem 0.75rem', background: '#0F172A', color: '#FFFFFF', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 } as const,
-  delBtn:  { padding: '0.32rem 0.75rem', background: '#FFFFFF', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 } as const,
-};
+const PAGE_SIZE = 15;
 
 export default function Properties() {
   const navigate = useNavigate();
-  const [items, setItems]         = useState<Property[]>([]);
+  const [items, setItems] = useState<Property[]>([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading]     = useState(true);
-  const [toggling, setToggling]   = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | Status>('all');
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState<number | null>(null);
 
   useEffect(() => {
     api.getProperties().then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
   }, []);
 
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return items.filter((p) => {
+      if (statusFilter !== 'all' && p.status !== statusFilter) return false;
+      if (!q) return true;
+      return (
+        (p.serial_number || '').toLowerCase().includes(q) ||
+        (p.title || '').toLowerCase().includes(q) ||
+        (p.location || '').toLowerCase().includes(q)
+      );
+    });
+  }, [items, search, statusFilter]);
+
+  const paged = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
   const remove = async (id: number, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
     await api.deleteProperty(id);
-    setItems(prev => prev.filter(p => p.id !== id));
+    setItems((prev) => prev.filter((p) => p.id !== id));
   };
 
   const cycleStatus = async (p: Property) => {
@@ -51,79 +59,126 @@ export default function Properties() {
     try {
       const { id: _id, created_at: _ca, ...rest } = p;
       await api.updateProperty({ ...rest, id: p.id, status: next });
-      setItems(prev => prev.map(x => x.id === p.id ? { ...x, status: next } : x));
+      setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, status: next } : x)));
     } finally {
       setToggling(null);
     }
   };
 
-  if (loading) return <p style={{ padding: '2rem' }}>Loading…</p>;
+  if (loading) return <p style={{ padding: '2rem', color: V1.slate }}>Loading…</p>;
 
   return (
     <div>
-      <div style={S.header}>
-        <h1 style={S.title}>Properties ({items.length})</h1>
-        <button style={S.btn} onClick={() => navigate('/properties/new')}>+ Add Property</button>
+      <div style={V1_STYLES.header}>
+        <div>
+          <h1 style={V1_STYLES.title}>Properties ({items.length})</h1>
+          <p style={V1_STYLES.subtitle}>Manage residential &amp; commercial listings, pricing, and availability.</p>
+        </div>
+        <button style={V1_STYLES.primaryBtn} onClick={() => navigate('/properties/new')}>
+          + Add Property
+        </button>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by serial number, title, or location" style={{ padding: '.65rem .8rem', border: '1px solid #cbd5e1', borderRadius: 8, width: 'min(100%, 420px)' }} /></div>
-      <div style={{ overflowX: 'auto' }}>
-      <table style={S.table}>
-        <thead>
-          <tr>
-            {['', 'Title', 'Price', 'Type', 'Status', 'Actions'].map(h => (
-              <th key={h} style={S.th}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {items.filter(p => !search || (p.serial_number || '').toLowerCase().includes(search.toLowerCase()) || (p.title || '').toLowerCase().includes(search.toLowerCase()) || (p.location || '').toLowerCase().includes(search.toLowerCase())).map(p => (
-            <tr key={p.id} style={{ transition: 'background .15s' }}>
-              <td style={{ ...S.td, width: 68, paddingRight: 0 }}>
-                {p.image_url
-                  ? <img src={p.image_url} alt="" style={S.thumb} />
-                  : <div style={S.noThumb}>PROP</div>}
-              </td>
-              <td style={S.td}>
-                <div style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.74rem', marginBottom: '0.18rem', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>{p.serial_number}</div>
-                <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{p.title}</div>
-                <div style={{ color: '#64748B', fontSize: '0.8rem' }}>{p.location}</div>
-              </td>
-              <td style={S.td}>
-                <div style={{ fontWeight: 600 }}>${Number(p.price).toLocaleString()}</div>
-                <div style={{ color: '#64748B', fontSize: '0.78rem' }}>
-                  {p.listing_type === 'rent' ? '/mo' : 'sale'}
-                </div>
-              </td>
-              <td style={S.td}>{p.type}</td>
-              <td style={S.td}>
-                <button
-                  style={{ ...statusColor(p.status), opacity: toggling === p.id ? 0.5 : 1 }}
-                  onClick={() => cycleStatus(p)}
-                  title="Click to cycle status"
-                  disabled={toggling === p.id}
-                >
-                  {p.status}
-                </button>
-                <div style={{ fontSize: '0.7rem', color: '#64748B', marginTop: '0.2rem' }}>click to change</div>
-              </td>
-              <td style={S.td}>
-                <div style={S.actions}>
-                  <button style={S.editBtn} onClick={() => navigate(`/properties/${p.id}/edit`)}>Edit</button>
-                  <button style={S.delBtn}  onClick={() => remove(p.id, p.title)}>Delete</button>
-                </div>
-              </td>
-            </tr>
+      <div style={V1_STYLES.toolbar}>
+        <div style={V1_STYLES.filterRow}>
+          {(['all', ...STATUSES] as const).map((st) => (
+            <button
+              key={st}
+              type="button"
+              style={V1_STYLES.filterPill(statusFilter === st)}
+              onClick={() => {
+                setStatusFilter(st);
+                setPage(1);
+              }}
+            >
+              {st === 'all' ? `All (${items.length})` : `${st.charAt(0).toUpperCase() + st.slice(1)} (${items.filter((i) => i.status === st).length})`}
+            </button>
           ))}
-          {items.length === 0 && (
-            <tr>
-              <td colSpan={6} style={{ ...S.td, textAlign: 'center', color: '#94a3b8', padding: '3rem' }}>
-                No properties yet. Add your first one →
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        </div>
+        <input
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search by serial number, title, or location"
+          style={V1_STYLES.searchInput}
+        />
+      </div>
+
+      <div style={V1_STYLES.card}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={V1_STYLES.table}>
+            <thead>
+              <tr>
+                {['', 'Title', 'Price', 'Type', 'Status', 'Actions'].map((h) => (
+                  <th key={h} style={V1_STYLES.th}>
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map((p) => (
+                <tr key={p.id}>
+                  <td style={{ ...V1_STYLES.td, width: 68, paddingRight: 0 }}>
+                    {p.image_url ? (
+                      <img src={p.image_url} alt="" style={{ width: 52, height: 40, objectFit: 'cover', borderRadius: 6, display: 'block', border: `1px solid ${V1.border}` }} />
+                    ) : (
+                      <div style={{ width: 52, height: 40, background: V1.slateSoft, color: V1.slate, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.04em' }}>
+                        PROP
+                      </div>
+                    )}
+                  </td>
+                  <td style={V1_STYLES.td}>
+                    <div style={{ color: V1.ink, fontWeight: 600, fontSize: '0.74rem', marginBottom: '0.18rem', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                      {p.serial_number}
+                    </div>
+                    <div style={{ fontWeight: 600, marginBottom: '0.1rem' }}>{p.title}</div>
+                    <div style={{ color: V1.slate, fontSize: '0.8rem' }}>{p.location}</div>
+                  </td>
+                  <td style={V1_STYLES.td}>
+                    <div style={{ fontWeight: 600 }}>${Number(p.price).toLocaleString()}</div>
+                    <div style={{ color: V1.slate, fontSize: '0.78rem' }}>{p.listing_type === 'rent' ? '/mo' : 'sale'}</div>
+                  </td>
+                  <td style={V1_STYLES.td}>{p.type}</td>
+                  <td style={V1_STYLES.td}>
+                    <button
+                      style={{ ...v1BadgeStyle(STATUS_TONE[p.status] || 'slate'), cursor: 'pointer', opacity: toggling === p.id ? 0.5 : 1 }}
+                      onClick={() => cycleStatus(p)}
+                      title="Click to cycle status"
+                      disabled={toggling === p.id}
+                    >
+                      {p.status}
+                    </button>
+                    <div style={{ fontSize: '0.7rem', color: V1.slate, marginTop: '0.2rem' }}>click to change</div>
+                  </td>
+                  <td style={V1_STYLES.td}>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button
+                        style={{ ...V1_STYLES.primaryBtn, padding: '0.32rem 0.75rem', fontSize: '0.78rem' }}
+                        onClick={() => navigate(`/properties/${p.id}/edit`)}
+                      >
+                        Edit
+                      </button>
+                      <button style={V1_STYLES.dangerBtn} onClick={() => remove(p.id, p.title)}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ ...V1_STYLES.td, textAlign: 'center', color: V1.slate, padding: '3rem' }}>
+                    {items.length === 0 ? 'No properties yet. Add your first one →' : 'No properties match the current filter.'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <V1Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
       </div>
     </div>
   );
