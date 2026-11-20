@@ -327,7 +327,10 @@ trait Completion {
     }
     private function marketingCreate(array $b): array {
         $this->permission('marketing.submit_property'); $type=$b['propertyType']??''; if (!in_array($type,['Villa','Block','Building','Apartment'],true)) throw new InvalidArgumentException('Choose property type.');
-        $this->execute('INSERT INTO mkt_production_entries(customer_name,address,property_type,submitted_by_id) VALUES (?,?,?,?)',[Domain::text($b['customerName']??null,160),Domain::text($b['address']??null,255),$type,$this->uid()]); $id=(int)$this->db->lastInsertId(); $this->audit('marketing.submitted',$id); return $this->marketingDto($this->record('mkt_production_entries',$id));
+        $branch=(int)($this->user['branch_id']??0);
+        if (!$branch && $this->user['role']==='ceo') $branch=(int)($this->one('SELECT id FROM core_branches WHERE active=1 ORDER BY id LIMIT 1')['id']??0);
+        if (!$branch) throw new HttpError(503,'Staff branch mapping requires review.');
+        $this->execute('INSERT INTO mkt_production_entries(branch_id,customer_name,address,property_type,submitted_by_id) VALUES (?,?,?,?,?)',[$branch,Domain::text($b['customerName']??null,160),Domain::text($b['address']??null,255),$type,$this->uid()]); $id=(int)$this->db->lastInsertId(); $this->audit('marketing.submitted',$id); return $this->marketingDto($this->record('mkt_production_entries',$id));
     }
     private function marketingAdvance(int $id,array $b): array {
         $r=$this->record('mkt_production_entries',$id,true); $this->version($r,$b); $action=$b['action']??'';
