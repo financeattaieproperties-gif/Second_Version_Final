@@ -113,9 +113,11 @@ export const LoginBackgroundSettings: React.FC = () => {
         })}
       </div>
 
+      <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.45rem' }}>
+        Background Image for {LOGIN_ROLES.find((r) => r.id === selectedRole)?.label ?? selectedRole}
+      </div>
       <ImageUpload
-        label={`Background Image for ${LOGIN_ROLES.find((r) => r.id === selectedRole)?.label ?? selectedRole}`}
-        value={currentUrl}
+        value={currentUrl || null}
         onChange={(url) => setBackgrounds((prev) => ({ ...prev, [selectedRole]: url || null }))}
       />
 
