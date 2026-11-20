@@ -18,17 +18,9 @@ import type {
   SubmissionPost,
 } from "../../../packages/staff-contracts/types";
 
-import { signIn, resetPassword } from "./auth/firebase.mjs";
 import { resolveStaffApiEndpoint } from "../../../packages/staff-contracts/role-preference.mjs";
-import {
-  firebaseConfig,
-  logout as firebaseLogout,
-  signInWithGoogleAuth,
-  testConnection,
-} from "../../../shared/googleWorkspaceAuth";
+import { testConnection } from "../../../shared/googleWorkspaceAuth";
 
-const firebaseKey =
-  import.meta.env.VITE_STAFF_FIREBASE_API_KEY || firebaseConfig.apiKey || "";
 const envApiBaseUrl = import.meta.env.VITE_STAFF_API_BASE_URL || "";
 let csrf = "";
 async function request<T>(
@@ -99,28 +91,18 @@ export const api = {
   },
   async login(username: string, password: string) {
     await this.session();
-    const idToken = await signIn(firebaseKey, username, password);
     const data = await request<Session>("auth/login", "POST", {
-      idToken,
+      username,
+      password,
     });
     csrf = data.csrfToken;
     return data;
   },
-  async loginWithGoogle() {
-    await this.session();
-    const { idToken } = await signInWithGoogleAuth();
-    const data = await request<Session>("auth/login", "POST", {
-      idToken,
-    });
-    csrf = data.csrfToken;
-    return data;
+  async loginWithGoogle(): Promise<Session> {
+    throw new Error("Google sign-in is disabled.");
   },
   async logout() {
-    try {
-      return await request("auth/logout", "POST", {});
-    } finally {
-      await firebaseLogout().catch(() => {});
-    }
+    return await request("auth/logout", "POST", {});
   },
   load: (view: string, q = "", page = 0, bucket = "all") =>
     request<DashboardData>(
@@ -209,5 +191,7 @@ export const api = {
       "POST",
       payload,
     ),
-  resetPassword: (email: string) => resetPassword(firebaseKey, email),
+  resetPassword: async (_email: string) => {
+    throw new Error("Contact your administrator to reset your password.");
+  },
 };

@@ -367,9 +367,9 @@ CREATE TABLE IF NOT EXISTS ai_chat_rate_limits (
 -- 19b. Website Submission Publications Retry Ledger
 CREATE TABLE IF NOT EXISTS website_submission_publications (
   submission_id INT UNSIGNED PRIMARY KEY,
-  property_id   INT UNSIGNED NOT NULL UNIQUE,
+  property_id   INT NOT NULL UNIQUE,
   published_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (property_id) REFERENCES properties(id)
+  CONSTRAINT fk_website_sub_pub_prop FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -440,6 +440,7 @@ CREATE TABLE IF NOT EXISTS core_branches (
 CREATE TABLE IF NOT EXISTS core_users (
   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   firebase_uid VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NULL,
   name VARCHAR(120) NOT NULL,
   username VARCHAR(254) NOT NULL UNIQUE,
   role VARCHAR(60) NOT NULL,

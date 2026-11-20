@@ -44,6 +44,7 @@ if (fs.existsSync(rootHtml)) {
   let html = fs.readFileSync(rootHtml, "utf8");
   html = html
     .replaceAll("../assets/", "./assets/")
+    .replaceAll("crossorigin", "")
     .replace(
       /<title>.*?<\/title>/,
       "<title>Sales Agent Workspace · Attaie Properties</title>",
@@ -53,8 +54,8 @@ if (fs.existsSync(rootHtml)) {
       '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />',
     )
     .replace(
-      "</head>",
-      `  <script>window.__ATTAIE_ANDROID_APP__ = true; window.__ATTAIE_STAFF_API_BASE_URL__ = window.__ATTAIE_STAFF_API_BASE_URL__ || ${JSON.stringify(backendBaseUrl)};</script>\n  </head>`,
+      "<head>",
+      `<head>\n  <script>window.__ATTAIE_ANDROID_APP__ = true; window.__ATTAIE_STAFF_API_BASE_URL__ = window.__ATTAIE_STAFF_API_BASE_URL__ || ${JSON.stringify(backendBaseUrl)};</script>`,
     );
   if (!html.includes("apple-touch-icon")) {
     html = html.replace(

@@ -1,5 +1,6 @@
 package af.attaieproperties.sales
 
+import android.net.Uri
 import android.content.SharedPreferences
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -10,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import org.json.JSONObject
+import java.security.KeyStore
 
 /**
  * AndroidX BiometricPrompt + Android Keystore EncryptedSharedPreferences bridge
@@ -33,7 +35,6 @@ class BiometricAuthBridge(
         private const val KEY_PASSWORD = "enrolled_password"
         private const val KEY_ENROLLED_AT = "enrolled_at"
         private const val KEY_QUICK_SIGN_IN = "quick_sign_in_enabled"
-        private const val TRUSTED_ORIGIN_PREFIX = "https://sales.attaieproperties.com/"
         private const val ALLOWED_AUTHENTICATORS =
             BiometricManager.Authenticators.BIOMETRIC_STRONG or
                 BiometricManager.Authenticators.BIOMETRIC_WEAK
@@ -52,17 +53,43 @@ class BiometricAuthBridge(
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
             )
         } catch (_: Exception) {
-            // If Android Keystore keys were invalidated (e.g. lock screen changed), reset corrupted vault
+            // If Android Keystore keys were invalidated (e.g. lock screen changed), reset corrupted vault & master key alias
             try {
                 activity.applicationContext.deleteSharedPreferences(PREFS_FILE)
             } catch (_: Exception) {
             }
-            null
+            try {
+                val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+                keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+            } catch (_: Exception) {
+            }
+            try {
+                val masterKey = MasterKey.Builder(activity.applicationContext)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build()
+                EncryptedSharedPreferences.create(
+                    activity.applicationContext,
+                    PREFS_FILE,
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                )
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 
     private fun isTrustedOrigin(url: String?): Boolean {
-        return url != null && url.startsWith(TRUSTED_ORIGIN_PREFIX)
+        if (url.isNullOrBlank()) return false
+        val uri = Uri.parse(url)
+        val scheme = uri.scheme
+        if ((scheme != "https") && (scheme != "http")) return false
+        val host = uri.host ?: return false
+        return host == "attaieproperties.com" ||
+            host == "www.attaieproperties.com" ||
+            host == "sales.attaieproperties.com" ||
+            host.endsWith(".attaieproperties.com")
     }
 
     private fun deliverResult(requestId: String, payload: JSONObject) {
@@ -70,7 +97,7 @@ class BiometricAuthBridge(
             if (!isTrustedOrigin(webView.url)) return@runOnUiThread
             val script =
                 "window.__attaieBiometricCallback && window.__attaieBiometricCallback(" +
-                    "${JSONObject.quote(requestId)}, ${payload});"
+                    "${JSONObject.quote(requestId)}, $payload);"
             webView.evaluateJavascript(script, null)
         }
     }
@@ -209,7 +236,17 @@ class BiometricAuthBridge(
                 .setConfirmationRequired(true)
                 .build()
 
-            prompt.authenticate(promptInfo)
+            try {
+                prompt.authenticate(promptInfo)
+            } catch (e: Exception) {
+                deliverResult(
+                    requestId,
+                    JSONObject()
+                        .put("ok", false)
+                        .put("cancelled", false)
+                        .put("message", e.message ?: "Failed to launch biometric authentication.")
+                )
+            }
         }
     }
 
@@ -296,7 +333,17 @@ class BiometricAuthBridge(
                 .setConfirmationRequired(false)
                 .build()
 
-            prompt.authenticate(promptInfo)
+            try {
+                prompt.authenticate(promptInfo)
+            } catch (e: Exception) {
+                deliverResult(
+                    requestId,
+                    JSONObject()
+                        .put("ok", false)
+                        .put("cancelled", false)
+                        .put("message", e.message ?: "Failed to launch biometric authentication.")
+                )
+            }
         }
     }
 }

@@ -18,5 +18,5 @@ _Avoid_: CEO, Staff Admin
 The internal staff role with global oversight across branches. This role is distinct from Website Admin.
 
 **Production launch**:
-The transition of `attaieproperties.com` to the verified V2 release, preserving existing live business data.
-_Avoid_: fresh installation, testing deployment
+The transition of `attaieproperties.com` to the verified V2 release (preserving existing live business data, or starting with a fresh database when explicitly authorized to replace test-only data).
+_Avoid_: testing deployment

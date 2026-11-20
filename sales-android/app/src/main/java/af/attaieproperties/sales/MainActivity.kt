@@ -6,12 +6,18 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
+import android.net.http.SslError
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
+import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
+import android.webkit.SslErrorHandler
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
@@ -30,7 +36,7 @@ import java.io.File
  * Dedicated Android Activity for the Attaie Properties Sales Agent Workspace (/sales).
  *
  * - Loads the compiled Sales Agent bundle from app/src/main/assets/www/index.html via HTTPS WebViewAssetLoader
- * - Connects to the exact same backend (/staff-api/v1/*) with persistent session & CSRF cookies
+ * - Connects to the exact same backend (/staff-api/v1/...) with persistent session & CSRF cookies
  * - Bridges tel: and WhatsApp links to the native Android dialer
  * - Supports camera/gallery file uploads for Buyer 3x4 Portrait & Tazkira photos when closing a deal
  * - Handles hardware Back navigation across Sales CRM tabs (Leads, Follow-ups, Customers, Projects, Overview)
@@ -113,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(swipeRefresh)
 
         val assetLoader = WebViewAssetLoader.Builder()
-            .setDomain("sales.attaieproperties.com")
+            .setDomain("attaieproperties.com")
             .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
 
@@ -121,6 +127,7 @@ class MainActivity : AppCompatActivity() {
         cookieManager.setAcceptCookie(true)
         cookieManager.setAcceptThirdPartyCookies(webView, true)
 
+        val defaultUserAgent = WebSettings.getDefaultUserAgent(this)
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -129,7 +136,7 @@ class MainActivity : AppCompatActivity() {
             allowContentAccess = true
             cacheMode = WebSettings.LOAD_DEFAULT
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            userAgentString = "$userAgentString AttaieSalesAndroid/2.0"
+            userAgentString = "$defaultUserAgent AttaieSalesAndroid/2.0"
         }
 
         swipeRefresh.setOnRefreshListener {
@@ -141,7 +148,21 @@ class MainActivity : AppCompatActivity() {
                 view: WebView,
                 request: WebResourceRequest
             ): WebResourceResponse? {
-                return assetLoader.shouldInterceptRequest(request.url)
+                val response = assetLoader.shouldInterceptRequest(request.url) ?: return null
+                val headers = response.responseHeaders ?: mutableMapOf()
+                headers["Access-Control-Allow-Origin"] = "*"
+                headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+                response.responseHeaders = headers
+                return response
+            }
+
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+                Log.e("SalesWebView", "Resource error for ${request?.url}: ${error?.description} (${error?.errorCode})")
             }
 
             override fun shouldOverrideUrlLoading(
@@ -166,6 +187,16 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
 
+            override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                cookieManager.flush()
+                val apiBase = BuildConfig.STAFF_API_BASE_URL
+                view.evaluateJavascript(
+                    "window.__ATTAIE_ANDROID_APP__ = true; window.__ATTAIE_STAFF_API_BASE_URL__ = ${org.json.JSONObject.quote(apiBase)};",
+                    null
+                )
+            }
+
             override fun onPageFinished(view: WebView, url: String) {
                 super.onPageFinished(view, url)
                 swipeRefresh.isRefreshing = false
@@ -180,6 +211,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                consoleMessage?.let {
+                    Log.d("SalesWebViewConsole", "${it.message()} -- From line ${it.lineNumber()} of ${it.sourceId()}")
+                }
+                return true
+            }
+
             override fun onShowFileChooser(
                 webView: WebView,
                 filePathCallback: ValueCallback<Array<Uri>>,
@@ -220,7 +258,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         // Load the bundled Sales Agent Workspace over virtual HTTPS origin
-        webView.loadUrl("https://sales.attaieproperties.com/assets/www/index.html")
+        webView.loadUrl("https://attaieproperties.com/assets/www/index.html")
     }
 
     override fun onResume() {

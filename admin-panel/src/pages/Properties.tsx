@@ -36,7 +36,7 @@ export default function Properties() {
   const [toggling, setToggling]   = useState<number | null>(null);
 
   useEffect(() => {
-    api.getProperties().then(setItems).finally(() => setLoading(false));
+    api.getProperties().then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
   }, []);
 
   const remove = async (id: number, title: string) => {
@@ -77,7 +77,7 @@ export default function Properties() {
           </tr>
         </thead>
         <tbody>
-          {items.filter(p => !search || p.serial_number.toLowerCase().includes(search.toLowerCase()) || p.title.toLowerCase().includes(search.toLowerCase()) || p.location.toLowerCase().includes(search.toLowerCase())).map(p => (
+          {items.filter(p => !search || (p.serial_number || '').toLowerCase().includes(search.toLowerCase()) || (p.title || '').toLowerCase().includes(search.toLowerCase()) || (p.location || '').toLowerCase().includes(search.toLowerCase())).map(p => (
             <tr key={p.id} style={{ transition: 'background .15s' }}>
               <td style={{ ...S.td, width: 68, paddingRight: 0 }}>
                 {p.image_url

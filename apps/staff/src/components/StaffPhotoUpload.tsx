@@ -1,11 +1,29 @@
-import React, { useId, useState } from 'react';
+import React, { useId, useState, useEffect } from 'react';
+import { LoaderLiquidProgress } from './ui/loaders-liquid-progress';
 
 export type UploadStaffFile = (dataURL: string, fileName: string, purpose: string) => Promise<{url: string; fileName?: string}>;
 export function StaffPhotoUpload({ label, value, purpose, onChange, onUpload, lang = 'en' }: {
   label: string; value: string; purpose: string; onChange: (url: string) => void;
   onUpload?: UploadStaffFile; lang?: 'en' | 'fa';
 }) {
-  const id = useId(); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
+  const id = useId();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  useEffect(() => {
+    let timer: any;
+    if (busy) {
+      setUploadProgress(15);
+      timer = setInterval(() => {
+        setUploadProgress((p) => (p >= 90 ? p : p + Math.floor(Math.random() * 12) + 5));
+      }, 350);
+    } else {
+      setUploadProgress(0);
+    }
+    return () => clearInterval(timer);
+  }, [busy]);
+
   return <div className="field">
     <label htmlFor={id}>{label}</label>
     {value && <img src={value} alt={label} width={72} height={96} style={{objectFit: 'cover',borderRadius: 6}} />}
@@ -21,10 +39,23 @@ export function StaffPhotoUpload({ label, value, purpose, onChange, onUpload, la
         try { const data = await new Promise<string>((resolve,reject) => {
           const reader = new FileReader(); reader.onerror = () => reject(new Error('Image could not be read.'));
           reader.onload = () => resolve(String(reader.result)); reader.readAsDataURL(file);
-        }); const uploaded = await onUpload(data, file.name, purpose); onChange(uploaded.url);
+        });
+        const uploaded = await onUpload(data, file.name, purpose);
+        setUploadProgress(100);
+        onChange(uploaded.url);
         } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
       }} />
-    {busy && <small role="status">{lang === 'fa' ? 'در حال بارگذاری…' : 'Uploading…'}</small>}
+    {busy && (
+      <div className="mt-2 w-full max-w-xs">
+        <LoaderLiquidProgress
+          progress={uploadProgress}
+          height={10}
+          showValue={true}
+          statusText={lang === 'fa' ? 'در حال آپلود عکس…' : 'Uploading photo…'}
+          colorScheme="emerald"
+        />
+      </div>
+    )}
     {error && <small id={`${id}-error`} role="alert">{error}</small>}
   </div>;
 }

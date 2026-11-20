@@ -48,11 +48,11 @@ if (isProduction) {
 } else {
   fs.writeFileSync(websiteHtml,fs.readFileSync(websiteHtml,'utf8').replace(/(<meta name="robots" content=")[^"]+/, '$1noindex, nofollow, noarchive').replaceAll('https://www.attaieproperties.com',targetOrigin));
 }
-await build({...common,root:path.join(root,'admin-panel'),plugins:[react()],base:'/admin/',build:{...common.build,outDir:path.join(dist,'admin')}});
+await build({...common,root:path.join(root,'admin-panel'),plugins:[react()],base:'/admin/',resolve:{alias:{react:path.join(root,'admin-panel/node_modules/react'),'react-dom':path.join(root,'admin-panel/node_modules/react-dom')},dedupe:['react','react-dom']},build:{...common.build,outDir:path.join(dist,'admin')}});
 const adminHtml=path.join(dist,'admin/index.html');
 fs.writeFileSync(adminHtml,fs.readFileSync(adminHtml,'utf8').replace('<head>','<head>\n<meta name="robots" content="noindex, nofollow, noarchive">'));
 copy('deployment/staff/dashboard.htaccess','dist/admin/.htaccess');
-for (const role of ['dashboard','management','callcenter']) {
+for (const role of ['dashboard','management','callcenter','ceo','sales-leader','sales','finance','marketing','engineering']) {
   const directory=path.join(dist,role);
   await build({...common,root:path.join(root,'apps/staff'),plugins:[react()],base:`/${role}/`,define:{__STAFF_ROLE__:JSON.stringify(role),__STAFF_PREVIEW_ALLOWED__:'false'},build:{...common.build,outDir:directory,rollupOptions:{input:path.join(root,`apps/staff/${role}/index.html`)}}});
   fs.renameSync(path.join(directory,role,'index.html'),path.join(directory,'index.html'));
@@ -64,6 +64,7 @@ for (const role of ['dashboard','management','callcenter']) {
 // Explicit shared assets only. Never copy all assets/aistudio (contains old notes).
 fs.cpSync(path.join(root,'public/fonts'),path.join(dist,'fonts'),{recursive:true,filter:file=>fs.statSync(file).isDirectory()||/\.(?:ttf|woff2?)$/i.test(file)});
 copy('public/logo.png','dist/logo.png');
+copy('public/login-logo.png','dist/login-logo.png');
 const referencedAssets=new Set();
 for (const file of walk(path.join(root,'src')).filter(file=>/\.(?:tsx?|css)$/.test(file))) {
   for (const match of fs.readFileSync(file,'utf8').matchAll(/['"](\/assets\/[A-Za-z0-9_./-]+\.(?:png|jpe?g|webp|svg))['"]/g)) referencedAssets.add(match[1]);
@@ -80,13 +81,13 @@ for (const tree of ['api','visual-config','staff-api']) {
     copy(`public/${relative}`,`dist/${relative}`);
   }
 }
-for (const name of ['seo.php','sitemap.php','.user.ini']) copy(`public/${name}`,`dist/${name}`);
+for (const name of ['seo.php','sitemap.php','chat-service.php','.user.ini']) copy(`public/${name}`,`dist/${name}`);
 let rules=read('public/.htaccess').replace(/RewriteRule \^sitemap\\\.xml\$ .*\n/,'');
 if(!rules.includes('^ceo')) {
   rules=rules.replace('# Admin CRM SPA fallback', '# V2 staff API and dashboard routing\nRewriteRule ^staff-api/v1(?:/.*)?$ /staff-api/index.php [L]\nRewriteRule ^dashboard(?:/.*)?$ /dashboard/index.html [L]\nRewriteRule ^management(?:/.*)?$ /management/index.html [L]\nRewriteRule ^callcenter(?:/.*)?$ /callcenter/index.html [L]\nRewriteRule ^ceo(?:/.*)?$ /ceo/index.html [L]\nRewriteRule ^sales-leader(?:/.*)?$ /sales-leader/index.html [L]\nRewriteRule ^sales(?:/.*)?$ /sales/index.html [L]\nRewriteRule ^finance(?:/.*)?$ /finance/index.html [L]\nRewriteRule ^marketing(?:/.*)?$ /marketing/index.html [L]\nRewriteRule ^engineering(?:/.*)?$ /engineering/index.html [L]\n\n# Admin CRM SPA fallback');
 }
 if(!rules.includes('^dashboard')||!rules.includes('^staff-api/v1'))throw new Error('Routing insertion failed.');
-write('dist/.htaccess',(isProduction?'# Production document root.\n':'# V2 testing document root ONLY.\n')+'RewriteEngine On\nRewriteRule ^(?:ai-chat(?:/|$)|chat-service\\.php$) - [F,L]\n'+rules+(isProduction?'':'\n<IfModule mod_headers.c>\nHeader always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>')+'\n<Files "initiate-call.php">\nRequire all denied\n</Files>\n');
+write('dist/.htaccess',(isProduction?'# Production document root.\n':'# V2 testing document root ONLY.\n')+'RewriteEngine On\nRewriteRule ^ai-chat(?:/|$) - [F,L]\n'+rules+(isProduction?'':'\n<IfModule mod_headers.c>\nHeader always set X-Robots-Tag "noindex, nofollow, noarchive"\n</IfModule>')+'\n<Files "initiate-call.php">\nRequire all denied\n</Files>\n');
 write('dist/robots.txt',isProduction?'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /dashboard/\nDisallow: /management/\nDisallow: /callcenter/\nDisallow: /ceo/\nDisallow: /sales-leader/\nDisallow: /sales/\nDisallow: /finance/\nDisallow: /marketing/\nDisallow: /engineering/\nDisallow: /api/\nDisallow: /staff-api/\n':'User-agent: *\nDisallow: /\n');
 write('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>\n');
 write('dist/uploads/.htaccess','Options -Indexes\n<FilesMatch "\\.(?:php[0-9]?|phtml|phar|cgi|pl|py|sh|shtml)$">\nRequire all denied\n</FilesMatch>\n');
@@ -100,8 +101,10 @@ write('private/config.example.php',read('staff-service/config/config.example.php
 copy('public/staff-api/paths.example.php','private/paths.example.php');
 let websiteConfig=read('public/api/db.example.php').replace("define('ADMIN_USER', 'admin');","define('ADMIN_USER', '');").replace("define('ADMIN_PASS', 'choose_a_strong_password');","define('ADMIN_PASS', '');");
 websiteConfig=websiteConfig.replace('<?php',"<?php\ndefine('ATTAIE_MANUAL_SCHEMA', true);\n// Separate THIRD submission database. Never use website or internal CRM credentials.\ndefine('SUBMISSION_DB_HOST','localhost');\ndefine('SUBMISSION_DB_USER','YOUR_SUBMISSION_USER');\ndefine('SUBMISSION_DB_PASS','');\ndefine('SUBMISSION_DB_NAME','YOUR_SUBMISSION_DATABASE');");
+websiteConfig=websiteConfig.replace("define('WEBSITE_CHAT_STORE_DIR', '');","define('WEBSITE_CHAT_STORE_DIR', '/home/CPANEL_USER/attaie-v2-private/chat_store');");
 write('private/website-db.example.php',websiteConfig);
 write('private/sessions/.gitkeep','');
+write('private/chat_store/.gitkeep','');
 const header=name=>`-- ${name}. ${isProduction ? 'PRODUCTION' : 'V2 TESTING ONLY'}. Verify DATABASE() in phpMyAdmin before import.\n-- Fresh install requires a NEW EMPTY database. Never import fresh SQL over existing data.\n`;
 write('database/fresh/01-website.sql',header('WEBSITE database')+read('public/api/schema.sql')+"\n"+read('staff-service/database/102-website-submission-map.sql')+`\nUPDATE seo_settings SET canonical_base_url='${targetOrigin}',robots_index=${isProduction?1:0} WHERE id=1;\n`);
 write('database/fresh/02-internal-crm.sql',header('SEPARATE INTERNAL OFFICE CRM database')+freshInternal.map(name=>`\n-- SOURCE ${name}\n`+read(`staff-service/database/${name}`)).join('\n'));
@@ -120,10 +123,10 @@ for(const file of walk(dist)) {
   const relative=path.relative(dist,file).replaceAll('\\','/');
   if(/(?:\.sql$|\.env|\.local\.php$|config\.php$|firebase\.json$|service.account|(?:^|\/)(?:private|database|node_modules)\/)/i.test(relative))throw new Error(`Private material in public output: ${relative}`);
   if(/\.(?:js|html|php|css|json|ini)$/.test(file)&&/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(fs.readFileSync(file,'utf8')))throw new Error(`Private key found: ${relative}`);
-  if(/^(?:dashboard|management|callcenter)\/assets\/.*\.js$/.test(relative)&&/Sample workspace only|Explore sample workspace/.test(fs.readFileSync(file,'utf8')))throw new Error(`Preview code leaked: ${relative}`);
+  if(/^(?:dashboard|management|callcenter|ceo|sales-leader|sales|finance|marketing|engineering)\/assets\/.*\.js$/.test(relative)&&/Sample workspace only|Explore sample workspace/.test(fs.readFileSync(file,'utf8')))throw new Error(`Preview code leaked: ${relative}`);
   if(relative.startsWith('assets/aistudio/')&&!referencedAssets.has('/'+relative))throw new Error(`Unreferenced artwork: ${relative}`);
 }
-for(const required of ['index.html','.htaccess','.user.ini','admin/index.html','dashboard/index.html','management/index.html','callcenter/index.html','staff-api/index.php','staff-api/paths.php','api/db.php'])if(!fs.existsSync(path.join(dist,required)))throw new Error(`Missing required public file: ${required}`);
+for(const required of ['index.html','.htaccess','.user.ini','admin/index.html','dashboard/index.html','management/index.html','callcenter/index.html','ceo/index.html','sales-leader/index.html','sales/index.html','finance/index.html','marketing/index.html','engineering/index.html','staff-api/index.php','staff-api/paths.php','api/db.php'])if(!fs.existsSync(path.join(dist,required)))throw new Error(`Missing required public file: ${required}`);
 const manifest=walk(output).map(file=>({path:path.relative(output,file).replaceAll('\\','/'),bytes:fs.statSync(file).size,sha256:crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')}));
 write('manifest.json',JSON.stringify(manifest,null,2));
 run(process.platform==='win32'?'python':'python3',['scripts/zip-v2-release.py',output]);

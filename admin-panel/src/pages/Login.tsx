@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { ShieldCheck, Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAdminServerUrl, isDesktopClient, setAdminServerUrl } from '../api';
-import { AttaieLogoEntrance } from '../components/AttaieLogoEntrance';
 
 const S = {
   page: {
@@ -364,7 +363,11 @@ export default function Login() {
   return (
     <div style={S.page} data-panel-id="admin">
       <div style={S.brand}>
-        <AttaieLogoEntrance mode="header" variant="navy" />
+        <img
+          src="/login-logo.png"
+          alt="Attaie Properties"
+          style={{ maxWidth: 260, width: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
+        />
         <span style={S.brandCaption}>Website Admin CRM</span>
       </div>
       <div style={S.card}>
@@ -493,23 +496,6 @@ export default function Login() {
             <span aria-hidden="true">→</span>
           </button>
         </form>
-
-        <div style={S.divider}>
-          <span style={S.dividerLine} />
-          <span>or</span>
-          <span style={S.dividerLine} />
-        </div>
-
-        <button
-          type="button"
-          data-testid="admin-google-signin-btn"
-          style={S.googleBtn}
-          disabled={busy || googleBusy}
-          onClick={handleGoogleSignIn}
-        >
-          <GoogleMark />
-          <span>{googleBusy ? 'Connecting Google…' : 'Sign in with Google'}</span>
-        </button>
 
         <div style={S.accountRow}>
           <span>Don't have an account?</span>

@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.BatteryManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -20,14 +21,26 @@ class DeviceBatteryBridge(
 ) {
     private var receiverRegistered = false
 
+    private fun isTrustedOrigin(url: String?): Boolean {
+        if (url.isNullOrBlank()) return false
+        val uri = Uri.parse(url)
+        val scheme = uri.scheme
+        if ((scheme != "https") && (scheme != "http")) return false
+        val host = uri.host ?: return false
+        return host == "attaieproperties.com" ||
+            host == "www.attaieproperties.com" ||
+            host == "sales.attaieproperties.com" ||
+            host.endsWith(".attaieproperties.com")
+    }
+
     private val batteryReceiver = object : BroadcastReceiver() {
         override fun onReceive(ctx: Context?, intent: Intent?) {
             val payload = readBatteryJson(intent)
             webView.post {
                 val url = webView.url ?: return@post
-                if (!url.startsWith("https://sales.attaieproperties.com/")) return@post
+                if (!isTrustedOrigin(url)) return@post
                 webView.evaluateJavascript(
-                    "window.__attaieBatteryUpdate && window.__attaieBatteryUpdate(${payload});",
+                    "window.__attaieBatteryUpdate && window.__attaieBatteryUpdate($payload);",
                     null
                 )
             }
