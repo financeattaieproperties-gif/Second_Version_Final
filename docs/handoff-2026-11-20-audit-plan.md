@@ -30,6 +30,13 @@ This plan consolidates the three codebase audits conducted on 2026-11-20 across:
 - **`public/api/schema.sql`**:
   - Added `website_submission_publications`.
 
+- **Completed in `44df332`:**
+  - `usePWAInstall.ts` early `beforeinstallprompt` capture + iOS Safari fallback instructions (`display: standalone`).
+  - Removed Google Login from staff `LoginScreen`, removed global header "Assign task" button, removed Google Drive panels (`StaffDriveDocumentsPanel`, `AdminDriveFolderModal`).
+  - Added direct Google Sheet ID / URL input in `StaffSheetsExportModal` (CEO) & `AdminSheetsExportModal` (Admin) for DB backup.
+  - Added user profile photo upload (`core_users.photo_url`, `POST /staff-api/v1/profile/photo`, `StaffPhotoUpload` on Profile page).
+  - UI Variant 1 Phase 0 (`public/login-logo.png`, `public/logo.png`, `shared/alabaster-dashboard.css`, `apps/staff/src/styles.css`, `admin-panel/src/pages/Login.tsx`, `admin-panel/src/components/Layout.tsx`).
+
 ---
 
 ## Remaining Implementation Plan (Next Session)
@@ -74,14 +81,10 @@ This plan consolidates the three codebase audits conducted on 2026-11-20 across:
   - Persist `apiUrl` using `setAdminServerUrl()` from `admin-panel/src/api.ts:16` instead of a no-op state toggle.
 - [ ] **3.2 Add real error handling in `admin-panel/src/pages/Properties.tsx` & `Projects.tsx`**
   - Surface error banners on `getProperties()`, `getProjects()`, `remove()`, and `cycleStatus()` failures instead of swallowing errors into empty states.
-- [ ] **3.3 Align `admin-panel/src/pages/Login.tsx` with Option 2 Alabaster**
-  - Replace legacy dark navy glassmorphism (`#0A1F5C` / `#020E3A` / `#0145F2`) with Option 2 Alabaster (`#F7F8FA` canvas, `#FFFFFF` card, `#0F172A` primary CTA).
-- [ ] **3.4 Remove emojis & legacy class names**
+- [ ] **3.3 Clean up emojis, legacy class names, and a11y labels**
   - Replace `📷` in `admin-panel/src/pages/ProjectForm.tsx:483,560` and `💡` in `admin-panel/src/components/ApartmentGalleryReorder.tsx:467` with Lucide icons.
-  - Rename `avatar gold` in `apps/staff/src/main.tsx:1281,1462,1635,2543` to Alabaster-neutral naming.
+  - Rename `avatar gold` in `apps/staff/src/main.tsx` to Variant 1 neutral naming.
   - Add `aria-label` to icon-only dismiss buttons in `Projects.tsx:136-142`, `Leads.tsx:593`, `Visits.tsx:218`, and `ApartmentGalleryReorder.tsx:410`.
-- [ ] **3.5 Disable/hide non-functional Google Sign-In & Reset Password in `apps/staff/src/main.tsx`**
-  - Hide or disable buttons that call `loginWithGoogle()` / `resetPassword()` (which unconditionally throw).
 
 ---
 
@@ -96,6 +99,41 @@ This plan consolidates the three codebase audits conducted on 2026-11-20 across:
   - `src/components/map/AttaieGoogleMap.tsx`
   - `src/components/project/PaymentPlanComparisonCard.tsx`
   - `src/components/about/ContactSectionContent.tsx`
+
+---
+
+### Phase 5 — UI Variant 1 Dashboard-by-Dashboard Rollout (from `docs/ui-variant-1-implementation-plan.md`)
+
+> **Standard:** `#0072BC` (Logo Blue), `#14A850` (Logo Green), `#818285` (Logo Slate Gray), `#F8FAFC` canvas, `#FFFFFF` cards/drawers, `#FBFBFD` 64px rail, `#1E293B` ink, `DM Sans` + `tabular-nums`, `lucide-react` 1.5px icons. Work dashboard-by-dashboard and mark `[x]` in `docs/ui-variant-1-implementation-plan.md` as each is verified.
+
+- [ ] **Dashboard 1: Admin CRM (`admin-panel/` — Web `/admin` & Electron PC)**
+  - Overview: 4 KPI cards with inline sparklines + `#14A850` delta pills, dual-tone `#0072BC`/`#14A850` Area Chart, Channel Breakdown Donut Chart.
+  - Tables (`Properties`, `Projects`, `Leads`, `Visits`, `Submissions`, `Careers`): hairline styling, filter pills, search bar, tri-color status badges, pagination.
+  - Split-View / Forms (`PropertyForm`, `ProjectForm`, `Chat`): Variant 1 borders, `#0072BC` primary CTAs, `#818285` muted labels.
+  - Verify: `npm run build:admin` + `cd admin-panel && npm run build`.
+- [ ] **Dashboard 2: Call Center (`/callcenter` & `callcenter-desktop` PC)**
+  - Overview: 4 KPI cards (`Drafts Needs Details`, `Active Leads`, `Handoffs to Sales`, `Duplicate Conflicts`) + Intake vs. Handoff Bar Chart.
+  - Leads Table + Slide-over `EntryForm` with `#0072BC` CTA and duplicate-review alert banner.
+  - Verify: `npm run build:staff` + `callcenter-desktop` check.
+- [ ] **Dashboard 3: Sales Agent Web & Mobile (`apps/staff` `/sales`, `sales-android`, `sales-ios`)**
+  - Web & Mobile Overview: 4 KPI cards + 24h SLA Compliance Ring/Bar.
+  - Leads & Follow-ups: hairline desktop table + `SalesMobileCards.tsx` (`#0072BC` Call, `#14A850` WhatsApp/Closed, `#818285` metadata).
+  - Feedback & Close Deal Modal: 4-way selector, Buyer Photo + Tazkira upload cards, `#0072BC` Close Deal CTA.
+  - Android & iOS Sync: rebuild `sales-android` (`npm run build:sales-android`) and verify `sales-ios` web bundle sync.
+- [ ] **Dashboard 4: Sales Leader (`/sales-leader`)**
+  - 4 KPI cards with sparklines + `LeadConversionFunnelChart.tsx` (`#0072BC` → `#14A850`) + `AgentConversionChart.tsx` (`#818285` vs `#14A850`) + Team Table.
+- [ ] **Dashboard 5: Branch Management & HR Contracts (`/management`)**
+  - Overview & Duplicate Reviews: 4 KPI cards + Inventory Stacked Bar Chart.
+  - `HrContractsWorkspace.tsx` split-view: left `pending_contract` queue + right verification drawer with `#0072BC` **Issue Contract** CTA.
+- [ ] **Dashboard 6: Finance (`/finance`)**
+  - `FinanceWorkspace.tsx`: 4 KPI cards + Monthly Cashflow Area Chart (`#0072BC` / `#14A850`) + Deposit Ledger Table (`Record`, `Approve` `#14A850`, `Reverse`).
+- [ ] **Dashboard 7: Marketing (`/marketing`)**
+  - `MarketingWorkspace.tsx`: 4 KPI cards + Channel Donut + Mark Posted 5-photo drawer (`Facebook | YouTube | Instagram`, `#0072BC` sync CTA).
+- [ ] **Dashboard 8: Engineering (`/engineering`)**
+  - `EngineeringWorkspace.tsx`: 4 KPI cards + Deliverables Table + Version History Drawer (`#14A850` Approve, `#818285`/`#BC3D46` Revision).
+- [ ] **Dashboard 9: CEO (`/ceo`)**
+  - Cross-branch 4 KPI cards + Revenue/Pipeline Area Chart + `ProjectOccupancyChart.tsx` (`#14A850` Available, `#0072BC` Sold/Closed, `#818285` Reserved) + `ProjectInventoryWizard.tsx` in Variant 1.
+- [ ] **Final Cross-Platform Release Verification:** `npm run build:admin`, `npm run build:staff`, `cd admin-panel && npm run build`, `callcenter-desktop`, `sales-ios`.
 
 ---
 
