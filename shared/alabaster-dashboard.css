@@ -3,28 +3,31 @@
  * Apply to all existing and future Admin CRM, Staff Workspace, and standalone dashboards.
  */
 :root {
-  --alabaster-bg: #F7F8FA;
+  --alabaster-bg: #F8FAFC;
   --alabaster-surface: #FFFFFF;
   --alabaster-rail-bg: #FBFBFD;
   --alabaster-subtle: #F8FAFC;
   --alabaster-hover: #F1F5F9;
   --alabaster-border: #E2E8F0;
   --alabaster-border-soft: #CBD5E1;
-  --alabaster-primary: #0F172A;
-  --alabaster-primary-hover: #1E293B;
+  --alabaster-primary: #0072BC;
+  --alabaster-primary-hover: #005E9B;
+  --alabaster-ink: #1E293B;
   --alabaster-secondary-text: #475569;
-  --alabaster-muted: #64748B;
-  --alabaster-subtle-text: #94A3B8;
+  --alabaster-muted: #818285;
+  --alabaster-subtle-text: #818285;
 
-  /* Semantic Status Colors (clean text & soft surfaces, zero dark/neon slop) */
-  --alabaster-success: #047857;
-  --alabaster-success-bg: #ECFDF5;
+  /* Semantic Status Colors (Exact Logo Tri-Color Palette) */
+  --alabaster-success: #14A850;
+  --alabaster-success-bg: #E8F7EE;
   --alabaster-warning: #B45309;
   --alabaster-warning-bg: #FFFBEB;
-  --alabaster-info: #1D4ED8;
-  --alabaster-info-bg: #EFF6FF;
+  --alabaster-info: #0072BC;
+  --alabaster-info-bg: #E6F2FA;
   --alabaster-danger: #B91C1C;
   --alabaster-danger-bg: #FEF2F2;
+  --alabaster-neutral: #818285;
+  --alabaster-neutral-bg: #F1F5F9;
 
   /* Geometry */
   --alabaster-rail-width: 64px;

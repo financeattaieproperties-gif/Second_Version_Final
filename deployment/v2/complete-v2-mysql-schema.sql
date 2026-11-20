@@ -93,6 +93,8 @@ CREATE TABLE IF NOT EXISTS project_units (
   currency     CHAR(3)       NOT NULL DEFAULT 'USD',
   status       ENUM('available','reserved','sold','rented') NOT NULL DEFAULT 'available',
   image_url    VARCHAR(500)  DEFAULT NULL,
+  gallery_images JSON          DEFAULT NULL,
+  video_url    VARCHAR(500)  DEFAULT NULL,
   description  TEXT          DEFAULT NULL,
   created_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   updated_at   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -143,10 +145,46 @@ CREATE TABLE IF NOT EXISTS leads (
   stage         VARCHAR(50)  DEFAULT 'New',
   source        VARCHAR(50)  DEFAULT 'Website',
   status        VARCHAR(50)  DEFAULT 'Pending',
+  client_request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  payload_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  receipt_reference VARCHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+  receipt_submitted_at DATETIME DEFAULT NULL,
+  followup_status ENUM('new','in_progress','resolved') NOT NULL DEFAULT 'new',
+  followup_notes TEXT DEFAULT NULL,
+  followup_at DATETIME DEFAULT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  UNIQUE KEY uq_inquiry_request (client_request_id),
+  UNIQUE KEY uq_inquiry_receipt (receipt_reference),
   created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_leads_status_stage (status, stage),
   INDEX idx_leads_property_id (property_id),
   INDEX idx_leads_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7b. Website Inquiry Follow-up Events
+CREATE TABLE IF NOT EXISTS website_inquiry_events (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  inquiry_id INT NOT NULL,
+  actor VARCHAR(100) NOT NULL,
+  previous_status VARCHAR(30) NOT NULL,
+  next_status VARCHAR(30) NOT NULL,
+  notes TEXT DEFAULT NULL,
+  followup_at DATETIME DEFAULT NULL,
+  version INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL,
+  INDEX idx_inquiry_event (inquiry_id, id),
+  CONSTRAINT fk_inquiry_event FOREIGN KEY (inquiry_id) REFERENCES leads(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7c. Site-Wide SEO Keywords Toggle Catalog
+CREATE TABLE IF NOT EXISTS seo_keywords (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  keyword    VARCHAR(180) NOT NULL,
+  enabled    TINYINT(1)   NOT NULL DEFAULT 1,
+  created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_seo_keyword (keyword),
+  INDEX idx_seo_keywords_enabled (enabled)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 8. Visit Requests & Viewing Appointments
@@ -447,6 +485,7 @@ CREATE TABLE IF NOT EXISTS core_users (
   department_code VARCHAR(60) NULL,
   team_leader_id INT UNSIGNED NULL,
   branch_id INT UNSIGNED NULL,
+  photo_url VARCHAR(500) NULL,
   active TINYINT NOT NULL DEFAULT 1,
   auth_version INT NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -850,6 +889,43 @@ CREATE TABLE IF NOT EXISTS inv_project_sales_agents (
   FOREIGN KEY (project_id) REFERENCES inv_projects(id),
   FOREIGN KEY (sales_agent_id) REFERENCES core_users(id),
   FOREIGN KEY (assigned_by) REFERENCES core_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 44b. Master Customer Ownership
+CREATE TABLE IF NOT EXISTS crm_customer_owners (
+  customer_id INT UNSIGNED PRIMARY KEY,
+  serial VARCHAR(80) NOT NULL UNIQUE,
+  owner_agent_id INT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES cc_customers(id),
+  FOREIGN KEY (owner_agent_id) REFERENCES core_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 44c. Customer Shared Access
+CREATE TABLE IF NOT EXISTS crm_customer_shared_access (
+  customer_id INT UNSIGNED NOT NULL,
+  agent_id INT UNSIGNED NOT NULL,
+  granted_by INT UNSIGNED NOT NULL,
+  reason VARCHAR(120) NOT NULL DEFAULT 'referral',
+  granted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (customer_id, agent_id),
+  FOREIGN KEY (customer_id) REFERENCES cc_customers(id),
+  FOREIGN KEY (agent_id) REFERENCES core_users(id),
+  FOREIGN KEY (granted_by) REFERENCES core_users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 44d. Lead Referrals
+CREATE TABLE IF NOT EXISTS crm_lead_referrals (
+  lead_id INT UNSIGNED NOT NULL,
+  shared_agent_id INT UNSIGNED NOT NULL,
+  referred_by_id INT UNSIGNED NOT NULL,
+  project_id INT UNSIGNED NULL,
+  apartment_id INT UNSIGNED NULL,
+  referred_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (lead_id, shared_agent_id),
+  FOREIGN KEY (lead_id) REFERENCES cc_leads(id),
+  FOREIGN KEY (shared_agent_id) REFERENCES core_users(id),
+  FOREIGN KEY (referred_by_id) REFERENCES core_users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 45. Customer Duplicate Review Requests

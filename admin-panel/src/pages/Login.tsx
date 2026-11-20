@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { ShieldCheck, Eye, EyeOff, Mail, Lock, Globe } from 'lucide-react';
+import { useState, useEffect, type FormEvent } from 'react';
+import { ShieldCheck, Eye, EyeOff, Mail, Lock, Globe, Calendar, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAdminServerUrl, isDesktopClient, setAdminServerUrl } from '../api';
 
@@ -10,10 +10,10 @@ const S = {
     flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'radial-gradient(circle at 50% 25%, #0A1F5C 0%, #020E3A 50%, #010826 100%)',
+    background: '#F8FAFC',
     padding: '1.5rem',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-    color: '#FFFFFF',
+    color: '#1E293B',
     position: 'relative' as const,
     boxSizing: 'border-box' as const,
   } as const,
@@ -21,56 +21,53 @@ const S = {
     display: 'flex',
     flexDirection: 'column' as const,
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginBottom: '1.5rem',
   } as const,
   brandCaption: {
-    fontSize: 10,
-    letterSpacing: '0.22em',
+    fontSize: 11,
+    letterSpacing: '0.18em',
     textTransform: 'uppercase' as const,
-    color: '#94A3B8',
+    color: '#818285',
     fontWeight: 600,
   } as const,
   card: {
-    background: 'rgba(10, 20, 48, 0.78)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    borderRadius: 22,
-    padding: '2.5rem 2.25rem',
+    background: '#FFFFFF',
+    borderRadius: 16,
+    padding: '2.25rem 2rem',
     width: '100%',
     maxWidth: 420,
-    boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
+    boxShadow: '0 8px 30px rgba(15, 23, 42, 0.06)',
+    border: '1px solid #E2E8F0',
     boxSizing: 'border-box' as const,
   } as const,
   avatarBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: '50%',
-    background: 'rgba(255, 255, 255, 0.08)',
-    border: '1px solid rgba(255, 255, 255, 0.18)',
-    color: '#FFFFFF',
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    background: '#E6F2FA',
+    border: '1px solid #BAE6FD',
+    color: '#0072BC',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    margin: '0 auto 1.25rem',
+    margin: '0 auto 1rem',
     fontWeight: 700,
-    fontSize: '1.25rem',
-    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
+    fontSize: '1.1rem',
     letterSpacing: '-0.02em',
   } as const,
   title: {
-    fontSize: '1.65rem',
+    fontSize: '1.5rem',
     fontWeight: 700,
     marginBottom: '0.35rem',
-    color: '#FFFFFF',
+    color: '#1E293B',
     letterSpacing: '-0.025em',
     textAlign: 'center' as const,
   } as const,
   sub: {
     fontSize: '0.84rem',
-    color: '#94A3B8',
-    marginBottom: '1.35rem',
+    color: '#818285',
+    marginBottom: '1.25rem',
     lineHeight: 1.5,
     textAlign: 'center' as const,
   } as const,
@@ -80,36 +77,36 @@ const S = {
     justifyContent: 'space-between',
     gap: 8,
     padding: '8px 12px',
-    marginBottom: '1.25rem',
+    marginBottom: '1.15rem',
     borderRadius: 8,
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    fontSize: 11,
-    color: '#CBD5E1',
+    background: '#F8FAFC',
+    border: '1px solid #E2E8F0',
+    fontSize: 11.5,
+    color: '#475569',
     fontVariantNumeric: 'tabular-nums',
   } as const,
   codeBadge: {
     fontSize: 11,
     fontWeight: 600,
-    color: '#FFFFFF',
-    background: 'rgba(255, 255, 255, 0.1)',
-    padding: '2px 7px',
-    borderRadius: 4,
-    border: '1px solid rgba(255, 255, 255, 0.15)',
+    color: '#14A850',
+    background: '#E8F7EE',
+    padding: '2px 8px',
+    borderRadius: 5,
+    border: '1px solid #BBF7D0',
   } as const,
   inputWrap: {
     position: 'relative' as const,
     display: 'flex',
     alignItems: 'center',
     width: '100%',
-    marginBottom: '0.9rem',
+    marginBottom: '0.85rem',
   } as const,
   inputIcon: {
     position: 'absolute' as const,
     insetInlineStart: 14,
     top: '50%',
     transform: 'translateY(-50%)',
-    color: '#94A3B8',
+    color: '#818285',
     pointerEvents: 'none' as const,
     display: 'flex',
     alignItems: 'center',
@@ -117,25 +114,25 @@ const S = {
   } as const,
   input: {
     width: '100%',
-    padding: '0.82rem 1rem 0.82rem 2.75rem',
-    border: '1px solid rgba(255, 255, 255, 0.14)',
-    borderRadius: 12,
+    padding: '0.75rem 1rem 0.75rem 2.75rem',
+    border: '1px solid #E2E8F0',
+    borderRadius: 10,
     fontSize: '0.9rem',
     outline: 'none',
-    background: 'rgba(255, 255, 255, 0.07)',
-    color: '#FFFFFF',
+    background: '#FFFFFF',
+    color: '#1E293B',
     boxSizing: 'border-box' as const,
     transition: 'border-color 0.2s, box-shadow 0.2s',
   } as const,
   passwordInput: {
     width: '100%',
-    padding: '0.82rem 2.75rem 0.82rem 2.75rem',
-    border: '1px solid rgba(255, 255, 255, 0.14)',
-    borderRadius: 12,
+    padding: '0.75rem 2.75rem 0.75rem 2.75rem',
+    border: '1px solid #E2E8F0',
+    borderRadius: 10,
     fontSize: '0.9rem',
     outline: 'none',
-    background: 'rgba(255, 255, 255, 0.07)',
-    color: '#FFFFFF',
+    background: '#FFFFFF',
+    color: '#1E293B',
     boxSizing: 'border-box' as const,
     transition: 'border-color 0.2s, box-shadow 0.2s',
   } as const,
@@ -149,7 +146,7 @@ const S = {
     borderRadius: 8,
     border: 'none',
     background: 'transparent',
-    color: '#94A3B8',
+    color: '#818285',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -160,9 +157,9 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    margin: '0.2rem 0 1.25rem',
+    margin: '0.2rem 0 1.15rem',
     fontSize: '0.82rem',
-    color: '#94A3B8',
+    color: '#818285',
   } as const,
   rememberLabel: {
     display: 'flex',
@@ -170,10 +167,10 @@ const S = {
     gap: 7,
     cursor: 'pointer',
     userSelect: 'none' as const,
-    color: '#CBD5E1',
+    color: '#475569',
   } as const,
   checkbox: {
-    accentColor: '#0145F2',
+    accentColor: '#0072BC',
     width: 15,
     height: 15,
     borderRadius: 4,
@@ -182,16 +179,17 @@ const S = {
   forgotBtn: {
     background: 'none',
     border: 'none',
-    color: '#94A3B8',
+    color: '#0072BC',
     fontSize: '0.82rem',
+    fontWeight: 600,
     cursor: 'pointer',
     padding: 0,
     textDecoration: 'none',
   } as const,
   notice: {
-    background: 'rgba(1, 69, 242, 0.15)',
-    color: '#93C5FD',
-    border: '1px solid rgba(1, 69, 242, 0.3)',
+    background: '#E6F2FA',
+    color: '#0072BC',
+    border: '1px solid #BAE6FD',
     padding: '0.65rem 0.85rem',
     borderRadius: 8,
     marginBottom: '1rem',
@@ -200,19 +198,18 @@ const S = {
   } as const,
   btn: {
     width: '100%',
-    padding: '0.82rem 1rem',
-    background: '#FFFFFF',
+    padding: '0.78rem 1rem',
+    background: '#0072BC',
     border: 'none',
-    borderRadius: 12,
-    color: '#020E3A',
-    fontWeight: 700,
+    borderRadius: 10,
+    color: '#FFFFFF',
+    fontWeight: 600,
     fontSize: '0.92rem',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.35)',
     transition: 'background-color 0.15s, transform 0.1s',
   } as const,
   divider: {
@@ -306,6 +303,13 @@ export default function Login() {
   const [editingServer, setEditingServer] = useState(false);
   const [serverDraft, setServerDraft] = useState(() => getAdminServerUrl());
   const [u, setU] = useState('');
+  const [rememberedUser] = useState(() => {
+    try {
+      return localStorage.getItem('attaie_admin_last_user') || '';
+    } catch {
+      return '';
+    }
+  });
   const [p, setP] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -313,6 +317,41 @@ export default function Login() {
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [googleBusy, setGoogleBusy] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const base = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '') + '/visual-config'
+      : '/visual-config';
+    fetch(`${base}/read.php`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((cfg) => {
+        if (!active) return;
+        const url = cfg?.loginBackgrounds?.admin;
+        if (url) setBgUrl(url);
+      })
+      .catch(() => {
+        try {
+          const raw = localStorage.getItem('attaie_visual_config_draft');
+          const parsed = raw ? JSON.parse(raw) : null;
+          if (active && parsed?.loginBackgrounds?.admin) {
+            setBgUrl(parsed.loginBackgrounds.admin);
+          }
+        } catch {
+          // ignore
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const saveServer = () => {
     try {
@@ -331,10 +370,14 @@ export default function Login() {
     setBusy(true);
     setErr('');
     try {
-      sessionStorage.setItem('attaie_admin_play_entrance', '1');
       await login(u, p);
+      try {
+        const cleanName = u.includes('@') ? u.split('@')[0] : u;
+        if (cleanName.trim()) localStorage.setItem('attaie_admin_last_user', cleanName.trim());
+      } catch {
+        // ignore storage errors
+      }
     } catch {
-      sessionStorage.removeItem('attaie_admin_play_entrance');
       setErr('Invalid username or password.');
     } finally {
       setBusy(false);
@@ -345,7 +388,6 @@ export default function Login() {
     setGoogleBusy(true);
     setErr('');
     try {
-      sessionStorage.setItem('attaie_admin_play_entrance', '1');
       await loginWithGoogle();
     } catch (error) {
       sessionStorage.removeItem('attaie_admin_play_entrance');
@@ -360,27 +402,58 @@ export default function Login() {
     }
   };
 
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  const timeLabel = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const pageStyle = bgUrl
+    ? {
+        ...S.page,
+        backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.72), rgba(248, 250, 252, 0.72)), url("${bgUrl}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : S.page;
+
   return (
-    <div style={S.page} data-panel-id="admin">
-      <div style={S.brand}>
-        <img
-          src="/login-logo.png"
-          alt="Attaie Properties"
-          style={{ maxWidth: 260, width: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
-        />
-        <span style={S.brandCaption}>Website Admin CRM</span>
+    <div style={pageStyle} data-panel-id="admin">
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '6px 14px',
+          marginBottom: '1rem',
+          borderRadius: 999,
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.04)',
+          fontSize: 12,
+          fontWeight: 600,
+          color: '#475569',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <Calendar size={13} color="#0072BC" />
+          <span>{dateLabel}</span>
+        </span>
+        <span style={{ color: '#CBD5E1' }}>•</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+          <Clock size={13} color="#14A850" />
+          <span>{timeLabel}</span>
+        </span>
       </div>
       <div style={S.card}>
-        <div style={S.avatarBadge}>
-          <span>A</span>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.1rem' }}>
+          <img
+            src="/login-logo.png"
+            alt="Attaie Properties"
+            style={{ maxWidth: 210, width: '100%', height: 'auto', display: 'block' }}
+          />
         </div>
-        <h1 style={S.title}>Welcome Back</h1>
-        <p style={S.sub}>Sign in to continue to Attaie Website Admin</p>
-
-        <div style={S.roleBox}>
-          <span><strong>Role:</strong> Website Administrator</span>
-          <code style={S.codeBadge}>{desktopMode ? 'Desktop App' : '/admin'}</code>
-        </div>
+        <h1 style={S.title}>
+          {rememberedUser ? `Welcome Back, ${rememberedUser}` : 'Welcome Back'}
+        </h1>
 
         {desktopMode && (
           <div style={{ marginBottom: '1rem', padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 11, color: '#CBD5E1' }}>
@@ -496,24 +569,8 @@ export default function Login() {
             <span aria-hidden="true">→</span>
           </button>
         </form>
-
-        <div style={S.accountRow}>
-          <span>Don't have an account?</span>
-          <button
-            type="button"
-            style={S.accountLink}
-            onClick={() => setShowForgotNotice(true)}
-          >
-            Contact Admin
-          </button>
-        </div>
-
-        <div style={S.privateNote}>
-          <ShieldCheck size={13} />
-          <span>Private, authorized staff access only · Fixed Role Workspace</span>
-        </div>
       </div>
-      <footer style={S.footer}>Attaie Properties · Kabul, Afghanistan</footer>
+      <footer style={S.footer}>Attaie Properties 2026 - Developed By Mohammad Roheen Ahmadi</footer>
     </div>
   );
 }

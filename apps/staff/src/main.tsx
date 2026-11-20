@@ -111,13 +111,13 @@ import { useLowBatteryWarning } from "./hooks/useLowBatteryWarning";
 import { registerSalesServiceWorker } from "./pwa/register";
 import { useLeadNotifications } from "./hooks/useLeadNotifications";
 import { notifyLeadAssigned } from "./pwa/leadNotificationService";
-import { AttaieLogoEntrance } from "./components/AttaieLogoEntrance";
 import { AgentConversionChart } from "./components/AgentConversionChart";
 import { LeadConversionFunnelChart } from "./components/LeadConversionFunnelChart";
 import { ProjectInventoryWizard } from "./components/ProjectInventoryWizard";
 import { HrContractsWorkspace } from "./components/HrContractsWorkspace";
 import { AgreementVerification } from "./components/AgreementVerification";
 import { FinanceWorkspace } from "./components/FinanceWorkspace";
+import { StaffPhotoUpload } from "./components/StaffPhotoUpload";
 import {
   MarketingWorkspace,
   SubmissionsStatusView,
@@ -129,7 +129,6 @@ import {
 } from "./components/SalesMobileCards";
 import {
   StaffCalendarSyncConfirmModal,
-  StaffDriveDocumentsPanel,
   StaffSheetsExportModal,
   type PendingStaffCalendarSync,
 } from "./components/GoogleWorkspaceIntegration";
@@ -266,7 +265,6 @@ function App() {
     [language],
   );
   const [session, setSession] = useState<Session | null>(null);
-  const [playingEntrance, setPlayingEntrance] = useState(false);
   const [starting, setStarting] = useState(true);
   const [page, setPage] = useState<Page>(() => pageFromPath());
   const [data, setData] = useState<DashboardData | null>(null);
@@ -1017,9 +1015,13 @@ function App() {
         onLogin={(s) => {
           writePreferredWorkspaceRole(s.user.role);
           writeOfflineSessionUser(panelSpec.panelId, s.user);
+          try {
+            if (s.user?.name) localStorage.setItem("attaie_staff_last_user", s.user.name);
+          } catch {
+            // ignore storage errors
+          }
           setOfflineSavedAt(null);
           setJustSignedOut(false);
-          setPlayingEntrance(true);
           setSession(s);
           setPage((current) =>
             resolvePageForRole(
@@ -1033,16 +1035,6 @@ function App() {
         management={management}
       />
     );
-
-  if (playingEntrance) {
-    return (
-      <AttaieLogoEntrance
-        mode="login-transition"
-        variant="navy"
-        onComplete={() => setPlayingEntrance(false)}
-      />
-    );
-  }
 
   if (
     !isDashboardPath &&
@@ -1331,7 +1323,16 @@ function App() {
                 type="button"
                 className="button secondary pwa-install-topbar-btn"
                 data-testid="pwa-install-btn"
-                onClick={() => void promptInstall()}
+                onClick={async () => {
+                  const result = await promptInstall();
+                  if (result === "ios") {
+                    setNotice(
+                      t(
+                        "On iPhone/iPad Safari: tap the Share button at the bottom, then choose 'Add to Home Screen' for full-screen app mode.",
+                      ),
+                    );
+                  }
+                }}
               >
                 <Download size={15} />
                 {t("Install App")}
@@ -1480,16 +1481,6 @@ function App() {
               >
                 <RefreshCw className={loading ? "spinning" : ""} size={18} />
               </button>
-              {canAssignTasks && (
-                <button
-                  className="button secondary"
-                  data-testid="assign-task-btn"
-                  onClick={() => setModal({ kind: "assign" })}
-                >
-                  <Plus size={17} />
-                  {t("Assign task")}
-                </button>
-              )}
               {(activeRole === "callcenter" || activeRole === "sales") && (
                 <button
                   className="button"
@@ -1792,28 +1783,21 @@ function App() {
 
           {/* Phase 2: Pre-Sale Projects & Apartments Wizard */}
           {page === "projects" && (
-            <>
-              <ProjectInventoryWizard
-                projects={data?.projects || []}
-                staffUsers={data?.assignees || []}
-                branches={data?.branches || []}
-                language={language}
-                onUpload={client.upload}
-                actorRole={activeRole}
-                onExportSheets={() => setSheetsExportMode("inventory")}
-                onSaveProject={async (proj) => {
-                  await client.saveProject(proj);
-                  await refresh();
-                }}
-                onNotice={setNotice}
-                onError={setError}
-              />
-              <StaffDriveDocumentsPanel
-                projects={data?.projects || []}
-                onNotice={setNotice}
-                onError={setError}
-              />
-            </>
+            <ProjectInventoryWizard
+              projects={data?.projects || []}
+              staffUsers={data?.assignees || []}
+              branches={data?.branches || []}
+              language={language}
+              onUpload={client.upload}
+              actorRole={activeRole}
+              onExportSheets={() => setSheetsExportMode("inventory")}
+              onSaveProject={async (proj) => {
+                await client.saveProject(proj);
+                await refresh();
+              }}
+              onNotice={setNotice}
+              onError={setError}
+            />
           )}
 
           {/* Phase 4: HR Deal Contracts & Two-Page A4 Legal Printout */}
@@ -2540,12 +2524,68 @@ function App() {
           {page === "profile" && (
             <div className="profile-grid">
               <section className="panel profile-card">
-                <span className="avatar large gold">
-                  {initials(session.user.name)}
-                </span>
+                {session.user.photoUrl ? (
+                  <img
+                    src={session.user.photoUrl}
+                    alt={session.user.name}
+                    width={72}
+                    height={72}
+                    style={{
+                      objectFit: "cover",
+                      borderRadius: "9999px",
+                      border: "2px solid #E2E8F0",
+                    }}
+                  />
+                ) : (
+                  <span className="avatar large gold">
+                    {initials(session.user.name)}
+                  </span>
+                )}
                 <h2>{session.user.name}</h2>
                 <p>{t(roleLabel)}</p>
                 <p>{t("All times in Kabul · UTC+04:30")}</p>
+                <div style={{ width: "100%", marginTop: 12, textAlign: "start" }}>
+                  <StaffPhotoUpload
+                    label={t("Profile photo")}
+                    value={session.user.photoUrl || ""}
+                    purpose="user_avatar"
+                    lang={language}
+                    onUpload={client.upload}
+                    onChange={async (url) => {
+                      try {
+                        const res = await client.updateProfilePhoto(url);
+                        setSession((prev) =>
+                          prev ? { ...prev, user: res.user } : prev,
+                        );
+                        setError("");
+                        setNotice(t("Profile photo updated."));
+                      } catch (e) {
+                        setError((e as Error).message);
+                      }
+                    }}
+                  />
+                  {session.user.photoUrl && (
+                    <button
+                      type="button"
+                      className="button secondary"
+                      style={{ marginTop: 8 }}
+                      onClick={async () => {
+                        try {
+                          const res = await client.updateProfilePhoto("");
+                          setSession((prev) =>
+                            prev ? { ...prev, user: res.user } : prev,
+                          );
+                          setError("");
+                          setNotice(t("Profile photo removed."));
+                        } catch (e) {
+                          setError((e as Error).message);
+                        }
+                      }}
+                    >
+                      {t("Remove photo")}
+                    </button>
+                  )}
+                </div>
                 <button
                   className="button secondary"
                   data-testid="profile-signout-btn"
@@ -2599,7 +2639,16 @@ function App() {
                       type="button"
                       className="button"
                       data-testid="profile-install-app-btn"
-                      onClick={() => void promptInstall()}
+                      onClick={async () => {
+                  const result = await promptInstall();
+                  if (result === "ios") {
+                    setNotice(
+                      t(
+                        "On iPhone/iPad Safari: tap the Share button at the bottom, then choose 'Add to Home Screen' for full-screen app mode.",
+                      ),
+                    );
+                  }
+                }}
                     >
                       <Download size={16} />
                       {t("Install App")}
@@ -4167,44 +4216,57 @@ function Login({
 }) {
   const [busy, setBusy] = useState(false);
   const [bioBusy, setBioBusy] = useState(false);
-  const [googleBusy, setGoogleBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [showForgot, setShowForgot] = useState(false);
   const [bioStatus, setBioStatus] = useState(() => getBiometricStatus());
+  const [now, setNow] = useState(() => new Date());
+  const [bgUrl, setBgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/visual-config/read.php")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((cfg) => {
+        if (!active) return;
+        const url = cfg?.loginBackgrounds?.[panelSpec.panelId];
+        if (url) setBgUrl(url);
+      })
+      .catch(() => {
+        try {
+          const raw = localStorage.getItem("attaie_visual_config_draft");
+          const parsed = raw ? JSON.parse(raw) : null;
+          const url = parsed?.loginBackgrounds?.[panelSpec.panelId];
+          if (active && url) setBgUrl(url);
+        } catch {
+          // ignore
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const [rememberedStaffUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem("attaie_staff_last_user");
+      if (saved) return saved;
+      const bio = getBiometricStatus();
+      if (bio.email) return bio.email.includes("@") ? bio.email.split("@")[0] : bio.email;
+      return "";
+    } catch {
+      return "";
+    }
+  });
   const [enableBiometric, setEnableBiometric] = useState(true);
   const autoPromptTriggeredRef = useRef(false);
   const passwordId = React.useId();
   const pwdProps = getPasswordVisibilityProps(showPassword);
-
-  const handleGoogleSignIn = useCallback(async () => {
-    setGoogleBusy(true);
-    setFailure("");
-    try {
-      const loggedIn = await client.loginWithGoogle();
-      if (
-        !isPreview &&
-        !(panelSpec.allowedRoles as readonly string[]).includes(
-          loggedIn.user.role,
-        )
-      ) {
-        await client.logout().catch(() => {});
-        setFailure(t("This account does not have access to this workspace."));
-        return;
-      }
-      onLogin(loggedIn);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Sign-in service is unavailable. Please try again.";
-      setFailure(
-        msg.includes("popup-closed-by-user")
-          ? t("Google sign-in popup was closed before completing.")
-          : t(msg),
-      );
-    } finally {
-      setGoogleBusy(false);
-    }
-  }, [onLogin, t]);
 
   const handleBiometricSignIn = useCallback(async () => {
     if (!bioStatus.available || !bioStatus.enrolled) return;
@@ -4285,31 +4347,59 @@ function Login({
               ? Compass
               : Headphones;
 
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+  const timeLabel = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  const screenStyle = bgUrl
+    ? {
+        backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.72), rgba(248, 250, 252, 0.72)), url("${bgUrl}")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : undefined;
+
   return (
-    <div className="login-screen" data-panel-id={panelSpec.panelId}>
-      <div className="login-brand">
-        <img
-          src="/login-logo.png"
-          alt="Attaie Properties"
-          style={{ maxWidth: 260, width: "100%", height: "auto", display: "block", margin: "0 auto" }}
-        />
-        <span>{t(panelSpec.loginTitle)}</span>
+    <div className="login-screen" data-panel-id={panelSpec.panelId} style={screenStyle}>
+      <div
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "6px 14px",
+          marginBottom: 16,
+          borderRadius: 999,
+          background: "#FFFFFF",
+          border: "1px solid #E2E8F0",
+          boxShadow: "0 2px 8px rgba(15, 23, 42, 0.04)",
+          fontSize: 12,
+          fontWeight: 600,
+          color: "#475569",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+          <CalendarClock size={13} color="#0072BC" />
+          <span>{dateLabel}</span>
+        </span>
+        <span style={{ color: "#CBD5E1" }}>•</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+          <Clock3 size={13} color="#14A850" />
+          <span>{timeLabel}</span>
+        </span>
       </div>
       <main className="login-card">
-        <span className="login-icon">
-          <PanelIcon size={22} />
-        </span>
-        <div className="eyebrow">{t(panelSpec.loginEyebrow)}</div>
-        <h1>{t("Welcome Back")}</h1>
-        <p>{t(panelSpec.loginSubtitle)}</p>
-        <div className="login-role-box">
-          <span>
-            <strong>{t("Role")}:</strong> {t(panelSpec.fixedRoleLabel)}
-          </span>
-          <code>
-            {panelSpec.basePath}
-          </code>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>
+          <img
+            src="/login-logo.png"
+            alt="Attaie Properties"
+            style={{ maxWidth: 210, width: "100%", height: "auto", display: "block" }}
+          />
         </div>
+        <h1>
+          {rememberedStaffUser
+            ? `${t("Welcome Back")}, ${rememberedStaffUser}`
+            : t("Welcome Back")}
+        </h1>
         {bioStatus.available && bioStatus.enrolled && (
           <>
             <div
@@ -4329,7 +4419,7 @@ function Login({
                 type="button"
                 className="button full"
                 data-testid="biometric-signin-btn"
-                disabled={busy || bioBusy || googleBusy}
+                disabled={busy || bioBusy}
                 onClick={handleBiometricSignIn}
               >
                 <Fingerprint size={17} />
@@ -4353,7 +4443,7 @@ function Login({
                   aria-label={t("Quick Sign-in")}
                   data-testid="biometric-quick-signin-toggle"
                   className="alabaster-switch"
-                  disabled={busy || bioBusy || googleBusy}
+                  disabled={busy || bioBusy}
                   onClick={() => {
                     const next = !bioStatus.quickSignInEnabled;
                     setQuickSignInPreference(next);
@@ -4370,7 +4460,7 @@ function Login({
                 type="button"
                 className="biometric-clear-link"
                 data-testid="biometric-clear-btn"
-                disabled={busy || bioBusy || googleBusy}
+                disabled={busy || bioBusy}
                 onClick={() => {
                   clearBiometricEnrollment();
                   setBioStatus(getBiometricStatus());
@@ -4503,30 +4593,14 @@ function Login({
           <FormError message={t(failure || error)} />
           <button
             className={`button full ${bioStatus.available && bioStatus.enrolled ? "secondary" : ""}`}
-            disabled={busy || bioBusy || googleBusy}
+            disabled={busy || bioBusy}
           >
             <span>{t(busy ? "Signing in…" : "Sign In")}</span>
             <ArrowRight size={16} />
           </button>
         </form>
-
-        <div className="login-account-row">
-          <span>{t("Don't have an account?") || "Don't have an account?"}</span>
-          <button
-            type="button"
-            className="login-contact-admin-btn"
-            onClick={() => setShowForgot(true)}
-          >
-            {t("Contact Admin") || "Contact Admin"}
-          </button>
-        </div>
-
-        <p className="login-private">
-          <ShieldCheck size={14} />
-          <span>{t("Private, authorized staff access only · Fixed Role Workspace")}</span>
-        </p>
       </main>
-      <footer>Attaie Properties · Kabul, Afghanistan</footer>
+      <footer>Attaie Properties 2026 - Developed By Mohammad Roheen Ahmadi</footer>
     </div>
   );
 }

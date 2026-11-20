@@ -96,5 +96,6 @@ export interface VisualConfig {
   revision: string;
   updatedAt: string;
   landingHero: LandingHeroConfig;
+  loginBackgrounds?: Record<string, string | null>;
   projects: Record<number, ExplorerProject>;
 }

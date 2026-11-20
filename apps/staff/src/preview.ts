@@ -824,6 +824,10 @@ export function previewClient(management: boolean, initialRoleOverride?: Role) {
       Object.assign(deliv, updated);
       return deliv;
     },
+    async updateProfilePhoto(photoUrl: string) {
+      activeUser.photoUrl = photoUrl || null;
+      return { user: { ...activeUser } };
+    },
     async resetPassword(_email: string) {
       throw new Error("Passwords are not stored in sample preview.");
     },

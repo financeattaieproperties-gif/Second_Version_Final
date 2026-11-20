@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import LandingBackgroundSettings from '../components/visual/LandingBackgroundSettings';
+import LoginBackgroundSettings from '../components/visual/LoginBackgroundSettings';
 
 const S = {
   page: { maxWidth: 640 } as const,
@@ -160,6 +161,12 @@ export default function SettingsPage() {
       <LandingBackgroundSettings />
 
       {/* Application Info Card */}
+      <div style={S.card}>
+        <div style={S.section}>
+          <LoginBackgroundSettings />
+        </div>
+      </div>
+
       <div style={S.card}>
         <div style={S.section}>
           <p style={S.secHdr}>Application Info</p>

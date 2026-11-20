@@ -52,6 +52,7 @@ export interface StaffUser {
   assignedProjectIds?: number[];
   branchId: number | null;
   branchName?: string | null;
+  photoUrl?: string | null;
   active?: boolean;
 }
 

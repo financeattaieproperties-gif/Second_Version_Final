@@ -959,7 +959,22 @@ export function StaffSheetsExportModal({
             </div>
 
             <div className="field">
-              <label>Designated Google Sheet</label>
+              <label>Google Sheet ID (or Paste Sheet URL)</label>
+              <input
+                type="text"
+                value={selectedId}
+                placeholder="Paste Google Sheet ID or https://docs.google.com/spreadsheets/d/..."
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  const match = val.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+                  setSelectedId(match ? match[1] : val);
+                }}
+                disabled={busy}
+              />
+            </div>
+
+            <div className="field">
+              <label>Or Select Existing Google Sheet</label>
               <select
                 value={selectedId}
                 onChange={(e) => setSelectedId(e.target.value)}

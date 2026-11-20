@@ -191,6 +191,8 @@ export const api = {
       "POST",
       payload,
     ),
+  updateProfilePhoto: (photoUrl: string) =>
+    request<{ user: StaffUser }>("profile/photo", "POST", { photoUrl }),
   resetPassword: async (_email: string) => {
     throw new Error("Contact your administrator to reset your password.");
   },

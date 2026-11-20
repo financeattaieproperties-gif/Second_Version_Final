@@ -6,7 +6,6 @@ import type {
   Role,
 } from '../../../../packages/staff-contracts/types';
 import { isManagerRole } from '../../../../packages/staff-contracts/workflow.mjs';
-import { StaffDriveDocumentsPanel } from './GoogleWorkspaceIntegration';
 
 export interface EngineeringWorkspaceProps {
   deliverables: EngineeringDeliverable[];
@@ -74,7 +73,6 @@ export function EngineeringWorkspace({
   };
 
   return (
-    <>
     <section className="panel" data-testid="engineering-workspace">
       <div className="panel-heading">
         <div>
@@ -305,11 +303,5 @@ export function EngineeringWorkspace({
         ))}
       </div>
     </section>
-    <StaffDriveDocumentsPanel
-      projects={projects}
-      onNotice={onNotice}
-      onError={onError}
-    />
-    </>
   );
 }

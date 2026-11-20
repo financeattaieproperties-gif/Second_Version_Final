@@ -410,3 +410,10 @@ CREATE TABLE IF NOT EXISTS website_inquiry_events (
   INDEX idx_inquiry_event (inquiry_id, id),
   CONSTRAINT fk_inquiry_event FOREIGN KEY (inquiry_id) REFERENCES leads(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS website_submission_publications (
+  submission_id INT UNSIGNED PRIMARY KEY,
+  property_id INT NOT NULL UNIQUE,
+  published_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_website_sub_pub_prop FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

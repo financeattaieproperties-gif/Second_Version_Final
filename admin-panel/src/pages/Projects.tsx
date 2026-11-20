@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api, type Project, type ProjectUnit } from '../api';
 import {
-  AdminDriveFolderModal,
   AdminSheetsExportModal,
 } from '../components/GoogleWorkspaceTools';
 import { ProjectOccupancyCard } from '../components/ProjectOccupancyCard';
@@ -40,7 +39,6 @@ export default function Projects() {
   const [loading, setLoading]   = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
   const [workspaceNotice, setWorkspaceNotice] = useState('');
-  const [driveOpen, setDriveOpen] = useState(false);
   const [sheetsOpen, setSheetsOpen] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [projectUnitsById, setProjectUnitsById] = useState<Record<number, ProjectUnit[]>>({});
@@ -94,14 +92,6 @@ export default function Projects() {
       <div style={S.header}>
         <h1 style={S.title}>Projects ({items.length})</h1>
         <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <button
-            type="button"
-            style={S.secBtn}
-            data-testid="admin-projects-drive-btn"
-            onClick={() => setDriveOpen(true)}
-          >
-            Drive Brochures &amp; Docs
-          </button>
           <button
             type="button"
             style={{ ...S.secBtn, opacity: loadingUnits ? 0.6 : 1 }}
@@ -206,13 +196,6 @@ export default function Projects() {
       </table>
       </div>
 
-      {driveOpen && (
-        <AdminDriveFolderModal
-          projects={items}
-          onClose={() => setDriveOpen(false)}
-          onNotice={(msg) => setWorkspaceNotice(msg)}
-        />
-      )}
       {sheetsOpen && (
         <AdminSheetsExportModal
           mode="inventory"

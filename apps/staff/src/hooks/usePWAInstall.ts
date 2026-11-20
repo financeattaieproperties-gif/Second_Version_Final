@@ -5,6 +5,28 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+let earlyDeferredPrompt: BeforeInstallPromptEvent | null = null;
+let earlyAppInstalled = false;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    earlyDeferredPrompt = event as BeforeInstallPromptEvent;
+  });
+  window.addEventListener("appinstalled", () => {
+    earlyDeferredPrompt = null;
+    earlyAppInstalled = true;
+  });
+}
+
+function isIosSafariBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = window.navigator.userAgent || "";
+  const isIos = /iPad|iPhone|iPod/.test(ua) || (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isIos && isSafari;
+}
+
 function isRunningInstalledOrNative(): boolean {
   if (typeof window === "undefined") return false;
   const win = window as unknown as {
@@ -19,23 +41,30 @@ function isRunningInstalledOrNative(): boolean {
 
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState<boolean>(() =>
-    isRunningInstalledOrNative(),
+    useState<BeforeInstallPromptEvent | null>(() => earlyDeferredPrompt);
+  const [isInstalled, setIsInstalled] = useState<boolean>(
+    () => earlyAppInstalled || isRunningInstalledOrNative(),
   );
 
   useEffect(() => {
-    if (isRunningInstalledOrNative()) {
+    if (earlyAppInstalled || isRunningInstalledOrNative()) {
       setIsInstalled(true);
       return;
     }
 
+    if (earlyDeferredPrompt) {
+      setDeferredPrompt(earlyDeferredPrompt);
+    }
+
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
-      setDeferredPrompt(event as BeforeInstallPromptEvent);
+      earlyDeferredPrompt = event as BeforeInstallPromptEvent;
+      setDeferredPrompt(earlyDeferredPrompt);
     };
 
     const handleAppInstalled = () => {
+      earlyDeferredPrompt = null;
+      earlyAppInstalled = true;
       setDeferredPrompt(null);
       setIsInstalled(true);
     };
@@ -51,20 +80,28 @@ export function usePWAInstall() {
     };
   }, []);
 
-  const promptInstall = useCallback(async () => {
-    if (!deferredPrompt) return false;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+  const isIos = isIosSafariBrowser();
+
+  const promptInstall = useCallback(async (): Promise<"installed" | "dismissed" | "ios" | "unavailable"> => {
+    const promptEvent = deferredPrompt ?? earlyDeferredPrompt;
+    if (!promptEvent) {
+      return isIos ? "ios" : "unavailable";
+    }
+    await promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    earlyDeferredPrompt = null;
     setDeferredPrompt(null);
     if (outcome === "accepted") {
+      earlyAppInstalled = true;
       setIsInstalled(true);
-      return true;
+      return "installed";
     }
-    return false;
-  }, [deferredPrompt]);
+    return "dismissed";
+  }, [deferredPrompt, isIos]);
 
   return {
-    canInstall: !isInstalled && Boolean(deferredPrompt),
+    canInstall: !isInstalled && (Boolean(deferredPrompt) || isIos),
+    isIosInstall: !isInstalled && !deferredPrompt && isIos,
     isInstalled,
     promptInstall,
   };

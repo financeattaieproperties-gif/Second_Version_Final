@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Variant 3: Compact Command Workspace — Attaie Properties Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F8FAFC; color: #1E293B; height: 100vh; display: flex; overflow: hidden; }
+    .rail { width: 64px; background: #FFFFFF; border-right: 1px solid #E2E8F0; display: flex; flex-direction: column; align-items: center; padding: 16px 0; gap: 12px; }
+    .logo-dot { width: 36px; height: 36px; border-radius: 9px; background: #0072BC; color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+    .rail-btn { width: 40px; height: 40px; border-radius: 10px; border: none; background: transparent; color: #818285; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s ease; }
+    .rail-btn:hover { background: #F1F5F9; color: #1E293B; }
+    .rail-btn.active { background: #0072BC; color: #FFFFFF; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 56px; background: #FFFFFF; border-bottom: 1px solid #E2E8F0; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+    .tabs { display: flex; gap: 8px; }
+    .tab-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid #E2E8F0; background: #fff; color: #818285; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .tab-btn.active { background: #0072BC; color: #fff; border-color: #0072BC; }
+    .btn-primary { background: #0072BC; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-outline { background: #fff; color: #1E293B; border: 1px solid #E2E8F0; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .view { display: none; flex: 1; padding: 20px 24px; flex-direction: column; gap: 16px; overflow: auto; }
+    .view.active { display: flex; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .card { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
+    .kpi-lbl { font-size: 12px; color: #818285; font-weight: 600; }
+    .kpi-val { font-size: 26px; font-weight: 700; margin: 4px 0; font-variant-numeric: tabular-nums; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .p-green { background: #E8F7EE; color: #14A850; }
+    .p-blue { background: #E6F2FA; color: #0072BC; }
+    .p-gray { background: #F1F5F9; color: #818285; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th { text-align: left; font-size: 11px; color: #818285; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid #E2E8F0; background: #F8FAFC; }
+    td { padding: 10px 12px; border-bottom: 1px solid #E2E8F0; }
+  </style>
+</head>
+<body>
+  <aside class="rail">
+    <div class="logo-dot">AP</div>
+    <button class="rail-btn active" onclick="show(0)" title="Overview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    </button>
+    <button class="rail-btn" onclick="show(1)" title="Leads &amp; Detail">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </button>
+    <button class="rail-btn" onclick="show(2)" title="Inventory Matrix">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    </button>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <strong style="font-size:15px;">Variant 3: Compact Command Workspace</strong>
+        <div class="tabs">
+          <button class="tab-btn active" onclick="show(0)">1. Overview</button>
+          <button class="tab-btn" onclick="show(1)">2. Leads + Drawer</button>
+          <button class="tab-btn" onclick="show(2)">3. Inventory Matrix</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;font-size:11px;align-items:center;">
+        <span class="pill p-green">#14A850</span>
+        <span class="pill p-blue">#0072BC</span>
+        <span class="pill p-gray">#818285</span>
+      </div>
+    </header>
+
+    <!-- Screen 1: Overview -->
+    <section class="view active">
+      <div class="kpis">
+        <div class="card"><div class="kpi-lbl">Active Leads</div><div class="kpi-val">142</div><span class="pill p-green">+14.2% this week</span></div>
+        <div class="card"><div class="kpi-lbl">24h SLA On-Time</div><div class="kpi-val">91.4%</div><span class="pill p-green">Target 90%</span></div>
+        <div class="card"><div class="kpi-lbl">Deals Closed</div><div class="kpi-val">28</div><span class="pill p-blue">5 Pending HR</span></div>
+        <div class="card"><div class="kpi-lbl">Available Units</div><div class="kpi-val">80</div><span class="pill p-gray">3 Projects</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;flex:1;">
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Weekly Pipeline &amp; Closures</div>
+          <div style="flex:1;display:flex;align-items:flex-end;gap:22px;padding:16px 12px 4px;border-bottom:1px solid #E2E8F0;">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:105px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:38px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Sat</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:142px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:52px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Sun</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:126px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:46px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Mon</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:178px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:66px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Tue</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:160px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:58px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Wed</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;"><div style="display:flex;align-items:flex-end;gap:5px;height:200px;"><div style="width:20px;height:118px;background:#0072BC;border-radius:4px 4px 0 0;"></div><div style="width:20px;height:44px;background:#14A850;border-radius:4px 4px 0 0;"></div></div><span style="font-size:11px;color:#818285;font-weight:600;">Thu</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-size:14px;font-weight:700;margin-bottom:12px;">Recent Handovers</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:12.5px;">
+            <div style="padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;"><div><strong>Sky Tower 4B</strong><div style="font-size:11px;color:#818285;">Sales → HR Contract</div></div><span class="pill p-blue">Closed</span></div>
+            <div style="padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;"><div><strong>Karimullah A.</strong><div style="font-size:11px;color:#818285;">Call Center → Sales</div></div><span class="pill p-green">Assigned</span></div>
+            <div style="padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;"><div><strong>Attaie Plaza 2A</strong><div style="font-size:11px;color:#818285;">HR → Finance</div></div><span class="pill p-green">Sold</span></div>
+            <div style="padding:10px;border:1px solid #E2E8F0;border-radius:8px;display:flex;justify-content:space-between;"><div><strong>Duplicate Check</strong><div style="font-size:11px;color:#818285;">Manager Review</div></div><span class="pill p-gray">Pending</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 2: Leads + Split Drawer -->
+    <section class="view">
+      <div style="display:grid;grid-template-columns:1.7fr 1fr;gap:16px;flex:1;">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:14px 16px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;font-size:14px;">Active Leads (48)</span>
+            <div style="display:flex;gap:6px;"><span class="pill p-blue">All</span><span class="pill p-green">On-Time</span><span class="pill p-gray">Draft</span></div>
+          </div>
+          <table>
+            <thead><tr><th>Serial</th><th>Customer</th><th>Project</th><th>Stage</th><th>SLA</th></tr></thead>
+            <tbody>
+              <tr style="background:#F8FAFC;"><td><b>SA02-L44</b></td><td>Karimullah Ahmadi</td><td>Sky Tower 4B</td><td><span class="pill p-blue">Visit</span></td><td><span class="pill p-green">Due 3h</span></td></tr>
+              <tr><td><b>SA01-L39</b></td><td>Farhad Rahimi</td><td>Attaie Plaza</td><td><span class="pill p-green">Closed</span></td><td><span class="pill p-green">Done</span></td></tr>
+              <tr><td><b>CA04-L108</b></td><td>Zainab Noori</td><td>Green Residencia</td><td><span class="pill p-gray">Draft</span></td><td><span class="pill p-gray">New</span></td></tr>
+              <tr><td><b>SA03-L51</b></td><td>Omid Karimi</td><td>Sky Tower 7A</td><td><span class="pill p-blue">Follow-up</span></td><td><span class="pill p-green">Due 12h</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div><div style="font-size:15px;font-weight:700;">Karimullah Ahmadi</div><div style="font-size:12px;color:#818285;">+93 78 222 2279 • SA02-L44</div></div>
+            <span class="pill p-blue">Visit</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button class="btn-primary">Call Customer</button>
+            <button class="btn-outline" style="color:#14A850;border-color:#14A850;">WhatsApp</button>
+          </div>
+          <div style="font-size:12px;font-weight:700;">Activity Timeline</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:#475569;">
+            <div style="padding:8px;background:#F8FAFC;border-radius:6px;border-left:3px solid #0072BC;"><strong>Site Visit Scheduled</strong><br><span style="color:#818285;">Tomorrow 10:30 AM (Kabul)</span></div>
+            <div style="padding:8px;background:#F8FAFC;border-radius:6px;border-left:3px solid #14A850;"><strong>Call Center Qualified</strong><br><span style="color:#818285;">Assigned to Sales Agent 02</span></div>
+            <div style="padding:8px;background:#F8FAFC;border-radius:6px;border-left:3px solid #818285;"><strong>Lead Created</strong><br><span style="color:#818285;">Phone verified (+93)</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Screen 3: Inventory Matrix -->
+    <section class="view">
+      <div class="kpis">
+        <div class="card"><div class="kpi-lbl">Available</div><div class="kpi-val" style="color:#14A850;">80</div></div>
+        <div class="card"><div class="kpi-lbl">Deal Closed</div><div class="kpi-val" style="color:#0072BC;">9</div></div>
+        <div class="card"><div class="kpi-lbl">Sold (HR)</div><div class="kpi-val" style="color:#0072BC;">36</div></div>
+        <div class="card"><div class="kpi-lbl">Reserved</div><div class="kpi-val" style="color:#818285;">15</div></div>
+      </div>
+      <div class="card" style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <strong style="font-size:14px;">Sky Tower — Unit Availability Matrix</strong>
+          <div style="display:flex;gap:8px;"><span class="pill p-green">Available</span><span class="pill p-blue">Sold / Closed</span><span class="pill p-gray">Reserved</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #0072BC;border-radius:8px;padding:12px;"><strong>Apt 201</strong><div style="font-size:11px;color:#818285;margin:3px 0;">145 m² • $125k</div><span class="pill p-blue">Sold</span></div>
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #14A850;border-radius:8px;padding:12px;"><strong>Apt 202</strong><div style="font-size:11px;color:#818285;margin:3px 0;">145 m² • $125k</div><span class="pill p-green">Available</span></div>
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #14A850;border-radius:8px;padding:12px;"><strong>Apt 203</strong><div style="font-size:11px;color:#818285;margin:3px 0;">160 m² • $140k</div><span class="pill p-green">Available</span></div>
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #818285;border-radius:8px;padding:12px;"><strong>Apt 204</strong><div style="font-size:11px;color:#818285;margin:3px 0;">145 m² • $125k</div><span class="pill p-gray">Reserved</span></div>
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #14A850;border-radius:8px;padding:12px;"><strong>Apt 205</strong><div style="font-size:11px;color:#818285;margin:3px 0;">145 m² • $125k</div><span class="pill p-green">Available</span></div>
+          <div style="border:1px solid #E2E8F0;border-top:3px solid #0072BC;border-radius:8px;padding:12px;"><strong>Apt 206</strong><div style="font-size:11px;color:#818285;margin:3px 0;">180 m² • $158k</div><span class="pill p-blue">Deal Closed</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const views = document.querySelectorAll('.view');
+    const railBtns = document.querySelectorAll('.rail-btn');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    function show(idx) {
+      views.forEach((v, i) => v.classList.toggle('active', i === idx));
+      railBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
+      tabBtns.forEach((b, i) => b.classList.toggle('active', i === idx));
+    }
+  </script>
+</body>
+</html>

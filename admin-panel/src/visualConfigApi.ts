@@ -113,4 +113,13 @@ export const visualConfigApi = {
     current.landingHero = hero;
     await this.publish(current);
   },
+
+  /**
+   * Updates per-role login page background images.
+   */
+  async updateLoginBackgrounds(loginBackgrounds: Record<string, string | null>): Promise<void> {
+    const current = await this.getConfig();
+    current.loginBackgrounds = loginBackgrounds;
+    await this.publish(current);
+  },
 };

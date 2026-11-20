@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attaie Properties V2 — End-to-End Lead-to-Close Workflow</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-canvas: #F7F8FA;
+      --bg-surface: #FFFFFF;
+      --bg-rail: #FBFBFD;
+      --bg-muted: #F1F5F9;
+      --ink-primary: #0F172A;
+      --ink-secondary: #475569;
+      --ink-muted: #64748B;
+      --border-hairline: #E2E8F0;
+      --brand-blue: #0145F2;
+      --brand-blue-lt: #EEF4FF;
+      --emerald: #16A34A;
+      --emerald-lt: #DCFCE7;
+      --amber: #D97706;
+      --amber-lt: #FEF3C7;
+      --red: #DC2626;
+      --red-lt: #FEE2E2;
+      --blue: #2563EB;
+      --blue-lt: #DBEAFE;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #E2E8F0;
+      color: var(--ink-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "DM Sans", sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+
+    .progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: var(--brand-blue);
+      transition: width 0.25s ease;
+      z-index: 1000;
+    }
+
+    .slide-deck {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-canvas);
+      overflow: hidden;
+    }
+
+    @media (min-width: 900px) {
+      .slide-deck {
+        max-width: calc(100vh * 16 / 9);
+        max-height: calc(100vw * 9 / 16);
+        margin: auto;
+        position: absolute;
+        inset: 0;
+        box-shadow: 0 24px 64px rgba(15, 23, 42, 0.16);
+        border: 1px solid var(--border-hairline);
+      }
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      padding: 34px 44px 66px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-canvas);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.28s ease;
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border-hairline);
+      flex-shrink: 0;
+    }
+
+    .breadcrumb {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .breadcrumb .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brand-blue);
+    }
+
+    .slide-title-sm {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      letter-spacing: -0.02em;
+      margin-top: 2px;
+    }
+
+    .role-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      color: var(--ink-primary);
+    }
+
+    .slide-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Grids & Cards */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .grid-60-40 { display: grid; grid-template-columns: 1.45fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+    .grid-40-60 { display: grid; grid-template-columns: 1fr 1.45fr; gap: 16px; flex: 1; min-height: 0; }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--ink-secondary);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .b-slate { background: var(--bg-muted); color: var(--ink-primary); }
+    .b-blue { background: var(--blue-lt); color: var(--blue); }
+    .b-green { background: var(--emerald-lt); color: var(--emerald); }
+    .b-amber { background: var(--amber-lt); color: var(--amber); }
+    .b-red { background: var(--red-lt); color: var(--red); }
+
+    /* Flow Nodes */
+    .flow-row {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .flow-node {
+      flex: 1;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-muted);
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-hairline);
+      background: var(--bg-rail);
+    }
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-hairline);
+      color: var(--ink-primary);
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+
+    /* Lists */
+    ul.clean {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 12.5px;
+      color: var(--ink-secondary);
+      line-height: 1.4;
+    }
+    ul.clean li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    ul.clean li strong { color: var(--ink-primary); }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      background: var(--bg-muted);
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--ink-primary);
+    }
+
+    /* Chart container */
+    .chart-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+    }
+
+    /* Android Frame */
+    .phone-frame {
+      background: var(--ink-primary);
+      border-radius: 24px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.14);
+      height: 100%;
+    }
+    .phone-screen {
+      background: var(--bg-canvas);
+      border-radius: 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+    .phone-status {
+      background: var(--bg-surface);
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+    .phone-body {
+      padding: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .phone-tabs {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-hairline);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px;
+      font-size: 10px;
+      text-align: center;
+      color: var(--ink-muted);
+    }
+    .phone-tabs .active-tab {
+      color: var(--ink-primary);
+      font-weight: 700;
+    }
+
+    /* Title Slide */
+    .hero-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 18px;
+      padding: 20px 10px;
+    }
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--brand-blue-lt);
+      color: var(--brand-blue);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .hero-h1 {
+      font-size: 46px;
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: var(--ink-primary);
+      max-width: 820px;
+    }
+    .hero-sub {
+      font-size: 17px;
+      color: var(--ink-secondary);
+      max-width: 720px;
+      line-height: 1.5;
+    }
+
+    /* Footer Navigation */
+    .nav-controls {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      padding: 6px 14px;
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+      z-index: 1000;
+    }
+    .nav-btn {
+      background: var(--bg-muted);
+      border: 1px solid var(--border-hairline);
+      color: var(--ink-primary);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .nav-btn:hover { background: var(--ink-primary); color: #fff; }
+    .slide-counter {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-muted);
+      min-width: 52px;
+      text-align: center;
+    }
+
+    .icon {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .icon-sm { width: 14px; height: 14px; }
+  </style>
+</head>
+<body>
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="slide-deck" id="deck">
+
+    <!-- SLIDE 1: TITLE -->
+    <section class="slide active">
+      <div class="hero-center">
+        <div class="hero-tag">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Attaie Properties V2 — Seminar Deck
+        </div>
+        <h1 class="hero-h1">End-to-End Lead-to-Close Workflow</h1>
+        <p class="hero-sub">
+          Complete operational walkthrough across the <strong>Public Website</strong>, <strong>Call Center Portal</strong>,
+          <strong>Sales Android App</strong>, <strong>Branch Management</strong>, and <strong>Finance</strong> — including every
+          database relation, 24-hour SLA guardrail, and inter-department handover.
+        </p>
+        <div class="flow-row" style="width: 100%; margin-top: 8px;">
+          <div class="flow-node">
+            <span class="badge b-blue">1. Capture</span>
+            <strong style="font-size:13px;">Website &amp; Walk-in</strong>
+            <span style="font-size:11.5px;color:var(--ink-muted);">Forms, Visits, CTC, WhatsApp</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-slate">2. Qualify</span>
+            <strong style="font-size:13px;">Call Center</strong>
+            <span style="font-size:11.5px;color:var(--ink-muted);">Draft, Phone Dedup, Assign</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-amber">3. Convert</span>
+            <strong style="font-size:13px;">Sales Android</strong>
+            <span style="font-size:11.5px;color:var(--ink-muted);">24h SLA, Calls, Site Visits</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-green">4. Close</span>
+            <strong style="font-size:13px;">Management &amp; HR</strong>
+            <span style="font-size:11.5px;color:var(--ink-muted);">Unit Lock &amp; Contract</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-green">5. Collect</span>
+            <strong style="font-size:13px;">Finance</strong>
+            <span style="font-size:11.5px;color:var(--ink-muted);">Installments &amp; Deposits</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2: SYSTEM ARCHITECTURE & BOUNDARY -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Architecture &amp; Pipelines</div>
+          <h2 class="slide-title-sm">Two-Pipeline Architecture &amp; Manual Bridge</h2>
+        </div>
+        <span class="role-pill">System Overview</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              Pipeline A: Public Website &amp; Admin (<span class="mono">/api/*</span>)
+            </div>
+            <ul class="clean">
+              <li><span class="badge b-blue">Form</span> <div><strong>Contact / About Form:</strong> <span class="mono">POST /api/submit-lead.php</span> → IndexedDB outbox (<span class="mono">INQ-</span> receipt) → MySQL <span class="mono">leads</span>.</div></li>
+              <li><span class="badge b-blue">Visit</span> <div><strong>Visit Request:</strong> <span class="mono">POST /api/submit-visit-request.php</span> → Kabul Sat–Thu 07:00–20:00 → <span class="mono">visit_requests</span>.</div></li>
+              <li><span class="badge b-blue">Call</span> <div><strong>Etisalat Click-to-Call:</strong> <span class="mono">POST /api/initiate-call.php</span> → bridges Call Center ↔ Customer → <span class="mono">ctc_public_call_log</span>.</div></li>
+              <li><span class="badge b-slate">Direct</span> <div><strong>WhatsApp &amp; AI Chat:</strong> <span class="mono">wa.me/93782222279</span> (no DB) &amp; <span class="mono">/ai-chat/handoff.php</span> → <span class="mono">conversations.json</span>.</div></li>
+            </ul>
+            <div style="margin-top:auto; padding:10px 12px; background:var(--amber-lt); border-radius:8px; font-size:12px; color:#92400E;">
+              <strong>Demo Boundary:</strong> Public <span class="mono">leads</span> do not auto-sync to <span class="mono">staff-service</span>. Call Center / Sales logs website inquiries into the Staff CRM via <strong>New Entry</strong>.
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              Pipeline B: Staff CRM &amp; Android (<span class="mono">/staff-api/v1/*</span>)
+            </div>
+            <ul class="clean">
+              <li><span class="badge b-slate">Call Center</span> <div><span class="mono">/callcenter</span> &amp; <span class="mono">callcenter-desktop</span>: Intake, draft creation, phone dedup, Sales handoff.</div></li>
+              <li><span class="badge b-amber">Sales</span> <div><span class="mono">/sales</span> &amp; <span class="mono">sales-android</span>: Biometric login, 24h SLA follow-ups, site visits, deal closing.</div></li>
+              <li><span class="badge b-blue">Leader</span> <div><span class="mono">/sales-leader</span>: Team funnel, agent conversion, SLA overtime monitoring.</div></li>
+              <li><span class="badge b-green">Manager</span> <div><span class="mono">/management</span>: Duplicate customer review &amp; HR Contract issuance (<span class="mono">sold</span>).</div></li>
+              <li><span class="badge b-green">Finance / CEO</span> <div><span class="mono">/finance</span> &amp; <span class="mono">/ceo</span>: Installment deposits, cross-branch inventory &amp; assignments.</div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3: LEAD CAPTURE & CHANNEL MIX -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 1 — Lead Capture</div>
+          <h2 class="slide-title-sm">Intake Channels, Validation &amp; Channel Mix KPIs</h2>
+        </div>
+        <span class="role-pill">Public Website + Call Center</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="kpi-card">
+            <div class="kpi-label">Inquiry Outbox <span class="badge b-blue">INQ-UUID</span></div>
+            <div class="kpi-value tabular-nums">100%</div>
+            <div class="kpi-sub">IndexedDB retry + idempotency hash</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Phone Normalization <span class="badge b-slate">+93</span></div>
+            <div class="kpi-value tabular-nums">+937XXXXXXXX</div>
+            <div class="kpi-sub">Enforced across Visit, CTC &amp; CRM</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Anti-Spam Rate Limit <span class="badge b-amber">Guard</span></div>
+            <div class="kpi-value tabular-nums">3 / 10m</div>
+            <div class="kpi-sub">Per IP; 1 / 2m per phone number</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Visit Window <span class="badge b-green">Kabul</span></div>
+            <div class="kpi-value tabular-nums">07:00–20:00</div>
+            <div class="kpi-sub">Sat–Thu in 30-min slots (+04:30)</div>
+          </div>
+        </div>
+
+        <div class="grid-60-40">
+          <div class="card">
+            <div class="card-title">Lead Sources Supported in Staff CRM (<span class="mono">EntryForm</span>)</div>
+            <table>
+              <thead>
+                <tr><th>Channel / Source</th><th>Origin</th><th>Storage / Endpoint</th><th>Next Step</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Call Center</strong> (<span class="mono">callcenter</span>)</td><td>Inbound / CTC</td><td><span class="mono">POST /call-drafts</span></td><td>Qualify &amp; assign to Sales</td></tr>
+                <tr><td><strong>Walk-in</strong> (<span class="mono">walk_in</span>)</td><td>Branch Office</td><td><span class="mono">EntryForm</span> → <span class="mono">submit-entry</span></td><td>Self-assign or refer</td></tr>
+                <tr><td><strong>Direct Call</strong> (<span class="mono">direct_call</span>)</td><td>Agent Mobile</td><td><span class="mono">EntryForm</span> → <span class="mono">submit-entry</span></td><td>24h SLA task created</td></tr>
+                <tr><td><strong>Company Referral</strong></td><td>Internal Staff</td><td><span class="mono">POST /leads/{id}/referrals</span></td><td>Shared lead access</td></tr>
+                <tr><td><strong>Social Media / Web</strong></td><td>Website / WA</td><td><span class="mono">leads</span> / <span class="mono">visit_requests</span></td><td>Logged into CRM</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Illustrative Lead Channel Mix (Seminar View)</div>
+            <div class="chart-wrap">
+              <canvas id="chartChannelMix"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 4: CALL CENTER TO SALES HANDOVER -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 2 — Department Handover 1</div>
+          <h2 class="slide-title-sm">Call Center → Sales Agent Qualification &amp; Assignment</h2>
+        </div>
+        <span class="role-pill">Call Center ↔ Sales</span>
+      </div>
+      <div class="slide-body">
+        <div class="flow-row">
+          <div class="flow-node">
+            <span class="badge b-slate">Step 2A: Draft</span>
+            <strong style="font-size:13px;">POST /call-drafts</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Creates <span class="mono">cc_leads</span> (<span class="mono">status='draft'</span>, <span class="mono">CA{uid}-L{n}</span>) + logs <span class="mono">cc_calls</span>.</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-blue">Step 2B: Submit Entry</span>
+            <strong style="font-size:13px;">POST /leads/{id}/submit-entry</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Runs phone dedup, property claim, and transitions <span class="mono">draft</span> → <span class="mono">active</span> (<span class="mono">L</span>).</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-amber">Step 2C: Task &amp; SLA</span>
+            <strong style="font-size:13px;">cc_followup_tasks</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Sets <span class="mono">current_task_id</span> with <span class="mono">deadline_at = scheduled_at + 24h</span>.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Department Assignment &amp; Referral Matrix (<span class="mono">App.php::eligible</span>)</div>
+            <table>
+              <thead>
+                <tr><th>From Role</th><th>Allowed Target</th><th>Mechanism</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="badge b-slate">callcenter</span></td><td>Self or <span class="badge b-amber">sales</span></td><td><span class="mono">nextAssigneeId</span> in Entry / Feedback</td></tr>
+                <tr><td><span class="badge b-amber">sales</span></td><td>Self or <span class="badge b-slate">callcenter</span></td><td><span class="mono">nextAssigneeId</span> in Entry / Feedback</td></tr>
+                <tr><td><span class="badge b-amber">sales</span></td><td>Another <span class="badge b-amber">sales</span></td><td><span class="mono">POST /leads/{id}/referrals</span> (Shared)</td></tr>
+                <tr><td><span class="badge b-blue">ceo</span></td><td>Project ↔ Sales</td><td><span class="mono">inv_project_sales_agents</span> assignment</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Call Center Intake &amp; Handoff Volume (Sample KPI)</div>
+            <div class="chart-wrap">
+              <canvas id="chartCallCenter"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 5: RELATIONS & GUARDRAILS -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Data Integrity &amp; Relations</div>
+          <h2 class="slide-title-sm">Customer Deduplication, Branch &amp; Property Relations</h2>
+        </div>
+        <span class="role-pill">Staff Service ↔ Branch Manager</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title"><span class="badge b-amber">1</span> Phone Deduplication</div>
+            <ul class="clean">
+              <li><strong>Registry:</strong> <span class="mono">crm_phone_registry</span> normalizes every mobile to <span class="mono">+937XXXXXXXX</span>.</li>
+              <li><strong>New Phone:</strong> Creates <span class="mono">cc_customers</span> (<span class="mono">C000001</span>) + <span class="mono">crm_customer_owners</span>.</li>
+              <li><strong>Conflict:</strong> If owned by another agent, creates <span class="mono">crm_customer_review_requests</span> (<span class="mono">pending_review</span>) and alerts Manager.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="badge b-blue">2</span> Manager Resolution</div>
+            <ul class="clean">
+              <li><strong>Queue:</strong> Branch Manager opens <span class="mono">/management</span> duplicate review queue.</li>
+              <li><strong>Approve:</strong> <span class="mono">approved_shared</span> writes <span class="mono">crm_customer_shared_access</span> so both agents can work.</li>
+              <li><strong>Reject:</strong> <span class="mono">rejected</span> protects the original owner's relationship.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="badge b-green">3</span> Branch &amp; Property Lock</div>
+            <ul class="clean">
+              <li><strong>Branch Scope:</strong> Project must match the staff member's <span class="mono">branch_id</span>.</li>
+              <li><strong>Agent Scope:</strong> Sales must be assigned in <span class="mono">inv_project_sales_agents</span>.</li>
+              <li><strong>1-Lead Rule:</strong> <span class="mono">crm_customer_property_leads</span> PK <span class="mono">(customer_id, property_kind, property_id)</span> blocks duplicate unit claims (HTTP 409).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="card" style="padding:14px 18px;">
+          <div class="card-title">Core Relational Chain in MySQL (<span class="mono">staff-service/database/</span>)</div>
+          <div class="flow-row" style="align-items:center;">
+            <div class="flow-node" style="padding:9px 12px;"><span class="mono">crm_phone_registry</span><span style="font-size:11px;color:var(--ink-muted);">Unique +937...</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="padding:9px 12px;"><span class="mono">cc_customers</span><span style="font-size:11px;color:var(--ink-muted);">Owner + Shared Access</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="padding:9px 12px;"><span class="mono">cc_leads</span><span style="font-size:11px;color:var(--ink-muted);">draft → active → closed/lost</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="padding:9px 12px;"><span class="mono">cc_followup_tasks</span><span style="font-size:11px;color:var(--ink-muted);">24h SLA + Outcome</span></div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node" style="padding:9px 12px;"><span class="mono">crm_deal_handoffs</span><span style="font-size:11px;color:var(--ink-muted);">HR Contract → Finance</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 6: SALES ANDROID APP -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 3 — Mobile Execution</div>
+          <h2 class="slide-title-sm">Sales Android App (<span class="mono">af.attaieproperties.sales</span>)</h2>
+        </div>
+        <span class="role-pill">Sales Agent Mobile</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-40-60">
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <div class="phone-status">
+                <span>9:41 AM</span>
+                <span>5G • 88% Battery</span>
+              </div>
+              <div class="phone-body">
+                <div style="background:var(--blue-lt);color:var(--blue);padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;">
+                  New Lead Assigned: Karimullah — Unit 4B
+                </div>
+                <div style="background:var(--bg-surface);border:1px solid var(--border-hairline);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <strong style="font-size:13px;">Karimullah Ahmadi</strong>
+                    <span class="badge b-amber">Due in 3h</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--ink-muted);">SA02-L44 • Sky Tower • Stage: V (Visit)</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;">
+                    <div style="background:var(--ink-primary);color:#fff;text-align:center;padding:6px;border-radius:6px;font-size:11px;font-weight:600;">Call (+93)</div>
+                    <div style="border:1px solid var(--border-hairline);text-align:center;padding:6px;border-radius:6px;font-size:11px;font-weight:600;">WhatsApp</div>
+                  </div>
+                  <div style="background:var(--bg-muted);text-align:center;padding:6px;border-radius:6px;font-size:11px;font-weight:600;">Log Feedback / Close Deal</div>
+                </div>
+                <div style="background:var(--bg-surface);border:1px solid var(--border-hairline);border-radius:10px;padding:9px;font-size:11px;color:var(--ink-secondary);">
+                  <strong>Biometric Unlock:</strong> Keystore AES-256-GCM vault ready
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <div class="active-tab">Leads</div>
+                <div>Follow-ups</div>
+                <div>Customers</div>
+                <div>Projects</div>
+                <div>Overview</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Native Android Capabilities &amp; Field Workflow</div>
+            <ul class="clean">
+              <li><span class="badge b-slate">Security</span> <div><strong>BiometricPrompt + Encrypted Vault:</strong> <span class="mono">BiometricAuthBridge.kt</span> unlocks credentials via Fingerprint/Face and silently re-authenticates <span class="mono">POST /auth/login</span>.</div></li>
+              <li><span class="badge b-blue">Real-Time</span> <div><strong>Polling &amp; Deep-Link Alerts:</strong> Polls every <strong>60s</strong> (or <strong>15s</strong> when offline items await sync), plays a 2-tone chime, and opens <span class="mono">/sales/leads?id={leadId}</span>.</div></li>
+              <li><span class="badge b-green">Comms</span> <div><strong>One-Tap Native Intents:</strong> <span class="mono">MainActivity.kt</span> intercepts <span class="mono">tel:</span> → Android Dialer and <span class="mono">wa.me/</span> → native WhatsApp. (No SMS button.)</div></li>
+              <li><span class="badge b-amber">Offline</span> <div><strong>Field Resilience:</strong> <span class="mono">offline-cache.mjs</span> caches snapshots and queues <span class="mono">lead_entry</span> &amp; <span class="mono">followup_feedback</span> mutations until connectivity returns.</div></li>
+              <li><span class="badge b-slate">Camera</span> <div><strong>File Chooser:</strong> Supports native camera capture &amp; gallery upload via <span class="mono">FileProvider</span>.</div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 7: FOLLOW-UP LOOP & 24H SLA -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 3B — Follow-up &amp; SLA</div>
+          <h2 class="slide-title-sm">Follow-Up Loop, Site Visits &amp; 24-Hour SLA Tracking</h2>
+        </div>
+        <span class="role-pill">FeedbackForm (/followups/{id}/feedback)</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-4">
+          <div class="kpi-card">
+            <div class="kpi-label">SLA Window <span class="badge b-blue">Rule</span></div>
+            <div class="kpi-value tabular-nums">24 Hours</div>
+            <div class="kpi-sub">deadline_at = scheduled_at + 24h</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Stage F <span class="badge b-slate">Follow-up</span></div>
+            <div class="kpi-value tabular-nums">Loop</div>
+            <div class="kpi-sub">Completes task + schedules next</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Stage V <span class="badge b-blue">Site Visit</span></div>
+            <div class="kpi-value tabular-nums">Calendar</div>
+            <div class="kpi-sub">Optional Google Calendar sync</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Overtime <span class="badge b-red">&gt; 24h</span></div>
+            <div class="kpi-value tabular-nums">late_seconds</div>
+            <div class="kpi-sub">Recorded on late completion</div>
+          </div>
+        </div>
+
+        <div class="grid-60-40">
+          <div class="card">
+            <div class="card-title">Follow-Up Outcome State Machine (<span class="mono">workflow.mjs</span>)</div>
+            <table>
+              <thead>
+                <tr><th>Outcome</th><th>Stage</th><th>Who Can Run</th><th>Resulting State</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="mono">followup</span></td><td><span class="badge b-slate">F</span></td><td>Call Center / Sales</td><td>Marks task done, creates next 24h task</td></tr>
+                <tr><td><span class="mono">visit</span></td><td><span class="badge b-blue">V</span></td><td>Call Center / Sales</td><td>Logs site visit, schedules post-visit task</td></tr>
+                <tr><td><span class="mono">lost</span></td><td><span class="badge b-red">DL</span></td><td>Call Center / Sales</td><td>Requires reason; sets <span class="mono">status='lost'</span></td></tr>
+                <tr><td><span class="mono">closed</span></td><td><span class="badge b-green">DC</span></td><td><strong>Sales Role Only</strong></td><td>Locks apartment &amp; hands off to HR</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">24h SLA Bucket Distribution (Sample KPI)</div>
+            <div class="chart-wrap">
+              <canvas id="chartSlaBuckets"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 8: DEAL CLOSURE TO MANAGEMENT HR -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 4 — Department Handover 2</div>
+          <h2 class="slide-title-sm">Sales Agent → Branch Manager (Deal Closure &amp; HR Contract)</h2>
+        </div>
+        <span class="role-pill">Sales → Management</span>
+      </div>
+      <div class="slide-body">
+        <div class="flow-row">
+          <div class="flow-node">
+            <span class="badge b-green">1. Sales Closes</span>
+            <strong style="font-size:13px;">closeHandoff()</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Selects unit, amount (<span class="mono">USD/AFN</span>), buyer &amp; Tazkira photos.</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-amber">2. Unit Locked</span>
+            <strong style="font-size:13px;">deal_closed</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Serial <span class="mono">SA{uid}PRC-{proj}-{unit}-{DDMMYY}</span>; <span class="mono">crm_deal_handoffs</span> created.</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-blue">3. Manager Issues HR</span>
+            <strong style="font-size:13px;">POST /hr/contracts</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Unit moves <span class="mono">deal_closed</span> → <span class="mono">sold</span>; <span class="mono">hr_status='contract_issued'</span>.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Validation Rules at Deal Closure (<span class="mono">Completion.php</span>)</div>
+            <ul class="clean">
+              <li><span class="badge b-red">Role Gate</span> <div>Only <span class="mono">sales</span> role can submit <span class="mono">outcome='closed'</span>; Call Center is blocked.</div></li>
+              <li><span class="badge b-amber">Unit Check</span> <div>Selected apartment must be <span class="mono">available</span> and match deal currency (<span class="mono">USD</span> / <span class="mono">AFN</span>).</div></li>
+              <li><span class="badge b-blue">Project Prep</span> <div>Manager ensures project sellers, company &amp; boundaries are prepared (<span class="mono">POST /inventory/projects/{id}/preparation</span>) before issuing contract.</div></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Project Apartment Inventory Lifecycle (Sample KPI)</div>
+            <div class="chart-wrap">
+              <canvas id="chartInventory"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 9: FINANCE & SALES LEADER OVERSIGHT -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Stage 5 — Department Handover 3 &amp; Analytics</div>
+          <h2 class="slide-title-sm">Finance Collections &amp; Sales Leader Conversion Charts</h2>
+        </div>
+        <span class="role-pill">Finance Manager &amp; Sales Leader</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Lead Conversion Funnel (<span class="mono">LeadConversionFunnelChart</span>)
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chartFunnel"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">
+              <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Agent Conversion Comparison (<span class="mono">AgentConversionChart</span>)
+            </div>
+            <div class="chart-wrap">
+              <canvas id="chartAgents"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 18px;">
+          <div class="card-title">Finance Handover (<span class="mono">/finance</span> → <span class="mono">FinanceWorkspace.tsx</span>)</div>
+          <div style="font-size:12.5px; color:var(--ink-secondary); display:flex; gap:18px; flex-wrap:wrap;">
+            <span><strong>1. Input:</strong> Issued <span class="mono">hr_contracts</span> from Management.</span>
+            <span><strong>2. Action:</strong> <span class="mono">POST /finance/deposits</span> records, approves, or reverses installment payments.</span>
+            <span><strong>3. Oversight:</strong> CEO (<span class="mono">/ceo</span>) &amp; Sales Leader (<span class="mono">/sales-leader</span>) track closed volume &amp; SLA compliance.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 10: DOCUMENT & CONTRACT OBLIGATIONS SCREEN -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Role Obligations &amp; Documents</div>
+          <h2 class="slide-title-sm">Screen Mockup: Deal Close Docs → HR Contract → Finance</h2>
+        </div>
+        <span class="role-pill">Sales → Manager → Finance</span>
+      </div>
+      <div class="slide-body">
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-title"><span class="badge b-amber">Sales Screen</span> Close Deal Modal</div>
+            <div style="background:var(--bg-canvas);border:1px solid var(--border-hairline);border-radius:8px;padding:10px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
+              <div><strong>Unit:</strong> Sky Tower • Apt 4B (<span class="mono">available</span>)</div>
+              <div><strong>Amount:</strong> <span class="mono">$125,000 USD</span></div>
+              <div><strong>Obligation 1:</strong> Buyer Portrait Photo (<span class="mono">portrait</span>)</div>
+              <div><strong>Obligation 2:</strong> Buyer Tazkira ID (<span class="mono">tazkira</span>)</div>
+              <div style="background:var(--ink-primary);color:#fff;padding:5px 8px;border-radius:6px;text-align:center;font-weight:600;margin-top:4px;">Lock Unit → deal_closed</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-muted);">Only <span class="mono">sales</span> role allowed. Generates <span class="mono">SA{uid}PRC-...</span></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="badge b-blue">Manager Screen</span> HR Contract Prep</div>
+            <div style="background:var(--bg-canvas);border:1px solid var(--border-hairline);border-radius:8px;padding:10px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
+              <div><strong>Queue:</strong> <span class="mono">crm_deal_handoffs</span> (<span class="mono">pending_contract</span>)</div>
+              <div><strong>Obligation 1:</strong> Project Prep (Sellers + Photos, Company, Boundaries)</div>
+              <div><strong>Obligation 2:</strong> Verify Buyer Portrait &amp; Tazkira</div>
+              <div style="background:var(--brand-blue);color:#fff;padding:5px 8px;border-radius:6px;text-align:center;font-weight:600;margin-top:4px;">POST /hr/contracts → sold</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-muted);">Supports amend &amp; <span class="mono">/hr/contracts/verify</span>.</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><span class="badge b-green">Finance Screen</span> Installments</div>
+            <div style="background:var(--bg-canvas);border:1px solid var(--border-hairline);border-radius:8px;padding:10px;font-size:11.5px;display:flex;flex-direction:column;gap:6px;">
+              <div><strong>Input:</strong> Issued <span class="mono">hr_contracts</span></div>
+              <div><strong>Obligation 1:</strong> Record Deposit (<span class="mono">USD / AFN</span>)</div>
+              <div><strong>Obligation 2:</strong> Approve or Reverse Ledger Entry</div>
+              <div style="background:var(--emerald);color:#fff;padding:5px 8px;border-radius:6px;text-align:center;font-weight:600;margin-top:4px;">POST /finance/deposits</div>
+            </div>
+            <div style="font-size:11.5px;color:var(--ink-muted);">Full audit trail per contract &amp; branch.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 11: MARKETING DEPARTMENT WORKFLOW & SCREEN -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Department — Marketing (<span class="mono">/marketing</span>)</div>
+          <h2 class="slide-title-sm">Marketing Production Pipeline &amp; Public Website Sync</h2>
+        </div>
+        <span class="role-pill">MarketingWorkspace.tsx</span>
+      </div>
+      <div class="slide-body">
+        <div class="flow-row">
+          <div class="flow-node">
+            <span class="badge b-slate">1. Submitted</span>
+            <strong style="font-size:12.5px;">Property Intake</strong>
+            <span style="font-size:11px;color:var(--ink-muted);">Villa, Block, Building, Apt (<span class="mono">marketing.submit_property</span>)</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-blue">2. Filming</span>
+            <strong style="font-size:12.5px;">Videographer</strong>
+            <span style="font-size:11px;color:var(--ink-muted);"><span class="mono">schedule_filming</span> → <span class="mono">complete_filming</span></span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-amber">3. Editing</span>
+            <strong style="font-size:12.5px;">Editor &amp; Content</strong>
+            <span style="font-size:11px;color:var(--ink-muted);"><span class="mono">schedule_editing</span> → <span class="mono">ready_for_post</span></span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-green">4. Posted</span>
+            <strong style="font-size:12.5px;">5 Photos + Social</strong>
+            <span style="font-size:11px;color:var(--ink-muted);">FB / YT / IG → <span class="mono">mkt_submission_outbox</span></span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Marketing Roles &amp; Obligations (<span class="mono">mkt_production_entries</span>)</div>
+            <ul class="clean">
+              <li><span class="badge b-slate">Submitter</span> <div>Submits property (<span class="mono">POST /marketing/entries</span>) with customer name, address, and type within branch scope.</div></li>
+              <li><span class="badge b-blue">Manager</span> <div><span class="mono">marketing_manager</span> / <span class="mono">production_manager</span> schedules filming date &amp; assigns <span class="mono">videographer</span> / <span class="mono">photographer</span>.</div></li>
+              <li><span class="badge b-amber">Videographer</span> <div>Completes on-site shoot and marks <span class="mono">filming_completed</span>.</div></li>
+              <li><span class="badge b-green">Editor</span> <div>Sets editing deadline, defines <span class="mono">contentType</span>, uploads <strong>exactly 5 distinct photos</strong>, serial &amp; platform (<span class="mono">Facebook | YouTube | Instagram</span>).</div></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Bridge to Public Website (<span class="mono">submissions/retry</span>)</div>
+            <ul class="clean">
+              <li><span class="badge b-blue">Outbox</span> <div>Marking an entry <span class="mono">posted</span> writes a payload into <span class="mono">mkt_submission_outbox</span>.</div></li>
+              <li><span class="badge b-green">Public Sync</span> <div><span class="mono">POST /submissions/retry</span> pushes the 5 photos &amp; property details to the public website submissions queue (<span class="mono">/admin/submissions</span>) for publishing, which then drives inbound leads back to Stage 1!</div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 12: ENGINEERING DEPARTMENT WORKFLOW & SCREEN -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Department — Engineering (<span class="mono">/engineering</span>)</div>
+          <h2 class="slide-title-sm">Engineering Deliverables, Versioning &amp; CEO Approval</h2>
+        </div>
+        <span class="role-pill">EngineeringWorkspace.tsx</span>
+      </div>
+      <div class="slide-body">
+        <div class="flow-row">
+          <div class="flow-node">
+            <span class="badge b-slate">1. CEO Assigns</span>
+            <strong style="font-size:13px;">POST /engineering/deliverables</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Links to <span class="mono">inv_projects</span> (+ optional unit), title, deadline, and engineering role.</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-blue">2. Staff Uploads</span>
+            <strong style="font-size:13px;">POST .../versions</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Increments <span class="mono">version_number</span> in <span class="mono">eng_deliverable_versions</span> (<span class="mono">submitted</span>).</span>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-node">
+            <span class="badge b-green">3. CEO Reviews</span>
+            <strong style="font-size:13px;">POST .../review</strong>
+            <span style="font-size:12px;color:var(--ink-secondary);">Sets <span class="mono">approved</span> or <span class="mono">revision_requested</span> with <span class="mono">reviewer_comment</span>.</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Engineering Roles &amp; Obligations (<span class="mono">eng_deliverables</span>)</div>
+            <table>
+              <thead>
+                <tr><th>Role</th><th>Obligation</th><th>Deliverable Scope</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><span class="badge b-slate">ceo</span></td><td>Assigns deliverables &amp; reviews versions</td><td>Approves or requests revisions</td></tr>
+                <tr><td><span class="badge b-blue">architect</span></td><td>Uploads architectural plans &amp; blueprints</td><td>Versioned files + format notes</td></tr>
+                <tr><td><span class="badge b-amber">graphic_designer</span></td><td>Uploads project branding &amp; print assets</td><td>Versioned visual deliverables</td></tr>
+                <tr><td><span class="badge b-green">visual_designer_3d</span></td><td>Uploads 3D renders &amp; walkthroughs</td><td>Feeds Sales &amp; Marketing visuals</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Screen Mockup: Deliverable Version Card</div>
+            <div style="background:var(--bg-canvas);border:1px solid var(--border-hairline);border-radius:8px;padding:12px;font-size:12px;display:flex;flex-direction:column;gap:7px;">
+              <div style="display:flex;justify-content:space-between;"><strong>Sky Tower — Floor Plan v3</strong><span class="badge b-green">approved</span></div>
+              <div style="color:var(--ink-muted);">Assigned: Architect • Deadline: 2026-11-25</div>
+              <div>File: <span class="mono">sky-tower-v3.pdf</span> (Format: PDF/CAD)</div>
+              <div style="background:var(--bg-surface);border:1px solid var(--border-hairline);padding:6px 8px;border-radius:6px;font-size:11.5px;"><strong>CEO Comment:</strong> Approved for Sales &amp; Public Explorer.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 13: COMPLETE HANDOVER MATRIX & SEMINAR CHECKLIST -->
+    <section class="slide">
+      <div class="slide-header">
+        <div>
+          <div class="breadcrumb"><span class="dot"></span>Summary &amp; Live Demo Plan</div>
+          <h2 class="slide-title-sm">Department Handover Matrix &amp; Seminar Demo Checklist</h2>
+        </div>
+        <span class="role-pill">All Departments</span>
+      </div>
+      <div class="slide-body">
+        <div class="card">
+          <table>
+            <thead>
+              <tr><th>From Dept</th><th>To Dept</th><th>Trigger / Endpoint</th><th>Record / Status Change</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Public Website</strong></td><td><strong>Admin / Call Center</strong></td><td><span class="mono">submit-lead.php</span> / <span class="mono">submit-visit-request.php</span></td><td><span class="mono">leads</span> / <span class="mono">visit_requests</span> (manual log to CRM)</td></tr>
+              <tr><td><strong>Call Center</strong></td><td><strong>Sales Agent</strong></td><td><span class="mono">POST /leads/{id}/submit-entry</span></td><td><span class="mono">draft</span> → <span class="mono">active (L)</span> + 24h SLA task + Android alert</td></tr>
+              <tr><td><strong>Duplicate Check</strong></td><td><strong>Branch Manager</strong></td><td><span class="mono">crm_phone_registry</span> conflict</td><td><span class="mono">pending_review</span> → <span class="mono">approved_shared</span> / <span class="mono">rejected</span></td></tr>
+              <tr><td><strong>Sales Agent</strong></td><td><strong>Sales Agent</strong></td><td><span class="mono">POST /leads/{id}/referrals</span></td><td>Shared lead access via <span class="mono">crm_lead_referrals</span></td></tr>
+              <tr><td><strong>Sales Agent</strong></td><td><strong>Branch Manager (HR)</strong></td><td><span class="mono">POST /followups/{id}/feedback</span> (<span class="mono">closed</span>)</td><td>Unit <span class="mono">deal_closed</span> + <span class="mono">crm_deal_handoffs</span> (<span class="mono">pending_contract</span>)</td></tr>
+              <tr><td><strong>Branch Manager</strong></td><td><strong>Finance Manager</strong></td><td><span class="mono">POST /hr/contracts</span></td><td>Unit <span class="mono">sold</span> + <span class="mono">hr_contracts</span> → <span class="mono">POST /finance/deposits</span></td></tr>
+              <tr><td><strong>Marketing Team</strong></td><td><strong>Public Website</strong></td><td><span class="mono">mark_posted</span> → <span class="mono">submissions/retry</span></td><td>5 photos + FB/YT/IG → <span class="mono">mkt_submission_outbox</span></td></tr>
+              <tr><td><strong>CEO ↔ Engineering</strong></td><td><strong>Sales &amp; Marketing</strong></td><td><span class="mono">POST /engineering/deliverables</span></td><td>Versioned plans/3D → CEO <span class="mono">approved</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-4">
+          <div class="kpi-card">
+            <div class="kpi-label">Demo Step 1 <span class="badge b-slate">Setup</span></div>
+            <div style="font-size:13px;font-weight:700;">1 Available Unit</div>
+            <div class="kpi-sub">Assigned to demo Sales Agent</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Demo Step 2 <span class="badge b-blue">/callcenter</span></div>
+            <div style="font-size:13px;font-weight:700;">Create &amp; Assign</div>
+            <div class="kpi-sub">Show New Entry + Dedup check</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Demo Step 3 <span class="badge b-amber">Android</span></div>
+            <div style="font-size:13px;font-weight:700;">Biometric → Close</div>
+            <div class="kpi-sub">Call, WhatsApp, Visit, Deal Closed</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Demo Step 4 <span class="badge b-green">/management</span></div>
+            <div style="font-size:13px;font-weight:700;">Issue Contract</div>
+            <div class="kpi-sub">Unit becomes Sold → Finance</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Navigation Controls -->
+  <div class="nav-controls">
+    <button class="nav-btn" id="prevBtn" aria-label="Previous slide">‹</button>
+    <span class="slide-counter tabular-nums" id="slideCounter">1 / 10</span>
+    <button class="nav-btn" id="nextBtn" aria-label="Next slide">›</button>
+  </div>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const progressBar = document.getElementById('progressBar');
+    const slideCounter = document.getElementById('slideCounter');
+    let current = 0;
+
+    function showSlide(index) {
+      current = Math.max(0, Math.min(index, slides.length - 1));
+      slides.forEach((s, i) => s.classList.toggle('active', i === current));
+      slideCounter.textContent = `${current + 1} / ${slides.length}`;
+      progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => showSlide(current - 1));
+    document.getElementById('nextBtn').addEventListener('click', () => showSlide(current + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); showSlide(current + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); showSlide(current - 1); }
+    });
+
+    showSlide(0);
+
+    // Chart.js Initialization (Illustrative Seminar Metrics)
+    Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    Chart.defaults.color = '#64748B';
+
+    new Chart(document.getElementById('chartChannelMix'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Call Center', 'Website Form', 'Visit Request', 'Click-to-Call', 'WhatsApp / Walk-in'],
+        datasets: [{
+          data: [34, 22, 16, 15, 13],
+          backgroundColor: ['#0F172A', '#0145F2', '#3B82F6', '#F59E0B', '#16A34A'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+      }
+    });
+
+    new Chart(document.getElementById('chartCallCenter'), {
+      type: 'bar',
+      data: {
+        labels: ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu'],
+        datasets: [
+          { label: 'Drafts Logged', data: [18, 24, 21, 28, 25, 19], backgroundColor: '#CBD5E1', borderRadius: 4 },
+          { label: 'Handed to Sales', data: [14, 19, 17, 23, 21, 16], backgroundColor: '#0F172A', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: '#F1F5F9' } }, x: { grid: { display: false } } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+      }
+    });
+
+    new Chart(document.getElementById('chartSlaBuckets'), {
+      type: 'bar',
+      data: {
+        labels: ['Upcoming', 'Due Today', 'Overtime (>24h)', 'Completed On-Time', 'Completed Late'],
+        datasets: [{
+          label: 'Tasks',
+          data: [24, 14, 4, 52, 7],
+          backgroundColor: ['#3B82F6', '#F59E0B', '#DC2626', '#16A34A', '#94A3B8'],
+          borderRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { color: '#F1F5F9' } }, x: { grid: { display: false }, ticks: { font: { size: 10 } } } }
+      }
+    });
+
+    new Chart(document.getElementById('chartInventory'), {
+      type: 'bar',
+      data: {
+        labels: ['Sky Tower', 'Attaie Plaza', 'Green Residencia'],
+        datasets: [
+          { label: 'Available', data: [28, 18, 34], backgroundColor: '#E2E8F0' },
+          { label: 'Reserved', data: [6, 4, 5], backgroundColor: '#F59E0B' },
+          { label: 'Deal Closed', data: [4, 3, 2], backgroundColor: '#3B82F6' },
+          { label: 'Sold (HR)', data: [12, 15, 9], backgroundColor: '#16A34A' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: '#F1F5F9' } } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+      }
+    });
+
+    new Chart(document.getElementById('chartFunnel'), {
+      type: 'bar',
+      data: {
+        labels: ['L: Active Leads', 'F: Follow-ups', 'V: Site Visits', 'DC: Deal Closed', 'HR: Sold'],
+        datasets: [{
+          label: 'Count',
+          data: [320, 210, 95, 28, 24],
+          backgroundColor: ['#0F172A', '#334155', '#0145F2', '#2563EB', '#16A34A'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, grid: { color: '#F1F5F9' } }, y: { grid: { display: false } } }
+      }
+    });
+
+    new Chart(document.getElementById('chartAgents'), {
+      type: 'bar',
+      data: {
+        labels: ['Agent A', 'Agent B', 'Agent C', 'Agent D', 'Agent E'],
+        datasets: [
+          { label: 'Active Leads', data: [32, 28, 24, 30, 22], backgroundColor: '#CBD5E1', borderRadius: 4 },
+          { label: 'Closed Deals', data: [8, 6, 5, 7, 4], backgroundColor: '#16A34A', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, grid: { color: '#F1F5F9' } }, x: { grid: { display: false } } },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } }
+      }
+    });
+  </script>
+</body>
+</html>
