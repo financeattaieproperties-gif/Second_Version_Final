@@ -4,6 +4,8 @@ require_once __DIR__ . '/../sitemap-helper.php';
 cors();
 require_admin();
 
+const ALLOWED_PROJECT_STATUSES = ['Coming Soon', 'In Progress', 'Sold Out', 'Under Construction', 'Ready'];
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 function decode_gallery(?string $raw): array {
@@ -30,8 +32,14 @@ if ($method === 'GET') {
 if ($method === 'POST') {
     $b = body();
     foreach (['name', 'location', 'status'] as $f) {
-        if (empty($b[$f])) json_out(['error' => "$f required"], 400);
+        if (!isset($b[$f]) || trim((string) $b[$f]) === '') json_out(['error' => "$f required"], 400);
     }
+    $status = trim((string) $b['status']);
+    if (!in_array($status, ALLOWED_PROJECT_STATUSES, true)) {
+        json_out(['error' => 'Invalid status. Allowed: ' . implode(', ', ALLOWED_PROJECT_STATUSES)], 422);
+    }
+    $name  = trim((string) $b['name']);
+    $loc   = trim((string) $b['location']);
     $avail = intval($b['available_units'] ?? 0);
     $total = intval($b['total_units']     ?? 0);
     $del   = !empty($b['delivery_date']) ? trim((string) $b['delivery_date']) : null;
@@ -44,7 +52,7 @@ if ($method === 'POST') {
         'INSERT INTO projects (name,location,delivery_date,status,available_units,total_units,image_url,gallery_images,video_url,masterplan_image,description)
          VALUES (?,?,?,?,?,?,?,?,?,?,?)'
     );
-    $stmt->bind_param('ssssiisssss', $b['name'], $b['location'], $del, $b['status'], $avail, $total, $img, $gallery, $video, $masterplan, $desc);
+    $stmt->bind_param('ssssiisssss', $name, $loc, $del, $status, $avail, $total, $img, $gallery, $video, $masterplan, $desc);
     if (!$stmt->execute()) {
         json_out(['error' => 'Failed to create project: ' . db()->error], 500);
     }
@@ -57,6 +65,15 @@ if ($method === 'PUT') {
     $b  = body();
     $id = intval($b['id'] ?? 0);
     if (!$id) json_out(['error' => 'id required'], 400);
+    foreach (['name', 'location', 'status'] as $f) {
+        if (!isset($b[$f]) || trim((string) $b[$f]) === '') json_out(['error' => "$f required"], 400);
+    }
+    $status = trim((string) $b['status']);
+    if (!in_array($status, ALLOWED_PROJECT_STATUSES, true)) {
+        json_out(['error' => 'Invalid status. Allowed: ' . implode(', ', ALLOWED_PROJECT_STATUSES)], 422);
+    }
+    $name  = trim((string) $b['name']);
+    $loc   = trim((string) $b['location']);
     $avail = intval($b['available_units'] ?? 0);
     $total = intval($b['total_units']     ?? 0);
     $del   = !empty($b['delivery_date']) ? trim((string) $b['delivery_date']) : null;
@@ -69,7 +86,7 @@ if ($method === 'PUT') {
         'UPDATE projects SET name=?,location=?,delivery_date=?,status=?,
          available_units=?,total_units=?,image_url=?,gallery_images=?,video_url=?,masterplan_image=?,description=? WHERE id=?'
     );
-    $stmt->bind_param('ssssiisssssi', $b['name'], $b['location'], $del, $b['status'], $avail, $total, $img, $gallery, $video, $masterplan, $desc, $id);
+    $stmt->bind_param('ssssiisssssi', $name, $loc, $del, $status, $avail, $total, $img, $gallery, $video, $masterplan, $desc, $id);
     if (!$stmt->execute()) {
         json_out(['error' => 'Failed to update project: ' . db()->error], 500);
     }

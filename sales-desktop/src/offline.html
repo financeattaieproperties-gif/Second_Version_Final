@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attaie Sales Agent — Offline</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F8FAFC;
+        color: #1E293B;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      .card {
+        width: 100%;
+        max-width: 460px;
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #0072BC;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 8px;
+        font-weight: 700;
+      }
+      p {
+        font-size: 13px;
+        line-height: 1.55;
+        color: #475569;
+        margin: 0 0 16px;
+      }
+      .meta {
+        font-size: 12px;
+        color: #64748B;
+        background: #F1F5F9;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 18px;
+        word-break: break-word;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        flex: 1;
+        height: 40px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF;
+        color: #1E293B;
+      }
+      button.primary {
+        background: #0072BC;
+        color: #FFFFFF;
+        border-color: #0072BC;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="eyebrow">Attaie Properties · Sales CRM</div>
+      <h1>Unable to load Sales Workspace</h1>
+      <p>Click Retry or switch your Backend Server URL.</p>
+      <div class="meta" id="status-box">Loading connection details…</div>
+      <div class="actions">
+        <button type="button" class="primary" id="retry-btn">Retry</button>
+        <button type="button" id="config-btn">Switch Server URL</button>
+      </div>
+    </main>
+    <script>
+      (async () => {
+        const api = window.attaieDesktop || window.salesDesktop || window.callcenterDesktop;
+        const box = document.getElementById('status-box');
+        if (api) {
+          const info = await api.getStatus();
+          box.textContent = (info.backendOrigin || info.serverUrl) + (info.lastError ? '\n' + info.lastError : '');
+          document.getElementById('retry-btn').addEventListener('click', () => api.retry());
+          document.getElementById('config-btn').addEventListener('click', () => api.openServerConfig());
+        }
+      })();
+    </script>
+  </body>
+</html>

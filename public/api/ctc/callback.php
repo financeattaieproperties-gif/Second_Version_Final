@@ -25,27 +25,47 @@ try {
     }
 
     if (is_array($data)) {
-        $referenceId = (string) ($data['reference_id'] ?? $data['requestid'] ?? $data['request_id'] ?? $data['ref_id'] ?? '');
+        $rawRef = $data['reference_id'] ?? $data['ref_id'] ?? null;
+        $rawReq = $data['requestid'] ?? $data['request_id'] ?? null;
         $eventStatus = strtolower((string) ($data['status'] ?? $data['call_status'] ?? $data['event'] ?? ''));
 
-        if ($referenceId !== '') {
+        $queryCol = null;
+        $bindType = 's';
+        $queryVal = null;
+
+        if ($rawRef !== null && is_numeric($rawRef) && (int) $rawRef > 0) {
+            $queryCol = 'reference_id';
+            $bindType = 'i';
+            $queryVal = (int) $rawRef;
+        } elseif ($rawReq !== null && trim((string) $rawReq) !== '') {
+            $queryCol = 'etisalat_request_id';
+            $bindType = 's';
+            $queryVal = trim((string) $rawReq);
+        } elseif ($rawRef !== null && trim((string) $rawRef) !== '') {
+            $queryCol = 'etisalat_request_id';
+            $bindType = 's';
+            $queryVal = trim((string) $rawRef);
+        }
+
+        if ($queryCol !== null && $queryVal !== null) {
             $conn = db();
+            $paramType = 's' . $bindType;
 
             if (strpos($eventStatus, 'fail') !== false || strpos($eventStatus, 'not connected') !== false) {
                 $stmt = $conn->prepare("
                     UPDATE ctc_public_call_log
                     SET status = 'failed', response_payload = ?
-                    WHERE reference_id = ?
+                    WHERE {$queryCol} = ?
                 ");
-                $stmt->bind_param('ss', $rawPayload, $referenceId);
+                $stmt->bind_param($paramType, $rawPayload, $queryVal);
                 $stmt->execute();
             } else {
                 $stmt = $conn->prepare("
                     UPDATE ctc_public_call_log
                     SET response_payload = ?
-                    WHERE reference_id = ?
+                    WHERE {$queryCol} = ?
                 ");
-                $stmt->bind_param('ss', $rawPayload, $referenceId);
+                $stmt->bind_param($paramType, $rawPayload, $queryVal);
                 $stmt->execute();
             }
         }

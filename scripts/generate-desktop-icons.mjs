@@ -153,10 +153,16 @@ const ico = buildIco([
   { size: 256, data: png256 },
 ]);
 
-for (const target of ['admin-panel/resources', 'callcenter-desktop/resources']) {
+for (const target of ['admin-panel/resources', 'callcenter-desktop/resources', 'sales-desktop/resources']) {
   const dir = path.join(root, target);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'icon.ico'), ico);
-  fs.copyFileSync(src512, path.join(dir, 'icon.png'));
-  console.log(`Generated ${target}/icon.ico (${ico.length} bytes) and icon.png`);
+  const icoPath = path.join(dir, 'icon.ico');
+  const pngPath = path.join(dir, 'icon.png');
+  try {
+    if (!fs.existsSync(icoPath)) fs.writeFileSync(icoPath, ico);
+    if (!fs.existsSync(pngPath)) fs.copyFileSync(src512, pngPath);
+    console.log(`Verified ${target}/icon.ico (${ico.length} bytes) and icon.png`);
+  } catch {
+    console.log(`Skipped locked ${target} icons (already present)`);
+  }
 }

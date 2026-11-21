@@ -426,7 +426,8 @@ html[dir="rtl"] .serial {
   flex-shrink: 0;
   letter-spacing: 0.3px;
 }
-.avatar.gold {
+.avatar.gold,
+.avatar.neutral {
   background: #F1F5F9;
   color: #1E293B;
 }
@@ -913,13 +914,18 @@ td small {
 }
 .filter-bar {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 5px;
   padding: 0 22px 17px;
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible;
   border-bottom: 1px solid var(--line);
 }
-.filter-bar button {
+.panel:has(.drp-root) {
+  overflow: visible;
+}
+.filter-bar > button {
   border: 0;
   background: transparent;
   padding: 8px 13px;
@@ -929,10 +935,17 @@ td small {
   white-space: nowrap;
   min-height: 36px;
 }
-.filter-bar button.active {
+.filter-bar > button.active {
   background: #0072BC;
   color: #FFFFFF;
   font-weight: 600;
+}
+@media (max-width: 640px) {
+  .drp-popover {
+    min-width: min(320px, calc(100vw - 28px)) !important;
+    right: 0 !important;
+    left: auto !important;
+  }
 }
 .empty {
   display: flex;
@@ -2030,7 +2043,7 @@ td small {
   .filter-bar::-webkit-scrollbar {
     display: none;
   }
-  .filter-bar button {
+  .filter-bar > button {
     padding: 6px 10px;
     font-size: 11px;
     min-height: 34px;

@@ -126,8 +126,8 @@ export const api = {
     request("staff", "POST", body, key),
   saveProject: (projectInput: Partial<InventoryProject>) =>
     request<InventoryProject>("inventory/projects", "POST", projectInput),
-  resolveCustomerReview: (reviewId: number, decision: "approved_shared" | "rejected") =>
-    request<CustomerReviewRequest>(`customers/review-requests/${reviewId}`, "POST", { decision }),
+  resolveCustomerReview: (reviewId: number, decision: "approved_shared" | "rejected", version: number) =>
+    request<CustomerReviewRequest>(`customers/review-requests/${reviewId}`, "POST", { decision, version }),
   upload: (dataUrl: string, fileName: string, purpose: string) =>
     request<{url: string; fileName: string}>("files", "POST", {dataUrl, fileName, purpose}),
   saveProjectPreparation: (projectId: number, body: ProjectPreparationInput) =>

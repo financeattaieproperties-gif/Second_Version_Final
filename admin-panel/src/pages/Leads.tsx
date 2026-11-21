@@ -583,6 +583,7 @@ export default function Leads() {
           <span>✓ {exportNotice}</span>
           <button
             type="button"
+            aria-label="Dismiss notice"
             onClick={() => setExportNotice('')}
             style={{
               background: 'none',

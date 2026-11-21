@@ -33,15 +33,16 @@ test('Phase 1: UDR-001..003 three-database isolation and CEO authority', () => {
   assert.equal(canAccessDatabase('admin', 'submissions'), 'review_and_publish');
   assert.equal(canAccessDatabase('admin', 'crm'), false);
 
-  // Manager and staff can access crm, NEVER website
+  // Manager and staff can access crm, NEVER website; only CEO and Editor have submissions tab access
   assert.equal(canAccessDatabase('manager', 'website'), false);
   assert.equal(canAccessDatabase('manager', 'crm'), true);
-  assert.equal(canAccessDatabase('manager', 'submissions'), 'read_only');
+  assert.equal(canAccessDatabase('manager', 'submissions'), false);
+  assert.equal(canAccessDatabase('ceo', 'submissions'), 'read_only');
 
-  // Marketing roles can submit and read submissions; Engineering has no submission DB access
-  assert.equal(canAccessDatabase('marketing_manager', 'submissions'), 'submit_and_read');
+  // Only Editor can submit and read submissions; other roles have no submission DB access
+  assert.equal(canAccessDatabase('marketing_manager', 'submissions'), false);
   assert.equal(canAccessDatabase('editor', 'submissions'), 'submit_and_read');
-  assert.equal(canAccessDatabase('sales', 'submissions'), 'read_only');
+  assert.equal(canAccessDatabase('sales', 'submissions'), false);
   assert.equal(canAccessDatabase('architect', 'submissions'), false);
 
   // Manager role & department/user management
@@ -385,6 +386,26 @@ test('Phase 5: Marketing production stages, Posted -> Submission DB handoff, and
     stage: 'submitted',
     version: 1,
   };
+
+  // CEO cannot schedule filming dates; only Manager and Marketing Manager can
+  assert.throws(
+    () =>
+      advanceMarketingProduction(
+        entry,
+        'schedule_filming',
+        { filmingDate: '2026-11-12', videographerId: 7 },
+        'ceo'
+      ),
+    /Only Marketing Manager or Manager can schedule filming/
+  );
+
+  const scheduledByManager = advanceMarketingProduction(
+    entry,
+    'schedule_filming',
+    { filmingDate: '2026-11-12', videographerId: 7 },
+    'manager'
+  );
+  assert.equal(scheduledByManager.stage, 'filming_scheduled');
 
   entry = advanceMarketingProduction(
     entry,

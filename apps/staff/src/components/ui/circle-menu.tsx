@@ -1,19 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { motion, AnimatePresence } from "motion/react";
+import { Plus } from "lucide-react";
 
 export interface CircleMenuItem {
   label: string;
   icon: React.ReactNode;
   onClick?: () => void;
   href?: string;
-  color?: string; // Optional custom color class, e.g. "bg-emerald-600 hover:bg-emerald-700"
+  color?: string;
 }
 
 export interface CircleMenuProps {
@@ -36,9 +30,9 @@ export function CircleMenu({
   ariaLabel = "Quick Action Menu",
 }: CircleMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Close when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -58,24 +52,19 @@ export function CircleMenu({
 
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
-  // Calculate angle for each item based on mode
   const getItemCoordinates = (index: number, total: number) => {
     let angle = 0;
     if (mode === "full") {
-      // Spread across 360 degrees starting from -90 deg (top)
       const step = (2 * Math.PI) / total;
       angle = -Math.PI / 2 + index * step;
     } else if (mode === "fan-up") {
-      // Spread 180 degrees upwards (from left to right)
       const step = total > 1 ? Math.PI / (total - 1) : 0;
       angle = Math.PI + index * step;
     } else if (mode === "fan-left") {
-      // Spread upwards and leftwards (quarter circle)
-      const step = total > 1 ? (Math.PI / 2) / (total - 1) : 0;
+      const step = total > 1 ? Math.PI / 2 / (total - 1) : 0;
       angle = Math.PI + index * step;
     } else if (mode === "fan-corner") {
-      // 90 to 180 degrees (top-left quarter circle)
-      const step = total > 1 ? (Math.PI / 2) / (total - 1) : 0;
+      const step = total > 1 ? Math.PI / 2 / (total - 1) : 0;
       angle = -Math.PI + index * step;
     }
 
@@ -87,7 +76,14 @@ export function CircleMenu({
   return (
     <div
       ref={containerRef}
-      className={cn("relative inline-flex items-center justify-center select-none", className)}
+      className={className}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        userSelect: "none",
+      }}
     >
       {/* Dimmed backdrop when menu is open */}
       <AnimatePresence>
@@ -96,21 +92,42 @@ export function CircleMenu({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/25 dark:bg-black/40 backdrop-blur-[2px]"
             onClick={() => setIsOpen(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 40,
+              background: "rgba(15, 23, 42, 0.2)",
+              backdropFilter: "blur(2px)",
+            }}
           />
         )}
       </AnimatePresence>
 
       {/* Floating Action Items */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+          zIndex: 50,
+        }}
+      >
         <AnimatePresence>
           {isOpen &&
             items.map((item, index) => {
               const { x, y } = getItemCoordinates(index, items.length);
+              const isHovered = hoveredIndex === index;
 
               const content = (
-                <div className="relative group">
+                <div
+                  style={{ position: "relative" }}
+                  onMouseEnter={() => setHoveredIndex(index)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
                   <motion.button
                     type="button"
                     onClick={() => {
@@ -137,35 +154,58 @@ export function CircleMenu({
                       scale: 0.2,
                       transition: { duration: 0.14 },
                     }}
-                    whileHover={{ scale: 1.15 }}
-                    whileTap={{ scale: 0.92 }}
-                    className={cn(
-                      "pointer-events-auto flex items-center justify-center w-11 h-11 rounded-full shadow-lg border text-white transition-shadow",
-                      item.color ||
-                        "bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 border-slate-700/60 dark:border-slate-600 shadow-slate-950/30"
-                    )}
+                    whileHover={{ scale: 1.12 }}
+                    whileTap={{ scale: 0.94 }}
                     aria-label={item.label}
+                    style={{
+                      pointerEvents: "auto",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      border: "1px solid #E2E8F0",
+                      background: isHovered ? "#0072BC" : "#FFFFFF",
+                      color: isHovered ? "#FFFFFF" : "#1E293B",
+                      boxShadow: "0 8px 20px rgba(15, 23, 42, 0.14)",
+                      cursor: "pointer",
+                    }}
                   >
                     {item.icon}
                   </motion.button>
 
-                  {/* Tooltip on hover */}
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileHover={{ opacity: 1, scale: 1 }}
-                    className="pointer-events-none absolute left-1/2 -bottom-7 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-150 px-2 py-0.5 rounded bg-slate-950 text-[10px] font-semibold text-white tracking-wide shadow-md whitespace-nowrap z-50"
-                  >
-                    {item.label}
-                  </motion.div>
+                  {isHovered && (
+                    <div
+                      style={{
+                        pointerEvents: "none",
+                        position: "absolute",
+                        left: "50%",
+                        bottom: -28,
+                        transform: "translate(calc(-50% + " + x + "px), " + y + "px)",
+                        padding: "3px 8px",
+                        borderRadius: 6,
+                        background: "#1E293B",
+                        color: "#FFFFFF",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 4px 12px rgba(15, 23, 42, 0.16)",
+                        zIndex: 60,
+                      }}
+                    >
+                      {item.label}
+                    </div>
+                  )}
                 </div>
               );
 
               return (
-                <div key={item.label} className="absolute">
+                <div key={item.label} style={{ position: "absolute" }}>
                   {item.href ? (
                     <a
                       href={item.href}
-                      className="pointer-events-auto"
+                      style={{ pointerEvents: "auto" }}
                       onClick={() => setIsOpen(false)}
                     >
                       {content}
@@ -183,19 +223,30 @@ export function CircleMenu({
       <motion.button
         type="button"
         onClick={toggleOpen}
-        whileHover={{ scale: 1.08 }}
+        whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
         animate={{ rotate: isOpen ? 45 : 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className={cn(
-          "relative z-50 flex items-center justify-center w-12 h-12 rounded-full shadow-xl transition-colors duration-200",
-          "bg-teal-600 hover:bg-teal-500 text-white border border-teal-400/30 shadow-teal-900/30",
-          buttonClassName
-        )}
+        className={buttonClassName}
         aria-label={ariaLabel}
         aria-expanded={isOpen}
+        style={{
+          position: "relative",
+          zIndex: 50,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 48,
+          height: 48,
+          borderRadius: "50%",
+          border: "1px solid #0072BC",
+          background: "#0072BC",
+          color: "#FFFFFF",
+          boxShadow: "0 8px 24px rgba(0, 114, 188, 0.28)",
+          cursor: "pointer",
+        }}
       >
-        {triggerIcon || <Plus className="w-5 h-5 stroke-[2.5]" />}
+        {triggerIcon || <Plus size={20} strokeWidth={2.5} />}
       </motion.button>
     </div>
   );

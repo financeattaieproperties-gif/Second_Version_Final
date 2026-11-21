@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Lightbulb } from 'lucide-react';
 import { ImageUpload } from './ImageUpload';
 
 interface ApartmentGalleryReorderProps {
@@ -338,6 +339,7 @@ export function ApartmentGalleryReorder({
                     disabled={i === 0}
                     onClick={() => moveStep(i, 'left')}
                     title="Move photo left"
+                    aria-label="Move photo left"
                     style={{
                       padding: '0.2rem 0.45rem',
                       background: i === 0 ? '#F8FAFC' : '#F1F5F9',
@@ -356,6 +358,7 @@ export function ApartmentGalleryReorder({
                     disabled={i === allPhotos.length - 1}
                     onClick={() => moveStep(i, 'right')}
                     title="Move photo right"
+                    aria-label="Move photo right"
                     style={{
                       padding: '0.2rem 0.45rem',
                       background: i === allPhotos.length - 1 ? '#F8FAFC' : '#F1F5F9',
@@ -378,6 +381,7 @@ export function ApartmentGalleryReorder({
                       type="button"
                       onClick={() => makeCover(i)}
                       title="Make this photo the primary apartment cover"
+                      aria-label="Make primary cover"
                       style={{
                         padding: '0.2rem 0.5rem',
                         background: '#E6F2FA',
@@ -396,6 +400,7 @@ export function ApartmentGalleryReorder({
                     type="button"
                     onClick={() => removePhoto(i)}
                     title="Remove this photo"
+                    aria-label="Remove photo"
                     style={{
                       padding: '0.2rem 0.45rem',
                       background: '#FEF2F2',
@@ -464,7 +469,7 @@ export function ApartmentGalleryReorder({
           gap: '0.35rem',
         }}
       >
-        <span>💡</span>
+        <Lightbulb size={13} style={{ color: '#0072BC', flexShrink: 0 }} aria-hidden="true" />
         <span>
           <strong>Pro-Tip:</strong> Grab any photo card and drag it onto another card to swap positions. Click <strong>★ Set as Cover</strong> to instantly make any interior or balcony shot the primary cover photo.
         </span>

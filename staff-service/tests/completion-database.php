@@ -6,7 +6,7 @@ require __DIR__.'/../src/App.php';
 $db=new PDO('mysql:host=127.0.0.1;port=3397;charset=utf8mb4','root','',[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_EMULATE_PREPARES=>false,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 $name='attaie_completion_fixture_'.bin2hex(random_bytes(5)); $db->exec("CREATE DATABASE `$name` CHARACTER SET utf8mb4"); $db->exec("USE `$name`");
 foreach (['001-core.sql','010-callcenter.sql','020-inventory.sql','030-sales-crm.sql','040-hr-finance.sql','050-marketing-production.sql','060-engineering.sql','090-role-migration.sql','095-retire-finance-assistant.sql','100-dashboard-completion.sql'] as $file) $db->exec(file_get_contents(__DIR__.'/../database/'.$file));
-$roles=['manager','hr_manager','finance_manager','sales','architect','marketing_manager','videographer','editor','sales'];
+$roles=['manager','manager','finance_manager','sales','architect','marketing_manager','videographer','editor','sales'];
 foreach ($roles as $i=>$role) { $q=$db->prepare('INSERT INTO core_users(id,firebase_uid,name,username,role) VALUES (?,?,?,?,?)'); $q->execute([$i+1,'fictional-'.$role.$i,'Fictional '.$role,$role.$i.'@example.test',$role]); }
 $app=new Staff\App(); $rc=new ReflectionClass($app);
 foreach (['db'=>$db,'now'=>gmdate('Y-m-d H:i:s'),'config'=>['origin'=>'https://v2.example.test']] as $key=>$value) $rc->getProperty($key)->setValue($app,$value);

@@ -21,7 +21,7 @@ for (const role of roles) {
   process.env.STAFF_ALLOW_PREVIEW = "1";
 
   await build({
-    configFile: path.join(root, "apps/staff/vite.config.ts"),
+    configFile: path.join(root, "apps/staff/vite.config.mjs"),
     logLevel: "warn",
     build: {
       outDir,

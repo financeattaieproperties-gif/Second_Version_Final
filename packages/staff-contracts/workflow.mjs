@@ -177,27 +177,8 @@ export function canAccessDatabase(role, database) {
   }
   if (database === "submissions") {
     if (role === "admin") return "review_and_publish";
-    if (
-      [
-        "marketing_manager",
-        "editor",
-        "videographer",
-      ].includes(role)
-    ) {
-      return "submit_and_read";
-    }
-    if (
-      [
-        "ceo",
-        "manager",
-        "finance_manager",
-        "sales_leader",
-        "sales",
-        "callcenter",
-      ].includes(role)
-    ) {
-      return "read_only";
-    }
+    if (role === "editor") return "submit_and_read";
+    if (role === "ceo") return "read_only";
     return false;
   }
   return false;
@@ -729,8 +710,8 @@ export function validateMarketingEntryCreation(input, actorRole) {
 
 export function advanceMarketingProduction(entry, action, payload = {}, actorRole) {
   if (action === "schedule_filming") {
-    if (!["marketing_manager", "manager", "ceo"].includes(actorRole)) {
-      throw new Error("Only Marketing Manager can schedule filming.");
+    if (!["marketing_manager", "manager"].includes(actorRole)) {
+      throw new Error("Only Marketing Manager or Manager can schedule filming.");
     }
     if (!payload.filmingDate || !payload.videographerId) {
       throw new Error("Select a filming date and Videographer.");

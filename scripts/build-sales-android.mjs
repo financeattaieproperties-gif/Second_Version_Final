@@ -25,7 +25,7 @@ process.env.STAFF_ALLOW_PREVIEW = process.env.STAFF_ALLOW_PREVIEW || "0";
 process.env.VITE_STAFF_API_BASE_URL = backendBaseUrl;
 
 await build({
-  configFile: path.join(root, "apps/staff/vite.config.ts"),
+  configFile: path.join(root, "apps/staff/vite.config.mjs"),
   logLevel: "warn",
   build: {
     outDir: wwwDir,

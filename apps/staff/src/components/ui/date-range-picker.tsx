@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -7,12 +7,6 @@ import {
   X,
   Check,
 } from "lucide-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface DateRange {
   from: Date | null;
@@ -39,46 +33,66 @@ const DEFAULT_PRESETS: DateRangePreset[] = [
   {
     label: "Today",
     getValue: () => {
-      const now = new Date();
-      return { from: new Date(now.setHours(0, 0, 0, 0)), to: new Date(now.setHours(23, 59, 59, 999)) };
+      const from = new Date();
+      from.setHours(0, 0, 0, 0);
+      const to = new Date();
+      to.setHours(23, 59, 59, 999);
+      return { from, to };
     },
   },
   {
     label: "Yesterday",
     getValue: () => {
-      const d = new Date();
-      d.setDate(d.getDate() - 1);
-      return { from: new Date(d.setHours(0, 0, 0, 0)), to: new Date(d.setHours(23, 59, 59, 999)) };
+      const from = new Date();
+      from.setDate(from.getDate() - 1);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(from);
+      to.setHours(23, 59, 59, 999);
+      return { from, to };
     },
   },
   {
     label: "Last 7 Days",
     getValue: () => {
       const to = new Date();
+      to.setHours(23, 59, 59, 999);
       const from = new Date();
       from.setDate(from.getDate() - 6);
-      return { from: new Date(from.setHours(0, 0, 0, 0)), to: new Date(to.setHours(23, 59, 59, 999)) };
+      from.setHours(0, 0, 0, 0);
+      return { from, to };
     },
   },
   {
     label: "Last 30 Days",
     getValue: () => {
       const to = new Date();
+      to.setHours(23, 59, 59, 999);
       const from = new Date();
       from.setDate(from.getDate() - 29);
-      return { from: new Date(from.setHours(0, 0, 0, 0)), to: new Date(to.setHours(23, 59, 59, 999)) };
+      from.setHours(0, 0, 0, 0);
+      return { from, to };
     },
   },
   {
     label: "This Month",
     getValue: () => {
       const now = new Date();
-      const from = new Date(now.getFullYear(), now.getMonth(), 1);
-      const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+      const from = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const to = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999
+      );
       return { from, to };
     },
   },
 ];
+
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 function isSameDay(d1: Date | null, d2: Date | null) {
   if (!d1 || !d2) return false;
@@ -87,6 +101,14 @@ function isSameDay(d1: Date | null, d2: Date | null) {
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
   );
+}
+
+function startOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+}
+
+function endOfDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 }
 
 function formatDate(d: Date | null): string {
@@ -106,20 +128,24 @@ export function DateRangePicker({
   presets = DEFAULT_PRESETS,
   placeholder = "Select date range",
   className,
-  align = "left",
+  align = "right",
 }: DateRangePickerProps) {
   const [internalRange, setInternalRange] = useState<DateRange>(
     value || { from: null, to: null }
   );
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
+  const [hoveredDayKey, setHoveredDayKey] = useState<string | null>(null);
+  const [hoveredPreset, setHoveredPreset] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState<Date>(
-    value?.from || new Date()
-  );
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => {
+    const base = value?.from || new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
 
   const containerRef = useRef<HTMLDivElement>(null);
 
   const activeRange = value !== undefined ? value : internalRange;
+  const today = useMemo(() => startOfDay(new Date()), []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -130,23 +156,30 @@ export function DateRangePicker({
         setIsOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
 
   const handleSelectDay = (day: Date) => {
     let next: DateRange;
     if (!activeRange.from || (activeRange.from && activeRange.to)) {
-      next = { from: day, to: null };
+      next = { from: startOfDay(day), to: null };
     } else {
       if (day < activeRange.from) {
-        next = { from: day, to: activeRange.from };
+        next = { from: startOfDay(day), to: endOfDay(activeRange.from) };
       } else {
-        next = { from: activeRange.from, to: day };
+        next = { from: startOfDay(activeRange.from), to: endOfDay(day) };
       }
     }
     setInternalRange(next);
@@ -157,11 +190,13 @@ export function DateRangePicker({
     const next = preset.getValue();
     setInternalRange(next);
     onChange?.(next);
-    if (next.from) setCurrentMonth(next.from);
+    if (next.from) {
+      setCurrentMonth(new Date(next.from.getFullYear(), next.from.getMonth(), 1));
+    }
   };
 
-  const clearSelection = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const clearSelection = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const empty = { from: null, to: null };
     setInternalRange(empty);
     onChange?.(empty);
@@ -171,89 +206,224 @@ export function DateRangePicker({
     return new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
   }, [currentMonth]);
 
+  const isPresetActive = (preset: DateRangePreset) => {
+    if (!activeRange.from || !activeRange.to) return false;
+    const target = preset.getValue();
+    return (
+      isSameDay(activeRange.from, target.from) &&
+      isSameDay(activeRange.to, target.to)
+    );
+  };
+
   const renderMonthDays = (monthDate: Date) => {
     const year = monthDate.getFullYear();
     const month = monthDate.getMonth();
     const firstDayIndex = new Date(year, month, 1).getDay();
     const totalDays = new Date(year, month + 1, 0).getDate();
 
-    const days = [];
+    const days: React.ReactNode[] = [];
     for (let i = 0; i < firstDayIndex; i++) {
       days.push(
-        <div key={`empty-${i}`} className="h-8 w-8" aria-hidden="true" />
+        <div
+          key={`empty-${year}-${month}-${i}`}
+          style={{ width: 32, height: 32 }}
+          aria-hidden="true"
+        />
       );
     }
 
+    const fromDay = activeRange.from ? startOfDay(activeRange.from) : null;
+    const toDay = activeRange.to ? startOfDay(activeRange.to) : null;
+    const hoverDay = hoverDate ? startOfDay(hoverDate) : null;
+
     for (let d = 1; d <= totalDays; d++) {
       const day = new Date(year, month, d);
-      const isStart = isSameDay(day, activeRange.from);
-      const isEnd = isSameDay(day, activeRange.to);
-      const isHovered =
-        activeRange.from &&
-        !activeRange.to &&
-        hoverDate &&
-        day > activeRange.from &&
-        day <= hoverDate;
+      const dayKey = `${year}-${month}-${d}`;
+      const isStart = isSameDay(day, fromDay);
+      const isEnd = isSameDay(day, toDay);
+      const isToday = isSameDay(day, today);
 
-      const inRange =
-        activeRange.from &&
-        activeRange.to &&
-        day >= activeRange.from &&
-        day <= activeRange.to;
+      const isHoveredInRange = Boolean(
+        fromDay &&
+          !toDay &&
+          hoverDay &&
+          ((day > fromDay && day <= hoverDay) ||
+            (day < fromDay && day >= hoverDay))
+      );
 
-      const isDisabled =
-        (minDate && day < minDate) || (maxDate && day > maxDate);
+      const inRange = Boolean(
+        fromDay && toDay && day >= fromDay && day <= toDay
+      );
+
+      const isDisabled = Boolean(
+        (minDate && day < startOfDay(minDate)) ||
+          (maxDate && day > startOfDay(maxDate))
+      );
+
+      const isSelectedEdge = isStart || isEnd;
+      const isRangeHighlight = (inRange || isHoveredInRange) && !isSelectedEdge;
+      const isCellHovered = hoveredDayKey === dayKey && !isDisabled;
+
+      let bg = "transparent";
+      let fg = "#1E293B";
+      let radius: string | number = 6;
+      let weight = 500;
+      let boxShadow = "none";
+
+      if (isDisabled) {
+        fg = "#CBD5E1";
+      } else if (isSelectedEdge) {
+        bg = "#0072BC";
+        fg = "#FFFFFF";
+        weight = 700;
+        if (isStart && isEnd) {
+          radius = 6;
+        } else if (isStart && (toDay || (hoverDay && hoverDay > day))) {
+          radius = "6px 0 0 6px";
+        } else if (isEnd && fromDay && fromDay < day) {
+          radius = "0 6px 6px 0";
+        } else {
+          radius = 6;
+        }
+      } else if (isRangeHighlight) {
+        bg = "#E6F2FA";
+        fg = "#0072BC";
+        weight = 600;
+        radius = 0;
+      } else if (isCellHovered) {
+        bg = "#F1F5F9";
+        fg = "#0072BC";
+      }
+
+      if (isToday && !isSelectedEdge) {
+        boxShadow = "inset 0 0 0 1.5px #14A850";
+        if (!isRangeHighlight) {
+          fg = "#14A850";
+          weight = 700;
+        }
+      }
 
       days.push(
         <button
-          key={`day-${d}`}
+          key={dayKey}
           type="button"
-          disabled={Boolean(isDisabled)}
+          className="drp-day-btn"
+          disabled={isDisabled}
           onClick={() => handleSelectDay(day)}
-          onMouseEnter={() => setHoverDate(day)}
-          onMouseLeave={() => setHoverDate(null)}
-          className={cn(
-            "relative h-8 w-8 text-xs font-medium transition-all duration-150 flex items-center justify-center",
-            isDisabled
-              ? "text-slate-300 dark:text-slate-700 cursor-not-allowed"
-              : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800",
-            (inRange || isHovered) &&
-              !isStart &&
-              !isEnd &&
-              "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200 rounded-none",
-            isStart &&
-              "bg-teal-600 text-white font-semibold rounded-l-md shadow-sm z-10",
-            isEnd &&
-              "bg-teal-600 text-white font-semibold rounded-r-md shadow-sm z-10",
-            isStart && isEnd && "rounded-md"
-          )}
+          onMouseEnter={() => {
+            setHoverDate(day);
+            setHoveredDayKey(dayKey);
+          }}
+          onMouseLeave={() => {
+            setHoverDate(null);
+            setHoveredDayKey(null);
+          }}
+          aria-label={day.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+          aria-pressed={isSelectedEdge}
+          style={{
+            position: "relative",
+            width: 32,
+            height: 32,
+            minHeight: 32,
+            padding: 0,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            fontWeight: weight,
+            fontVariantNumeric: "tabular-nums",
+            border: "none",
+            borderRadius: radius,
+            background: bg,
+            color: fg,
+            boxShadow,
+            cursor: isDisabled ? "not-allowed" : "pointer",
+            transition: "background 0.12s ease, color 0.12s ease",
+          }}
         >
           {d}
+          {isToday && (
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                bottom: 3,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: 4,
+                height: 4,
+                borderRadius: "50%",
+                background: isSelectedEdge ? "#FFFFFF" : "#14A850",
+              }}
+            />
+          )}
         </button>
       );
     }
 
     return (
-      <div className="space-y-2">
-        <div className="text-center font-semibold text-xs tracking-wider uppercase text-slate-800 dark:text-slate-200">
+      <div style={{ minWidth: 224 }}>
+        <div
+          style={{
+            textAlign: "center",
+            fontWeight: 700,
+            fontSize: 13,
+            color: "#1E293B",
+            marginBottom: 10,
+            letterSpacing: "-0.1px",
+          }}
+        >
           {monthDate.toLocaleDateString("en-US", {
             month: "long",
             year: "numeric",
           })}
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold text-slate-400">
-          <span>Su</span>
-          <span>Mo</span>
-          <span>Tu</span>
-          <span>We</span>
-          <span>Th</span>
-          <span>Fr</span>
-          <span>Sa</span>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 32px)",
+            textAlign: "center",
+            fontSize: 11,
+            fontWeight: 600,
+            color: "#818285",
+            marginBottom: 6,
+            justifyContent: "center",
+          }}
+        >
+          {WEEKDAYS.map((dayName) => (
+            <span
+              key={dayName}
+              style={{
+                width: 32,
+                height: 22,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {dayName}
+            </span>
+          ))}
         </div>
-        <div className="grid grid-cols-7 gap-y-1">{days}</div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(7, 32px)",
+            rowGap: 4,
+            justifyContent: "center",
+          }}
+        >
+          {days}
+        </div>
       </div>
     );
   };
+
+  const hasSelection = Boolean(activeRange.from || activeRange.to);
 
   const displayText =
     activeRange.from && activeRange.to
@@ -262,130 +432,376 @@ export function DateRangePicker({
       ? `${formatDate(activeRange.from)} – …`
       : placeholder;
 
+  const popoverPlacementStyle: React.CSSProperties =
+    align === "right"
+      ? { right: 0 }
+      : align === "center"
+      ? { left: "50%", transform: "translateX(-50%)" }
+      : { left: 0 };
+
   return (
-    <div ref={containerRef} className={cn("relative inline-block text-left", className)}>
+    <div
+      ref={containerRef}
+      className={["drp-root", className].filter(Boolean).join(" ")}
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        alignItems: "center",
+        verticalAlign: "middle",
+      }}
+    >
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "inline-flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium rounded-lg border shadow-sm transition-all duration-150",
-          "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-700",
-          isOpen && "ring-2 ring-teal-500/20 border-teal-500 dark:border-teal-400"
-        )}
+        className="drp-trigger-btn"
+        data-testid="date-range-picker-trigger"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
+        onClick={() => setIsOpen((prev) => !prev)}
+        style={{
+          height: 36,
+          minHeight: 36,
+          padding: "0 12px",
+          borderRadius: 8,
+          border:
+            isOpen || hasSelection
+              ? "1px solid #0072BC"
+              : "1px solid #E2E8F0",
+          background: hasSelection ? "#E6F2FA" : "#FFFFFF",
+          color: hasSelection ? "#0072BC" : "#1E293B",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          fontVariantNumeric: "tabular-nums",
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+          boxShadow: isOpen ? "0 0 0 3px rgba(0, 114, 188, 0.14)" : "none",
+          transition:
+            "border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease",
+        }}
       >
-        <CalendarIcon className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-        <span className={cn(!activeRange.from && "text-slate-400 dark:text-slate-500")}>
+        <CalendarIcon
+          size={15}
+          style={{
+            color: isOpen || hasSelection ? "#0072BC" : "#818285",
+            flexShrink: 0,
+          }}
+        />
+        <span
+          style={{
+            color: hasSelection
+              ? "#0072BC"
+              : isOpen
+              ? "#1E293B"
+              : "#475569",
+          }}
+        >
           {displayText}
         </span>
-        {activeRange.from && (
+        {hasSelection && (
           <span
             role="button"
             tabIndex={0}
+            aria-label="Clear date range"
             onClick={clearSelection}
-            className="ml-1 p-0.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                clearSelection();
+              }
+            }}
+            style={{
+              marginInlineStart: 2,
+              width: 18,
+              height: 18,
+              borderRadius: "50%",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0, 114, 188, 0.12)",
+              color: "#0072BC",
+              cursor: "pointer",
+            }}
           >
-            <X className="w-3 h-3" />
+            <X size={12} />
           </span>
         )}
       </button>
 
-      {/* Popover */}
+      {/* Popover Card */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            role="dialog"
+            aria-label="Select date range"
+            className="drp-popover"
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
-            transition={{ duration: 0.16 }}
-            className={cn(
-              "absolute z-50 mt-2 p-4 rounded-xl border shadow-xl backdrop-blur-md",
-              "bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100",
-              align === "right" ? "right-0" : align === "center" ? "left-1/2 -translate-x-1/2" : "left-0"
-            )}
-            style={{ minWidth: "320px" }}
+            transition={{ duration: 0.14 }}
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              ...popoverPlacementStyle,
+              zIndex: 100,
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
+              borderRadius: 12,
+              boxShadow: "0 12px 32px rgba(15, 23, 42, 0.12)",
+              padding: 16,
+              minWidth: 560,
+              maxWidth: "calc(100vw - 28px)",
+              color: "#1E293B",
+            }}
           >
-            <div className="flex flex-col md:flex-row gap-4">
-              {/* Presets Column */}
-              {presets.length > 0 && (
-                <div className="flex md:flex-col gap-1.5 pb-2 md:pb-0 md:pr-4 border-b md:border-b-0 md:border-r border-slate-200 dark:border-slate-800 overflow-x-auto">
-                  <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 px-2 hidden md:block">
-                    Presets
-                  </span>
-                  {presets.map((p) => (
+            {/* Presets Top Pill Row */}
+            {presets.length > 0 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingBottom: 12,
+                  marginBottom: 12,
+                  borderBottom: "1px solid #E2E8F0",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.7px",
+                    textTransform: "uppercase",
+                    color: "#818285",
+                    marginInlineEnd: 4,
+                  }}
+                >
+                  Quick Range
+                </span>
+                {presets.map((p) => {
+                  const active = isPresetActive(p);
+                  const hovered = hoveredPreset === p.label;
+                  return (
                     <button
                       key={p.label}
                       type="button"
+                      className="drp-preset-btn"
                       onClick={() => handleApplyPreset(p)}
-                      className="px-2.5 py-1.5 text-xs text-left rounded-md font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap"
+                      onMouseEnter={() => setHoveredPreset(p.label)}
+                      onMouseLeave={() => setHoveredPreset(null)}
+                      style={{
+                        height: 28,
+                        minHeight: 28,
+                        padding: "0 10px",
+                        borderRadius: 6,
+                        border: active
+                          ? "1px solid #0072BC"
+                          : "1px solid #E2E8F0",
+                        background: active
+                          ? "#E6F2FA"
+                          : hovered
+                          ? "#F8FAFC"
+                          : "#FFFFFF",
+                        color: active
+                          ? "#0072BC"
+                          : hovered
+                          ? "#0072BC"
+                          : "#475569",
+                        fontSize: 11,
+                        fontWeight: active ? 700 : 600,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "all 0.12s ease",
+                      }}
                     >
                       {p.label}
                     </button>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
+            )}
 
-              {/* Calendars */}
-              <div className="space-y-3">
-                {/* Month navigation */}
-                <div className="flex items-center justify-between px-1">
+            {/* Month Navigation Controls */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <button
+                type="button"
+                className="drp-nav-btn"
+                aria-label="Previous month"
+                onClick={() =>
+                  setCurrentMonth(
+                    new Date(
+                      currentMonth.getFullYear(),
+                      currentMonth.getMonth() - 1,
+                      1
+                    )
+                  )
+                }
+                style={{
+                  width: 30,
+                  height: 30,
+                  minHeight: 30,
+                  padding: 0,
+                  borderRadius: 7,
+                  border: "1px solid #E2E8F0",
+                  background: "#FFFFFF",
+                  color: "#475569",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <ChevronLeft size={15} />
+              </button>
+
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: "#818285",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                Select start & end date
+              </span>
+
+              <button
+                type="button"
+                className="drp-nav-btn"
+                aria-label="Next month"
+                onClick={() =>
+                  setCurrentMonth(
+                    new Date(
+                      currentMonth.getFullYear(),
+                      currentMonth.getMonth() + 1,
+                      1
+                    )
+                  )
+                }
+                style={{
+                  width: 30,
+                  height: 30,
+                  minHeight: 30,
+                  padding: 0,
+                  borderRadius: 7,
+                  border: "1px solid #E2E8F0",
+                  background: "#FFFFFF",
+                  color: "#475569",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <ChevronRight size={15} />
+              </button>
+            </div>
+
+            {/* Two-Month Side-by-Side Calendar Grid */}
+            <div
+              className="drp-calendars-grid"
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))",
+                gap: 20,
+                alignItems: "start",
+              }}
+            >
+              {renderMonthDays(currentMonth)}
+              {renderMonthDays(nextMonthDate)}
+            </div>
+
+            {/* Footer Bar */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+                paddingTop: 12,
+                marginTop: 12,
+                borderTop: "1px solid #E2E8F0",
+                flexWrap: "wrap",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: hasSelection ? "#1E293B" : "#818285",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {activeRange.from && activeRange.to
+                  ? `${formatDate(activeRange.from)} – ${formatDate(
+                      activeRange.to
+                    )}`
+                  : activeRange.from
+                  ? `${formatDate(activeRange.from)} – Select end date`
+                  : "No date filter applied"}
+              </span>
+
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                {hasSelection && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setCurrentMonth(
-                        new Date(
-                          currentMonth.getFullYear(),
-                          currentMonth.getMonth() - 1,
-                          1
-                        )
-                      )
-                    }
-                    className="p-1 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="drp-clear-btn"
+                    onClick={() => clearSelection()}
+                    style={{
+                      height: 32,
+                      minHeight: 32,
+                      padding: "0 12px",
+                      borderRadius: 7,
+                      border: "1px solid #E2E8F0",
+                      background: "#FFFFFF",
+                      color: "#475569",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    Clear
                   </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCurrentMonth(
-                        new Date(
-                          currentMonth.getFullYear(),
-                          currentMonth.getMonth() + 1,
-                          1
-                        )
-                      )
-                    }
-                    className="p-1 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {renderMonthDays(currentMonth)}
-                  <div className="hidden sm:block">
-                    {renderMonthDays(nextMonthDate)}
-                  </div>
-                </div>
-
-                {/* Footer status & Done */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 text-xs">
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {activeRange.from && !activeRange.to
-                      ? "Select end date"
-                      : activeRange.from && activeRange.to
-                      ? "Range selected"
-                      : "Click to select range"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsOpen(false)}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-teal-600 hover:bg-teal-700 text-white font-medium rounded-md text-xs shadow-sm"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Apply
-                  </button>
-                </div>
+                )}
+                <button
+                  type="button"
+                  className="drp-apply-btn"
+                  onClick={() => setIsOpen(false)}
+                  style={{
+                    height: 32,
+                    minHeight: 32,
+                    padding: "0 14px",
+                    borderRadius: 7,
+                    border: "1px solid #0072BC",
+                    background: "#0072BC",
+                    color: "#FFFFFF",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  <Check size={14} />
+                  Apply
+                </button>
               </div>
             </div>
           </motion.div>

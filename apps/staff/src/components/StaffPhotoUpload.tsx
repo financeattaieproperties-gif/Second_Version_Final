@@ -46,7 +46,7 @@ export function StaffPhotoUpload({ label, value, purpose, onChange, onUpload, la
         } catch (err) { setError((err as Error).message); } finally { setBusy(false); }
       }} />
     {busy && (
-      <div className="mt-2 w-full max-w-xs">
+      <div style={{ marginTop: 8, width: '100%', maxWidth: 320 }}>
         <LoaderLiquidProgress
           progress={uploadProgress}
           height={10}

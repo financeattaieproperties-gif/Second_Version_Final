@@ -1,4 +1,5 @@
-import type { Lead, Followup } from "../api";
+import type { Lead, Followup } from "../../../../packages/staff-contracts/types";
+import { followupState } from "../../../../packages/staff-contracts/workflow.mjs";
 
 interface OverviewAnalyticsStripProps {
   activeRole: string;
@@ -42,7 +43,7 @@ export function OverviewAnalyticsStrip({ activeRole, leads, followups }: Overvie
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const intake = days.map((_, i) => Math.max(1, leads.filter((_, idx) => idx % 6 === i).length));
     const handoff = days.map((_, i) =>
-      Math.max(0, leads.filter((l, idx) => idx % 6 === i && (l.status === "assigned" || l.status === "closed")).length)
+      Math.max(0, leads.filter((l, idx) => idx % 6 === i && (l.status === "active" || l.status === "closed")).length)
     );
     const maxVal = Math.max(...intake, ...handoff, 4);
 
@@ -87,7 +88,7 @@ export function OverviewAnalyticsStrip({ activeRole, leads, followups }: Overvie
 
   if (activeRole === "sales") {
     const total = Math.max(followups.length, 1);
-    const onTime = followups.filter((f) => f.completedAt || f.status !== "overtime").length;
+    const onTime = followups.filter((f) => Boolean(f.completedAt) || followupState(f) !== "overtime").length;
     const pct = Math.min(100, Math.round((onTime / total) * 100));
     const r = 34;
     const c = 2 * Math.PI * r;
@@ -149,7 +150,7 @@ export function OverviewAnalyticsStrip({ activeRole, leads, followups }: Overvie
   if (activeRole === "manager") {
     const available = leads.filter((l) => l.status === "draft" || l.status === "active").length;
     const closed = leads.filter((l) => l.status === "closed").length;
-    const reserved = leads.filter((l) => l.status === "assigned").length;
+    const reserved = leads.filter((l) => l.status === "active" && Boolean(l.assigneeId)).length;
     const total = Math.max(available + closed + reserved, 1);
 
     return (

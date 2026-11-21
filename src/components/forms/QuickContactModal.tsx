@@ -282,13 +282,13 @@ export const QuickContactModal: React.FC<QuickContactModalProps> = ({
                     <div className="relative">
                       <User
                         size={16}
-                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                        className="absolute start-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                       />
                       <input
                         id={`qc-name-${property.id}`}
                         {...register('name')}
                         placeholder="Ahmad Karimi"
-                        className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
+                        className={`w-full ps-10 pe-4 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
                           errors.name
                             ? 'border-red-500 focus:ring-2 focus:ring-red-500/20'
                             : 'border-neutral-300 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20'
@@ -314,14 +314,14 @@ export const QuickContactModal: React.FC<QuickContactModalProps> = ({
                       <div className="relative">
                         <Mail
                           size={16}
-                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                          className="absolute start-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                         />
                         <input
                           id={`qc-email-${property.id}`}
                           type="email"
                           {...register('email')}
                           placeholder="ahmad@example.com"
-                          className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
+                          className={`w-full ps-10 pe-3.5 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
                             errors.email
                               ? 'border-red-500 focus:ring-2 focus:ring-red-500/20'
                               : 'border-neutral-300 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20'
@@ -346,14 +346,14 @@ export const QuickContactModal: React.FC<QuickContactModalProps> = ({
                       <div className="relative">
                         <Phone
                           size={16}
-                          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                          className="absolute start-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
                         />
                         <input
                           id={`qc-phone-${property.id}`}
                           type="tel"
                           {...register('phone')}
                           placeholder="+93 70 123 4567"
-                          className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
+                          className={`w-full ps-10 pe-3.5 py-2.5 rounded-xl border text-sm text-brand-navy transition-colors outline-none ${
                             errors.phone
                               ? 'border-red-500 focus:ring-2 focus:ring-red-500/20'
                               : 'border-neutral-300 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20'

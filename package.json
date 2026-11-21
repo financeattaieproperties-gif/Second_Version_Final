@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --port 3000 --host 0.0.0.0",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
-    "build:admin": "tsc --noEmit -p admin-panel/tsconfig.json && vite build admin-panel --config admin-panel/vite.config.ts",
+    "build:admin": "tsc --noEmit -p admin-panel/tsconfig.json && node scripts/build-admin-web.mjs",
     "build:staff": "node scripts/build-public-staff.mjs && node scripts/build-sales-android.mjs",
     "build:sales-android": "node scripts/build-sales-android.mjs",
     "build": "node scripts/generate-sitemap.mjs && npm run build:admin && npm run build:staff && tsc --noEmit && vite build",

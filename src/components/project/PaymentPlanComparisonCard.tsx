@@ -219,7 +219,7 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
 
         {/* Budget preset buttons */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-neutral-500 font-medium mr-1">
+          <span className="text-xs text-neutral-500 font-medium me-1">
             {isRtl ? 'قیمت فرضی:' : 'Sample Price:'}
           </span>
           {PRESET_PRICES.map((p) => {
@@ -279,8 +279,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy text-xs font-bold me-1.5">
                     50%
                   </span>
                   <span className="text-sm font-bold text-brand-navy tabular-nums">
@@ -301,8 +301,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-neutral-200 text-neutral-700 text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-neutral-200 text-neutral-700 text-xs font-bold me-1.5">
                     40%
                   </span>
                   <span className="text-sm font-bold text-brand-navy tabular-nums">
@@ -323,8 +323,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold me-1.5">
                     10%
                   </span>
                   <span className="text-sm font-bold text-brand-navy tabular-nums">
@@ -362,7 +362,7 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
 
         {/* Card 2: 2nd Payment Plan */}
         <div className="bg-white rounded-2xl border-2 border-brand-gold/40 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+          <div className="absolute top-0 end-0 bg-brand-gold text-white text-[10px] font-bold px-3 py-1 rounded-es-xl uppercase tracking-wider">
             {isRtl ? 'ساده‌ترین تسویه' : 'Direct 2-Step'}
           </div>
 
@@ -396,8 +396,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-brand-gold/20 text-brand-navy text-xs font-bold me-1.5">
                     75%
                   </span>
                   <span className="text-sm font-bold text-brand-navy tabular-nums">
@@ -418,8 +418,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 text-xs font-bold me-1.5">
                     0%
                   </span>
                   <span className="text-sm font-bold text-emerald-900 tabular-nums">
@@ -440,8 +440,8 @@ export const PaymentPlanComparisonCard: React.FC<PaymentPlanComparisonCardProps>
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold mr-1.5">
+                <div className="text-end">
+                  <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-xs font-bold me-1.5">
                     25%
                   </span>
                   <span className="text-sm font-bold text-brand-navy tabular-nums">

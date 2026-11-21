@@ -44,3 +44,6 @@ debug.log
 .gemini/settings.json
 opencode.json
 .worktrees/
+
+# Sales desktop generated installers
+sales-desktop/release/

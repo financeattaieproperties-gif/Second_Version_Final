@@ -25,6 +25,10 @@ ALTER TABLE core_branches
   ADD COLUMN IF NOT EXISTS email VARCHAR(254) NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS version INT NOT NULL DEFAULT 1;
 
+ALTER TABLE core_users
+  ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255) NULL AFTER firebase_uid,
+  ADD COLUMN IF NOT EXISTS photo_url MEDIUMTEXT NULL AFTER branch_id;
+
 ALTER TABLE core_management_tasks ADD COLUMN IF NOT EXISTS branch_id INT UNSIGNED NULL AFTER id;
 ALTER TABLE cc_customers ADD COLUMN IF NOT EXISTS branch_id INT UNSIGNED NULL AFTER id;
 ALTER TABLE cc_leads ADD COLUMN IF NOT EXISTS branch_id INT UNSIGNED NULL AFTER id;
@@ -89,10 +93,15 @@ WHERE @phase7_apply = 1 AND code IN (
 INSERT IGNORE INTO core_role_permissions (role_code, permission_code)
 SELECT 'manager', code FROM core_permissions
 WHERE @phase7_apply = 1 AND code IN (
-  'core.tasks.read_own','core.tasks.assign','core.submissions.read','callcenter.access','callcenter.manage',
+  'core.tasks.read_own','core.tasks.assign','callcenter.access','callcenter.manage',
   'inventory.read','sales.access','sales.team_manage','customers.review_duplicates','hr.contracts.manage','hr.preparation.manage',
-  'marketing.submit_property'
+  'marketing.submit_property','marketing.schedule_filming'
 );
+
+DELETE FROM core_role_permissions
+WHERE @phase7_apply = 1
+  AND permission_code = 'core.submissions.read'
+  AND role_code NOT IN ('ceo', 'editor', 'admin');
 
 INSERT IGNORE INTO core_branch_assignment_issues (record_type, record_id, issue_code)
 SELECT 'core_users', id, 'active_user_missing_active_branch'

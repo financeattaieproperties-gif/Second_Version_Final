@@ -216,6 +216,7 @@ export default function Visits() {
           <span>✓ {calendarNotice}</span>
           <button
             type="button"
+            aria-label="Dismiss notice"
             onClick={() => setCalendarNotice('')}
             style={{ background: 'none', border: 'none', color: '#166534', cursor: 'pointer', fontWeight: 700 }}
           >
@@ -225,8 +226,16 @@ export default function Visits() {
       )}
 
       {error && (
-        <div style={{ padding: '0.75rem 1rem', background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: '1rem', fontSize: '0.88rem', fontWeight: 600 }}>
-          {error}
+        <div style={{ padding: '0.75rem 1rem', background: '#fee2e2', color: '#991b1b', borderRadius: 8, marginBottom: '1rem', fontSize: '0.88rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{error}</span>
+          <button
+            type="button"
+            aria-label="Dismiss error"
+            onClick={() => setError(null)}
+            style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontWeight: 700 }}
+          >
+            ✕
+          </button>
         </div>
       )}
 

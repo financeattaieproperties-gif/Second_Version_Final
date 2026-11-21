@@ -8,6 +8,7 @@ directories:
 
 files:
   - src/**/*
+  - www/**/*
   - resources/**/*
   - package.json
 

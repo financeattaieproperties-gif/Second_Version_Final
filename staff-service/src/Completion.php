@@ -6,7 +6,7 @@ use InvalidArgumentException;
 trait Completion {
     private function taskAssigneeScope(array $assignee): void {
         $role=$this->user['role']; if (in_array($role,['ceo','manager'],true)) return;
-        $allowed=match($role) { 'sales_leader'=>['sales'], 'marketing_manager','production_manager'=>['editor','videographer','photographer'], 'finance_manager'=>['finance_manager'], default=>[] };
+        $allowed=match($role) { 'sales_leader'=>['sales'], 'marketing_manager'=>['editor','videographer'], 'finance_manager'=>['finance_manager'], default=>[] };
         if (!in_array($assignee['role'],$allowed,true)) throw new HttpError(403,'Choose staff within your department.');
         if ($role==='sales_leader' && (int)($this->record('core_users',(int)$assignee['id'])['team_leader_id']??0)!==$this->uid()) throw new HttpError(403,'Choose an assigned team member.');
     }
@@ -22,15 +22,15 @@ trait Completion {
         if (in_array($view,['overview','tasks','team'],true)) {
             $this->permission('core.tasks.read_own'); $scope='t.assignee_id=?'; $params=[$this->uid()];
             if ($view==='team') { $this->permission('core.tasks.assign'); $scope='t.assigned_by=?'; }
-            $data['tasks']=array_map([$this,'taskDto'],$this->query("SELECT t.*,u.name AS assigned_by_name FROM core_management_tasks t JOIN core_users u ON u.id=t.assigned_by WHERE $scope ORDER BY t.id DESC LIMIT 100",$params));
+            $data['tasks']=array_map([$this,'taskDto'],$this->query("SELECT t.*,u.name AS assigned_by_name,ua.name AS assignee_name FROM core_management_tasks t JOIN core_users u ON u.id=t.assigned_by LEFT JOIN core_users ua ON ua.id=t.assignee_id WHERE $scope ORDER BY t.id DESC LIMIT 100",$params));
         }
-        if ($this->hasPermission('inventory.read') && in_array($view,['overview','projects','contracts','finance','deliverables'],true)) {
+        if ($this->hasPermission('inventory.read') && in_array($view,['overview','tasks','team','projects','contracts','finance','deliverables'],true)) {
             $scope='1=1'; $params=[];
             if (in_array($role,['sales','sales_leader'],true)) { $scope='(assigned_team_leader_id=? OR id IN (SELECT project_id FROM inv_project_sales_agents WHERE sales_agent_id=?))'; $params=[$this->uid(),$this->uid()]; }
             elseif (!$this->isGlobalRole()) { $scope='branch_id=?'; $params=[$this->requireUserBranchId()]; }
             $data['projects']=array_map([$this,'projectDto'],$this->query('SELECT * FROM inv_projects WHERE '.$scope.' ORDER BY id DESC LIMIT 100',$params));
         }
-        if (in_array($view,['overview','contracts','finance'],true)&&in_array($role,['manager','hr_manager','finance_manager','ceo','branch_manager'],true)) {
+        if (in_array($view,['overview','contracts','finance'],true)&&in_array($role,['manager','finance_manager','ceo'],true)) {
             $cWhere=[]; $cParams=[];
             if ($role==='finance_manager') $cWhere[]="status IN ('issued','amended')";
             if (!$this->isGlobalRole()) { $cWhere[]='project_id IN (SELECT id FROM inv_projects WHERE branch_id=?)'; $cParams[]=$this->requireUserBranchId(); }
@@ -41,23 +41,30 @@ trait Completion {
             $fParams=$this->isGlobalRole()?[]:[$this->requireUserBranchId()];
             $data['financeDeposits']=array_map([$this,'depositDto'],$this->query('SELECT * FROM fin_deposits'.$fWhere.' ORDER BY id DESC LIMIT 100',$fParams));
         }
-        if ($this->hasPermission('core.tasks.assign')||$this->hasPermission('core.staff.manage')) {
-            $uWhere=$this->isGlobalRole()?'':' AND u.branch_id=?';
-            $uParams=$this->isGlobalRole()?[]:[$this->requireUserBranchId()];
-            $data['assignees']=array_map([$this,'publicUser'],$this->query("SELECT u.id,u.name,u.username,u.role,u.active,u.department_code,u.team_leader_id,u.branch_id FROM core_users u WHERE active=1 AND role NOT IN ('customer','admin','finance_assistant')$uWhere ORDER BY name LIMIT 200",$uParams));
-        }
+        $uWhere=$this->isGlobalRole()?'':' AND (u.branch_id=? OR u.branch_id IS NULL)';
+        $uParams=$this->isGlobalRole()?[]:[$this->requireUserBranchId()];
+        $data['assignees']=array_map([$this,'publicUser'],$this->query("SELECT u.id,u.name,u.username,u.role,u.active,u.department_code,u.team_leader_id,u.branch_id FROM core_users u WHERE active=1 AND role NOT IN ('customer','admin','finance_assistant')$uWhere ORDER BY name LIMIT 200",$uParams));
         if ($this->hasPermission('core.departments.manage')) $data['departments']=$this->query("SELECT code,name FROM core_departments WHERE code<>'customers'");
-        if ($this->hasPermission('core.staff.manage')||$this->hasPermission('inventory.manage')) $data['branches']=$this->query("SELECT id,code,name,address,phone,email,active,version FROM core_branches WHERE active=1 ORDER BY id LIMIT 50");
-        if (in_array($view,['overview','deliverables'],true)&&($role==='ceo'||$this->hasPermission('engineering.deliverables.submit'))) $data['engineeringDeliverables']=array_map([$this,'engineeringDto'],$this->query('SELECT * FROM eng_deliverables'.($role==='ceo'?'':' WHERE assignee_id='.$this->uid()).' ORDER BY id DESC LIMIT 100'));
+        $data['branches']=$this->query("SELECT id,code,name,address,phone,email,active,version FROM core_branches WHERE active=1 ORDER BY id LIMIT 50");
+        if (in_array($view,['overview','deliverables'],true)&&($role==='ceo'||$role==='manager'||$this->hasPermission('engineering.deliverables.submit'))) {
+            if ($role==='ceo') $eSql='SELECT * FROM eng_deliverables ORDER BY id DESC LIMIT 100';
+            elseif ($role==='manager') $eSql='SELECT e.* FROM eng_deliverables e JOIN inv_projects p ON p.id=e.project_id WHERE p.branch_id='.$this->requireUserBranchId().' ORDER BY e.id DESC LIMIT 100';
+            else $eSql='SELECT * FROM eng_deliverables WHERE assignee_id='.$this->uid().' ORDER BY id DESC LIMIT 100';
+            $data['engineeringDeliverables']=array_map([$this,'engineeringDto'],$this->query($eSql));
+        }
         if (in_array($view,['overview','marketing'],true)&&($this->hasPermission('marketing.submit_property')||$this->hasPermission('marketing.edit_and_post')||$this->hasPermission('marketing.complete_filming'))) {
             $mParams=[];
             if ($role==='ceo') $scope='1=1';
-            elseif (in_array($role,['manager','marketing_manager','production_manager','editor'],true)) { $scope='branch_id=?'; $mParams=[$this->requireUserBranchId()]; }
+            elseif (in_array($role,['manager','marketing_manager','editor'],true)) { $scope='branch_id=?'; $mParams=[$this->requireUserBranchId()]; }
             else $scope='(submitted_by_id='.$this->uid().' OR videographer_id='.$this->uid().')';
             $data['marketingEntries']=array_map([$this,'marketingDto'],$this->query('SELECT * FROM mkt_production_entries WHERE '.$scope.' ORDER BY id DESC LIMIT 100',$mParams));
         }
-        if ($view==='submissions') $data['submissions']=$this->submissionList();
-        if (in_array($role,['manager','hr_manager'],true)&&in_array($view,['overview','contracts'],true)) $data['hrWorkItems']=array_map(fn($r)=>['id'=>(int)$r['id'],'dealSerial'=>$r['deal_serial'],'leadId'=>(int)$r['lead_id'],'customerName'=>$r['customer_name'],'phone'=>$r['phone'],'projectId'=>(int)$r['project_id'],'projectCode'=>$r['code'],'projectName'=>$r['name'],'apartmentId'=>(int)$r['apartment_id'],'apartmentNumber'=>$r['unit_number'],'agreedAmount'=>(float)$r['agreed_amount'],'currency'=>$r['currency'],'salesAgentName'=>$r['sales_agent_name'],'buyerPhotoUrl'=>$r['buyer_photo_url'],'tazkiraPhotoUrl'=>$r['tazkira_photo_url'],'status'=>$r['hr_status'],'createdAt'=>Domain::iso($r['closed_at'])],$this->query('SELECT h.*,l.customer_name,l.phone,p.code,p.name,a.unit_number,u.name AS sales_agent_name FROM crm_deal_handoffs h JOIN cc_leads l ON l.id=h.lead_id JOIN inv_projects p ON p.id=h.project_id JOIN inv_apartments a ON a.id=h.apartment_id JOIN core_users u ON u.id=h.sales_agent_id WHERE p.branch_id=? ORDER BY h.id DESC LIMIT 100',[$this->requireUserBranchId()]));
+        if ($view==='submissions') { $this->roleOnly(['ceo','editor']); $data['submissions']=$this->submissionList(); }
+        if (($role==='manager'||$role==='ceo')&&in_array($view,['overview','contracts'],true)) {
+            $hrWhere=$role==='ceo'?'1=1':'p.branch_id=?';
+            $hrParams=$role==='ceo'?[]:[$this->requireUserBranchId()];
+            $data['hrWorkItems']=array_map(fn($r)=>['id'=>(int)$r['id'],'dealSerial'=>$r['deal_serial'],'leadId'=>(int)$r['lead_id'],'customerName'=>$r['customer_name'],'phone'=>$r['phone'],'projectId'=>(int)$r['project_id'],'projectCode'=>$r['code'],'projectName'=>$r['name'],'apartmentId'=>(int)$r['apartment_id'],'apartmentNumber'=>$r['unit_number'],'agreedAmount'=>(float)$r['agreed_amount'],'currency'=>$r['currency'],'salesAgentName'=>$r['sales_agent_name'],'buyerPhotoUrl'=>$r['buyer_photo_url'],'tazkiraPhotoUrl'=>$r['tazkira_photo_url'],'status'=>$r['hr_status'],'createdAt'=>Domain::iso($r['closed_at'])],$this->query("SELECT h.*,l.customer_name,l.phone,p.code,p.name,a.unit_number,u.name AS sales_agent_name FROM crm_deal_handoffs h JOIN cc_leads l ON l.id=h.lead_id JOIN inv_projects p ON p.id=h.project_id JOIN inv_apartments a ON a.id=h.apartment_id JOIN core_users u ON u.id=h.sales_agent_id WHERE $hrWhere ORDER BY h.id DESC LIMIT 100",$hrParams));
+        }
         return $data;
     }
     private function submissionList(): array {
@@ -88,7 +95,7 @@ trait Completion {
         if (preg_match('#^leads/(\d+)/property$#',$route,$m)) return $this->changeLeadProperty((int)$m[1],$b);
         if (preg_match('#^customers/review-requests/(\d+)$#',$route,$m)) return $this->customerReview((int)$m[1],$b);
         if (preg_match('#^leads/(\d+)/referrals$#',$route,$m)) return $this->shareLead((int)$m[1],$b);
-        if ($route==='submissions/retry') { $this->roleOnly(['manager','marketing_manager','production_manager']); return ['queued'=>true]; }
+        if ($route==='submissions/retry') { $this->roleOnly(['manager','marketing_manager']); return ['queued'=>true]; }
         return null;
     }
     private function submissionDb(): ?\PDO {
@@ -116,7 +123,7 @@ trait Completion {
     }
     private function fileReference(mixed $url,?string $purpose=null): string {
         $id=CompletionRules::privateFile($url); $f=$this->one('SELECT owner_id,purpose FROM core_private_files WHERE id=?',[$id]);
-        if (!$f || ($purpose!==null&&$f['purpose']!==$purpose) || ((int)$f['owner_id']!==$this->uid() && !in_array($this->user['role'],['manager','hr_manager','finance_manager'],true))) throw new HttpError(404,'Upload not found.');
+        if (!$f || ($purpose!==null&&$f['purpose']!==$purpose) || ((int)$f['owner_id']!==$this->uid() && !in_array($this->user['role'],['manager','finance_manager'],true))) throw new HttpError(404,'Upload not found.');
         return $url;
     }
     private function uploadPrivate(array $b): array {
@@ -292,7 +299,7 @@ trait Completion {
         $this->execute('INSERT INTO crm_phone_registry(phone) VALUES (?) ON DUPLICATE KEY UPDATE phone=VALUES(phone)',[$phone]); $registry=$this->one('SELECT customer_id FROM crm_phone_registry WHERE phone=? FOR UPDATE',[$phone]);
         if ($registry['customer_id']) {
             $id=(int)$registry['customer_id']; $owner=$this->one('SELECT owner_agent_id FROM crm_customer_owners WHERE customer_id=?',[$id]);
-            $access=$owner && ((int)$owner['owner_agent_id']===$this->uid()||$this->one('SELECT 1 FROM crm_customer_shared_access WHERE customer_id=? AND agent_id=?',[$id,$this->uid()]));
+            $access=$this->isGlobalRole() || ($owner && ((int)$owner['owner_agent_id']===$this->uid()||$this->one('SELECT 1 FROM crm_customer_shared_access WHERE customer_id=? AND agent_id=?',[$id,$this->uid()])));
             if (!$access) {
                 $pending=$this->one("SELECT id FROM crm_customer_review_requests WHERE customer_id=? AND requesting_agent_id=? AND status='pending_review'",[$id,$this->uid()]);
                 if (!$pending) $this->execute('INSERT INTO crm_customer_review_requests(customer_id,phone,requesting_agent_id,submitted_name,submitted_requirements) VALUES (?,?,?,?,?)',[$id,$phone,$this->uid(),$name,$requirements]);
@@ -300,18 +307,22 @@ trait Completion {
             }
             return ['customerId'=>$id];
         }
-        $branch=(int)($this->user['branch_id']??0);if(!$branch)throw new HttpError(503,'Staff branch mapping requires review.');
+        $branch=(int)($this->user['branch_id']??0);
+        if (!$branch && $this->isGlobalRole()) $branch=(int)($this->one('SELECT id FROM core_branches WHERE active=1 ORDER BY id LIMIT 1')['id']??0);
+        if(!$branch)throw new HttpError(503,'Staff branch mapping requires review.');
         $this->execute('INSERT INTO cc_customers(branch_id,name,phone,created_at) VALUES (?,?,?,?)',[$branch,$name,$phone,$this->now]); $id=(int)$this->db->lastInsertId();
         $this->execute('UPDATE crm_phone_registry SET customer_id=? WHERE phone=?',[$id,$phone]);
         $this->execute('INSERT INTO crm_customer_owners(customer_id,serial,owner_agent_id) VALUES (?,?,?)',[$id,'C'.str_pad((string)$id,6,'0',STR_PAD_LEFT),$this->uid()]); return ['customerId'=>$id];
     }
     private function salesLead(array $b): array {
-        $this->roleOnly(['sales']); $phone=Domain::phone((string)($b['phone']??'')); $name=Domain::text($b['customerName']??null,160); $requirements=Domain::text($b['requirements']??null);
+        $this->roleOnly(['sales','ceo']); $phone=Domain::phone((string)($b['phone']??'')); $name=Domain::text($b['customerName']??null,160); $requirements=Domain::text($b['requirements']??null);
         $claim=$this->customerClaim($phone,$name,$requirements); if (!empty($claim['duplicateConflict'])) return $claim;
         $property=$this->resolveLeadProperty($b);
         $this->execute('INSERT INTO cc_serial_counters(agent_id,next_number) VALUES (?,1) ON DUPLICATE KEY UPDATE next_number=next_number',[$this->uid()]); $counter=$this->one('SELECT next_number FROM cc_serial_counters WHERE agent_id=? FOR UPDATE',[$this->uid()]);
-        $serial='SA'.str_pad((string)$this->uid(),2,'0',STR_PAD_LEFT).'-L'.$counter['next_number']; $this->execute('UPDATE cc_serial_counters SET next_number=next_number+1 WHERE agent_id=?',[$this->uid()]);
-        $this->execute("INSERT INTO cc_leads(branch_id,serial,customer_id,customer_name,phone,requirements,origin_agent_id,assignee_id,status,call_at,source,property_kind,property_id,project_id,apartment_id) VALUES (?,?,?,?,?,?,?,?,'active',?,'manual',?,?,?,?)",[(int)$this->user['branch_id'],$serial,$claim['customerId'],$name,$phone,$requirements,$this->uid(),$this->uid(),$this->now,$property['kind'],$property['id'],$property['projectId'],$property['apartmentId']]); $id=(int)$this->db->lastInsertId();
+        $prefix=$this->user['role']==='ceo'?'CE':'SA';
+        $serial=$prefix.str_pad((string)$this->uid(),2,'0',STR_PAD_LEFT).'-L'.$counter['next_number']; $this->execute('UPDATE cc_serial_counters SET next_number=next_number+1 WHERE agent_id=?',[$this->uid()]);
+        $branch=(int)($this->user['branch_id']??0) ?: ((int)($property['projectId'] ? ($this->one('SELECT branch_id FROM inv_projects WHERE id=?',[$property['projectId']])['branch_id']??0) : 0)) ?: (int)($this->one('SELECT id FROM core_branches WHERE active=1 ORDER BY id LIMIT 1')['id']??0);
+        $this->execute("INSERT INTO cc_leads(branch_id,serial,customer_id,customer_name,phone,requirements,origin_agent_id,assignee_id,status,call_at,source,property_kind,property_id,project_id,apartment_id) VALUES (?,?,?,?,?,?,?,?,'active',?,'manual',?,?,?,?)",[$branch,$serial,$claim['customerId'],$name,$phone,$requirements,$this->uid(),$this->uid(),$this->now,$property['kind'],$property['id'],$property['projectId'],$property['apartmentId']]); $id=(int)$this->db->lastInsertId();
         $this->claimLeadProperty((int)$claim['customerId'],$property,$id);
         $task=$this->nextTask($id,$this->uid(),Domain::future($b['nextScheduledAt']??null),$requirements); $this->execute('UPDATE cc_leads SET current_task_id=? WHERE id=?',[$task,$id]); $this->activity($id,'sales_entry',$requirements); $this->audit('sales.lead_created',$id); return $this->leadDto($this->record('cc_leads',$id));
     }
@@ -326,7 +337,7 @@ trait Completion {
         $this->roleOnly(['manager']); $r=$this->record('crm_customer_review_requests',$id,true);
         $cust=$this->record('cc_customers',(int)$r['customer_id']);
         if ((int)$cust['branch_id']!==$this->requireUserBranchId()) throw new HttpError(403,'Customer belongs to another branch.');
-        if (isset($b['version'])) $this->version($r,$b);
+        $this->version($r,$b);
         if ($r['status']!=='pending_review') throw new HttpError(409,'Review already resolved.'); $decision=$b['decision']??''; if (!in_array($decision,['approved_shared','rejected'],true)) throw new InvalidArgumentException('Choose review decision.');
         if ($decision==='approved_shared') $this->execute('INSERT IGNORE INTO crm_customer_shared_access(customer_id,agent_id,granted_by,reason) VALUES (?,?,?,?)',[$r['customer_id'],$r['requesting_agent_id'],$this->uid(),'Manager duplicate review']);
         $note=Domain::text($b['note']??'Manager review'); $this->execute('UPDATE crm_customer_review_requests SET status=?,reviewed_by=?,manager_note=?,reviewed_at=?,version=version+1 WHERE id=?',[$decision,$this->uid(),$note,$this->now,$id]); $this->audit('customer.reviewed',$id); return ['id'=>$id,'status'=>$decision];
@@ -381,8 +392,8 @@ trait Completion {
         $r=$this->record('mkt_production_entries',$id,true); $this->version($r,$b); $action=$b['action']??'';
         $expected=['schedule_filming'=>'submitted','complete_filming'=>'filming_scheduled','schedule_editing'=>'filming_completed','ready_for_post'=>'editing_scheduled','mark_posted'=>'ready_for_post'];
         if (!isset($expected[$action])||$r['stage']!==$expected[$action]) throw new HttpError(409,'Production stage already changed.');
-        if ($action==='schedule_filming') { $this->permission('marketing.schedule_filming'); $agent=$this->activeUser((int)($b['videographerId']??0)); if (!in_array($agent['role'],['videographer','photographer'],true)) throw new InvalidArgumentException('Choose videographer.'); $date=Domain::text($b['filmingDate']??null,10); if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)) throw new InvalidArgumentException('Choose filming date.'); $this->execute("UPDATE mkt_production_entries SET filming_date=?,videographer_id=?,stage='filming_scheduled',version=version+1 WHERE id=?",[$date,$agent['id'],$id]); }
-        elseif ($action==='complete_filming') { $this->permission('marketing.complete_filming'); if (!in_array($this->user['role'],['marketing_manager','production_manager'],true)&&(int)$r['videographer_id']!==$this->uid()) throw new HttpError(404,'Entry not found.'); $this->execute("UPDATE mkt_production_entries SET filming_completed_at=?,stage='filming_completed',version=version+1 WHERE id=?",[$this->now,$id]); }
+        if ($action==='schedule_filming') { if ($this->user['role'] === 'ceo') throw new HttpError(403, 'Only the Manager can schedule filming dates.'); $this->permission('marketing.schedule_filming'); $agent=$this->activeUser((int)($b['videographerId']??0)); if ($agent['role']!=='videographer') throw new InvalidArgumentException('Choose videographer.'); $date=Domain::text($b['filmingDate']??null,10); if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)) throw new InvalidArgumentException('Choose filming date.'); $this->execute("UPDATE mkt_production_entries SET filming_date=?,videographer_id=?,stage='filming_scheduled',version=version+1 WHERE id=?",[$date,$agent['id'],$id]); }
+        elseif ($action==='complete_filming') { $this->permission('marketing.complete_filming'); if ($this->user['role']!=='marketing_manager'&&(int)$r['videographer_id']!==$this->uid()) throw new HttpError(404,'Entry not found.'); $this->execute("UPDATE mkt_production_entries SET filming_completed_at=?,stage='filming_completed',version=version+1 WHERE id=?",[$this->now,$id]); }
         else {
             $this->permission('marketing.edit_and_post'); if ($r['editor_id']&&(int)$r['editor_id']!==$this->uid()) throw new HttpError(404,'Entry not found.');
             if ($action==='schedule_editing') { $date=Domain::text($b['editingDeadlineAt']??null,10); if (!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$date)) throw new InvalidArgumentException('Choose editing date.'); $this->execute("UPDATE mkt_production_entries SET editing_deadline_at=?,editor_id=?,stage='editing_scheduled',version=version+1 WHERE id=?",[$date,$this->uid(),$id]); }

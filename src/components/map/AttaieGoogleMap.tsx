@@ -269,7 +269,7 @@ const ListingAdvancedMarker: React.FC<{
                   href={item.googleMapsURI}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-500 hover:text-brand-navy ml-auto"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-500 hover:text-brand-navy ms-auto"
                 >
                   <span>Google Maps</span>
                   <ExternalLink size={11} />
@@ -814,7 +814,7 @@ const MapWorkspaceInner: React.FC<{
         <div className="relative w-full lg:w-80">
           <Search
             size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none"
+            className="absolute start-3 top-1/2 -translate-y-1/2 text-white/50 pointer-events-none"
           />
           <input
             type="text"
@@ -822,7 +822,7 @@ const MapWorkspaceInner: React.FC<{
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search place or street in Kabul…"
             aria-label="Search place on Google Maps"
-            className="w-full pl-9 pr-8 py-2 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-brand-gold"
+            className="w-full ps-9 pe-8 py-2 rounded-xl bg-white/10 border border-white/15 text-xs text-white placeholder:text-white/50 focus:outline-none focus:border-brand-gold"
           />
           {searchInput && (
             <button
@@ -832,7 +832,7 @@ const MapWorkspaceInner: React.FC<{
                 setSuggestions([]);
                 setSearchedPlacePin(null);
               }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/60 hover:text-white cursor-pointer"
+              className="absolute end-2.5 top-1/2 -translate-y-1/2 text-white/60 hover:text-white cursor-pointer"
               aria-label="Clear search"
             >
               <X size={14} />
@@ -840,13 +840,13 @@ const MapWorkspaceInner: React.FC<{
           )}
 
           {suggestions.length > 0 && (
-            <ul className="absolute left-0 right-0 top-full mt-1.5 bg-white text-brand-navy rounded-xl shadow-xl border border-neutral-200 z-30 max-h-60 overflow-y-auto divide-y divide-neutral-100">
+            <ul className="absolute start-0 end-0 top-full mt-1.5 bg-white text-brand-navy rounded-xl shadow-xl border border-neutral-200 z-30 max-h-60 overflow-y-auto divide-y divide-neutral-100">
               {suggestions.map((s, idx) => (
                 <li key={idx}>
                   <button
                     type="button"
                     onClick={() => void handleSelectSuggestion(s)}
-                    className="w-full text-left px-3.5 py-2.5 text-xs hover:bg-brand-ivory transition-colors flex items-start gap-2 cursor-pointer"
+                    className="w-full text-start px-3.5 py-2.5 text-xs hover:bg-brand-ivory transition-colors flex items-start gap-2 cursor-pointer"
                   >
                     <MapPin size={14} className="text-brand-gold shrink-0 mt-0.5" />
                     <span className="line-clamp-2 font-medium">
@@ -885,7 +885,7 @@ const MapWorkspaceInner: React.FC<{
             );
           })}
           {loadingNearby && (
-            <span className="text-xs text-neutral-500 ml-2 shrink-0">Searching Places API…</span>
+            <span className="text-xs text-neutral-500 ms-2 shrink-0">Searching Places API…</span>
           )}
         </div>
       )}
@@ -917,14 +917,14 @@ const MapWorkspaceInner: React.FC<{
             {/* Center simulated map pins & grid lines */}
             <div className="relative flex-1 my-6 rounded-xl border border-dashed border-neutral-300/80 flex items-center justify-center">
               <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-px opacity-30">
-                <div className="border-r border-b border-neutral-300" />
-                <div className="border-r border-b border-neutral-300" />
+                <div className="border-e border-b border-neutral-300" />
+                <div className="border-e border-b border-neutral-300" />
                 <div className="border-b border-neutral-300" />
-                <div className="border-r border-b border-neutral-300" />
-                <div className="border-r border-b border-neutral-300" />
+                <div className="border-e border-b border-neutral-300" />
+                <div className="border-e border-b border-neutral-300" />
                 <div className="border-b border-neutral-300" />
-                <div className="border-r border-neutral-300" />
-                <div className="border-r border-neutral-300" />
+                <div className="border-e border-neutral-300" />
+                <div className="border-e border-neutral-300" />
                 <div />
               </div>
 
@@ -940,13 +940,13 @@ const MapWorkspaceInner: React.FC<{
               </div>
 
               {/* Simulated floating pins in map space */}
-              <div className="absolute top-1/4 left-1/4 w-7 h-7 rounded-full bg-neutral-300 shadow-xs flex items-center justify-center">
+              <div className="absolute top-1/4 start-1/4 w-7 h-7 rounded-full bg-neutral-300 shadow-xs flex items-center justify-center">
                 <div className="w-3 h-3 rounded-full bg-brand-navy/30" />
               </div>
-              <div className="absolute bottom-1/3 right-1/4 w-7 h-7 rounded-full bg-neutral-300 shadow-xs flex items-center justify-center">
+              <div className="absolute bottom-1/3 end-1/4 w-7 h-7 rounded-full bg-neutral-300 shadow-xs flex items-center justify-center">
                 <div className="w-3 h-3 rounded-full bg-brand-gold/40" />
               </div>
-              <div className="absolute top-1/3 right-1/3 w-6 h-6 rounded-full bg-neutral-200" />
+              <div className="absolute top-1/3 end-1/3 w-6 h-6 rounded-full bg-neutral-200" />
             </div>
 
             {/* Bottom listing pill skeleton */}
@@ -1010,7 +1010,7 @@ const MapWorkspaceInner: React.FC<{
 
         {/* Quick Listing Selector Pills Overlay */}
         {resolvedPins.length > 1 && (
-          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="absolute bottom-3 start-3 end-3 z-10 flex items-center gap-2 overflow-x-auto pb-1">
             {resolvedPins.map((pin) => {
               const active = selectedPinId === pin.id;
               const priceText = pin.priceDisplay || pin.priceLabel;
@@ -1187,7 +1187,7 @@ export const AttaieGoogleMap: React.FC<AttaieGoogleMapProps> = ({
             Explore our verified listings and flagship multi-unit developments across Kabul’s premier growth corridors.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pe-1">
             {effectiveItems.map((item, idx) => (
               <div
                 key={item.id || idx}

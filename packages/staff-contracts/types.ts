@@ -98,6 +98,7 @@ export interface CustomerReviewRequest {
   createdAt: string;
   resolvedAt?: string | null;
   resolutionNote?: string;
+  version: number;
 }
 
 export interface Activity {

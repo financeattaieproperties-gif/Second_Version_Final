@@ -28,11 +28,9 @@ INSERT IGNORE INTO core_role_permissions (role_code, permission_code) VALUES
   ('ceo', 'core.staff.manage'),
   ('ceo', 'core.departments.manage'),
   ('ceo', 'core.submissions.read'),
+  ('editor', 'core.submissions.read'),
   ('manager', 'core.tasks.read_own'),
   ('manager', 'core.tasks.assign'),
-  ('manager', 'core.submissions.read'),
   ('marketing_manager', 'core.tasks.read_own'),
   ('marketing_manager', 'core.tasks.assign'),
-  ('marketing_manager', 'core.submissions.read'),
-  ('videographer', 'core.tasks.read_own'),
-  ('videographer', 'core.submissions.read');
+  ('videographer', 'core.tasks.read_own');

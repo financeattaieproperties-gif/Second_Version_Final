@@ -39,7 +39,7 @@ INSERT INTO core_permissions VALUES
   ('marketing.edit_and_post','marketing','Schedule editing, set content type, and mark Posted with 5 photos');
 INSERT INTO core_role_permissions VALUES
   ('sales','marketing.submit_property'),('sales_leader','marketing.submit_property'),('callcenter','marketing.submit_property'),
-  ('manager','marketing.submit_property'),('ceo','marketing.submit_property'),
+  ('manager','marketing.submit_property'),('manager','marketing.schedule_filming'),('ceo','marketing.submit_property'),
   ('marketing_manager','marketing.submit_property'),('marketing_manager','marketing.schedule_filming'),('marketing_manager','marketing.complete_filming'),
   ('videographer','marketing.complete_filming'),
   ('editor','marketing.edit_and_post');

@@ -31,9 +31,17 @@ export default function Projects() {
   const [sheetsOpen, setSheetsOpen] = useState(false);
   const [loadingUnits, setLoadingUnits] = useState(false);
   const [projectUnitsById, setProjectUnitsById] = useState<Record<number, ProjectUnit[]>>({});
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getProjects().then(setItems).finally(() => setLoading(false));
+    setError(null);
+    api.getProjects()
+      .then(setItems)
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load projects.');
+        setItems([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -52,17 +60,25 @@ export default function Projects() {
 
   const remove = async (id: number, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
-    await api.deleteProject(id);
-    setItems((prev) => prev.filter((p) => p.id !== id));
+    setError(null);
+    try {
+      await api.deleteProject(id);
+      setItems((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to delete project "${name}".`);
+    }
   };
 
   const cycleStatus = async (p: Project) => {
     const next = nextStatus(p.status);
     setToggling(p.id);
+    setError(null);
     try {
       const { id: _id, created_at: _ca, ...rest } = p;
       await api.updateProject({ ...rest, id: p.id, status: next });
       setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, status: next } : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to update status for "${p.name}".`);
     } finally {
       setToggling(null);
     }
@@ -113,6 +129,44 @@ export default function Projects() {
         </div>
       </div>
 
+      {error && (
+        <div
+          role="alert"
+          style={{
+            background: V1.dangerSoft,
+            border: `1px solid ${V1.danger}40`,
+            color: V1.danger,
+            padding: '0.75rem 1rem',
+            borderRadius: 8,
+            marginBottom: '1rem',
+            fontWeight: 600,
+            fontSize: '0.84rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>✕ {error}</span>
+          <button
+            type="button"
+            aria-label="Dismiss error"
+            onClick={() => setError(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: V1.danger,
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '1rem',
+              lineHeight: 1,
+              padding: '0.2rem 0.4rem',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {workspaceNotice && (
         <div
           role="status"
@@ -133,6 +187,7 @@ export default function Projects() {
           <span>✓ {workspaceNotice}</span>
           <button
             type="button"
+            aria-label="Dismiss notice"
             onClick={() => setWorkspaceNotice('')}
             style={{ background: 'none', border: 'none', color: '#0F7A3A', cursor: 'pointer', fontWeight: 700 }}
           >

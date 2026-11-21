@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import { api, type ProjectInput, type ProjectUnit, type ProjectUnitInput } from '../api';
 import ImageUpload from '../components/ImageUpload';
 import { ApartmentGalleryReorder } from '../components/ApartmentGalleryReorder';
@@ -480,8 +481,9 @@ export default function ProjectForm() {
                             <span style={{
                               fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
                               background: '#fef3c7', color: '#92400e', fontWeight: 600,
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                             }}>
-                              📷 {u.gallery_images.length}
+                              <Camera size={11} aria-hidden="true" /> {u.gallery_images.length}
                             </span>
                           )}
                           {u.video_url && (
@@ -557,8 +559,9 @@ export default function ProjectForm() {
                             <span style={{
                               fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: 4,
                               background: '#fef3c7', color: '#92400e', fontWeight: 600,
+                              display: 'inline-flex', alignItems: 'center', gap: '0.25rem',
                             }}>
-                              📷 {su.gallery_images.length}
+                              <Camera size={11} aria-hidden="true" /> {su.gallery_images.length}
                             </span>
                           )}
                           {su.video_url && (

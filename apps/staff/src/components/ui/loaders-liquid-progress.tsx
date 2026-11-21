@@ -1,11 +1,5 @@
 import React, { useEffect } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { motion, useSpring, useTransform } from "motion/react";
 
 export interface LoaderLiquidProgressProps
   extends React.HTMLAttributes<HTMLDivElement> {
@@ -18,32 +12,32 @@ export interface LoaderLiquidProgressProps
 
 const colorSchemes = {
   emerald: {
-    gradient: "from-emerald-600 via-teal-400 to-cyan-300",
-    glow: "shadow-[0_0_14px_rgba(20,184,166,0.55)]",
-    bubble: "bg-teal-200/40",
-    text: "text-teal-600 dark:text-teal-400",
-    border: "border-teal-500/20",
+    barBg: "linear-gradient(90deg, #14A850 0%, #0072BC 100%)",
+    glow: "0 0 10px rgba(20, 168, 80, 0.35)",
+    bubble: "rgba(232, 247, 238, 0.7)",
+    text: "#14A850",
+    border: "#BBF7D0",
   },
   amber: {
-    gradient: "from-amber-600 via-orange-400 to-yellow-300",
-    glow: "shadow-[0_0_14px_rgba(245,158,11,0.55)]",
-    bubble: "bg-amber-200/40",
-    text: "text-amber-600 dark:text-amber-400",
-    border: "border-amber-500/20",
+    barBg: "linear-gradient(90deg, #D97706 0%, #F59E0B 100%)",
+    glow: "0 0 10px rgba(245, 158, 11, 0.35)",
+    bubble: "rgba(254, 243, 199, 0.7)",
+    text: "#D97706",
+    border: "#FDE68A",
   },
   blue: {
-    gradient: "from-blue-600 via-indigo-400 to-sky-300",
-    glow: "shadow-[0_0_14px_rgba(59,130,246,0.55)]",
-    bubble: "bg-sky-200/40",
-    text: "text-blue-600 dark:text-blue-400",
-    border: "border-blue-500/20",
+    barBg: "linear-gradient(90deg, #0072BC 0%, #005E9B 100%)",
+    glow: "0 0 10px rgba(0, 114, 188, 0.35)",
+    bubble: "rgba(230, 242, 250, 0.7)",
+    text: "#0072BC",
+    border: "#BAE6FD",
   },
   violet: {
-    gradient: "from-violet-600 via-fuchsia-400 to-pink-300",
-    glow: "shadow-[0_0_14px_rgba(168,85,247,0.55)]",
-    bubble: "bg-fuchsia-200/40",
-    text: "text-violet-600 dark:text-violet-400",
-    border: "border-violet-500/20",
+    barBg: "linear-gradient(90deg, #0072BC 0%, #14A850 100%)",
+    glow: "0 0 10px rgba(0, 114, 188, 0.35)",
+    bubble: "rgba(230, 242, 250, 0.7)",
+    text: "#0072BC",
+    border: "#E2E8F0",
   },
 };
 
@@ -54,6 +48,7 @@ export function LoaderLiquidProgress({
   statusText,
   colorScheme = "emerald",
   className,
+  style,
   ...props
 }: LoaderLiquidProgressProps) {
   const clamped = Math.max(0, Math.min(100, progress));
@@ -69,15 +64,46 @@ export function LoaderLiquidProgress({
     springProgress.set(clamped);
   }, [clamped, springProgress]);
 
-  const width = useTransform(springProgress, (val) => `${Math.max(0, Math.min(100, val))}%`);
+  const width = useTransform(
+    springProgress,
+    (val) => `${Math.max(0, Math.min(100, val))}%`
+  );
 
   return (
-    <div className={cn("w-full space-y-2 select-none", className)} {...props}>
+    <div
+      className={className}
+      style={{
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+        userSelect: "none",
+        ...style,
+      }}
+      {...props}
+    >
       {(statusText || showValue) && (
-        <div className="flex items-center justify-between text-xs font-medium tracking-wide text-slate-600 dark:text-slate-300">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            fontSize: 12,
+            fontWeight: 600,
+            color: "#475569",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
           <span>{statusText || "Uploading"}</span>
           {showValue && (
-            <span className={cn("font-mono font-semibold", scheme.text)}>
+            <span
+              style={{
+                fontFamily:
+                  "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                fontWeight: 700,
+                color: scheme.text,
+              }}
+            >
               {Math.round(clamped)}%
             </span>
           )}
@@ -86,26 +112,46 @@ export function LoaderLiquidProgress({
 
       {/* Progress Track */}
       <div
-        className={cn(
-          "relative w-full overflow-hidden rounded-full p-[2px] backdrop-blur-sm transition-all",
-          "bg-slate-200/70 dark:bg-slate-900/80 border border-slate-300/60 dark:border-slate-800",
-          scheme.border
-        )}
-        style={{ height: `${height + 4}px` }}
+        style={{
+          position: "relative",
+          width: "100%",
+          height: height + 4,
+          overflow: "hidden",
+          borderRadius: 999,
+          padding: 2,
+          background: "#F1F5F9",
+          border: `1px solid ${scheme.border}`,
+        }}
       >
         {/* Animated Liquid Bar */}
         <motion.div
-          className={cn(
-            "relative h-full rounded-full bg-gradient-to-r",
-            scheme.gradient,
-            scheme.glow
-          )}
-          style={{ width }}
+          style={{
+            position: "relative",
+            height: "100%",
+            width,
+            borderRadius: 999,
+            background: scheme.barBg,
+            boxShadow: scheme.glow,
+          }}
         >
           {/* Wave & Shimmer Highlights */}
-          <div className="absolute inset-0 overflow-hidden rounded-full">
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              overflow: "hidden",
+              borderRadius: 999,
+            }}
+          >
             <motion.div
-              className="absolute inset-y-0 w-24 bg-gradient-to-r from-transparent via-white/35 to-transparent"
+              style={{
+                position: "absolute",
+                top: 0,
+                bottom: 0,
+                width: 96,
+                background:
+                  "linear-gradient(90deg, transparent, rgba(255,255,255,0.38), transparent)",
+              }}
               animate={{ x: ["-100%", "400%"] }}
               transition={{
                 duration: 1.8,
@@ -118,10 +164,16 @@ export function LoaderLiquidProgress({
           {/* Liquid droplet bubble at the leading edge */}
           {clamped > 3 && clamped < 99 && (
             <motion.span
-              className={cn(
-                "absolute -top-1 right-0 h-4 w-4 rounded-full blur-[2px] opacity-75",
-                scheme.bubble
-              )}
+              style={{
+                position: "absolute",
+                top: -2,
+                right: 0,
+                width: 12,
+                height: 12,
+                borderRadius: "50%",
+                background: scheme.bubble,
+                filter: "blur(1.5px)",
+              }}
               animate={{
                 scale: [0.9, 1.25, 0.9],
                 opacity: [0.6, 0.9, 0.6],

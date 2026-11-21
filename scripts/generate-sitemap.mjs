@@ -430,13 +430,21 @@ async function crawlAndGenerateSitemap() {
   };
 
   const publicDir = path.join(ROOT_DIR, 'public');
-  fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), xmlContent, 'utf8');
-  fs.writeFileSync(path.join(publicDir, 'sitemap-status.json'), JSON.stringify(crawlReport, null, 2), 'utf8');
+  try {
+    fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), xmlContent, 'utf8');
+    fs.writeFileSync(path.join(publicDir, 'sitemap-status.json'), JSON.stringify(crawlReport, null, 2), 'utf8');
+  } catch (err) {
+    console.warn(`[sitemap] Warning: public/sitemap.xml write deferred: ${err.message}`);
+  }
 
   const distDir = path.join(ROOT_DIR, 'dist');
   if (fs.existsSync(distDir)) {
-    fs.writeFileSync(path.join(distDir, 'sitemap.xml'), xmlContent, 'utf8');
-    fs.writeFileSync(path.join(distDir, 'sitemap-status.json'), JSON.stringify(crawlReport, null, 2), 'utf8');
+    try {
+      fs.writeFileSync(path.join(distDir, 'sitemap.xml'), xmlContent, 'utf8');
+      fs.writeFileSync(path.join(distDir, 'sitemap-status.json'), JSON.stringify(crawlReport, null, 2), 'utf8');
+    } catch (err) {
+      console.warn(`[sitemap] Warning: dist/sitemap.xml write deferred: ${err.message}`);
+    }
   }
 
   console.log(

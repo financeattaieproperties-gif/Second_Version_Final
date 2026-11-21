@@ -1,0 +1,52 @@
+appId: af.attaieproperties.sales.desktop
+productName: Attaie Sales Agent
+copyright: Copyright © 2026 Attaie Properties
+electronVersion: 31.7.7
+npmRebuild: false
+
+directories:
+  buildResources: resources
+  output: release
+
+files:
+  - src/**/*
+  - www/**/*
+  - resources/**/*
+  - package.json
+
+extraResources:
+  - from: resources/
+    to: resources/
+    filter:
+      - "**/*"
+
+win:
+  icon: resources/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Attaie Sales Agent
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+
+mac:
+  icon: resources/icon.png
+  category: public.app-category.business
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+
+linux:
+  icon: resources/icon.png
+  category: Office
+  target:
+    - target: AppImage
+      arch: [x64]

@@ -33,7 +33,7 @@ CREATE TABLE core_users (
  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
  firebase_uid VARCHAR(128) CHARACTER SET ascii COLLATE ascii_bin NOT NULL UNIQUE,
  name VARCHAR(120) NOT NULL, username VARCHAR(254) NOT NULL UNIQUE,
- role VARCHAR(60) NOT NULL, branch_id INT UNSIGNED NULL, active TINYINT NOT NULL DEFAULT 1,
+ role VARCHAR(60) NOT NULL, branch_id INT UNSIGNED NULL, photo_url MEDIUMTEXT NULL, active TINYINT NOT NULL DEFAULT 1,
  auth_version INT NOT NULL DEFAULT 1, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  FOREIGN KEY(role) REFERENCES core_roles(code), FOREIGN KEY(branch_id) REFERENCES core_branches(id), INDEX(role,active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -89,8 +89,5 @@ INSERT INTO core_role_permissions VALUES
  ('sales_leader','core.tasks.assign'),('marketing_manager','core.tasks.assign'),('finance_manager','core.tasks.assign'),
  ('ceo','core.staff.manage'),
  ('ceo','core.departments.manage'),
- ('manager','core.submissions.read'),('ceo','core.submissions.read'),('marketing_manager','core.submissions.read'),
- ('editor','core.submissions.read'),('videographer','core.submissions.read'),
- ('finance_manager','core.submissions.read'),
- ('sales_leader','core.submissions.read'),('sales','core.submissions.read'),('callcenter','core.submissions.read');
+ ('ceo','core.submissions.read'),('editor','core.submissions.read');
 INSERT IGNORE INTO core_branches(id,code,name,active) VALUES (1,'HQ','Main Branch (Kabul)',1);

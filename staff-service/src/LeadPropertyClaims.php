@@ -20,8 +20,9 @@ trait LeadPropertyClaims {
         if (isset($body['projectId']) && (int)$body['projectId']!==$projectId) throw new \InvalidArgumentException('Unit belongs to another project.');
         if (isset($body['apartmentId']) && (int)$body['apartmentId']!==$apartmentId) throw new \InvalidArgumentException('Property selection is inconsistent.');
         $branch=(int)($this->user['branch_id'] ?? 0);
+        if (!$branch && $this->isGlobalRole()) $branch=(int)$project['branch_id'];
         if (!$branch) throw new HttpError(503,'Staff branch mapping requires review.');
-        if ((int)$project['branch_id']!==$branch) throw new HttpError(404,'Property not found.');
+        if (!$this->isGlobalRole() && (int)$project['branch_id']!==$branch) throw new HttpError(404,'Property not found.');
         if ($this->user['role']==='sales' && !$this->one('SELECT 1 FROM inv_project_sales_agents WHERE project_id=? AND sales_agent_id=?',[$projectId,$this->uid()])) throw new HttpError(404,'Property not found.');
         return ['kind'=>$kind,'id'=>$id,'projectId'=>$projectId,'apartmentId'=>$apartmentId];
     }

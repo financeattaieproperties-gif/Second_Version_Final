@@ -240,7 +240,7 @@ const Navbar = () => {
               decoding="async"
             />
           </a>
-          <KabulHeaderWidgets className="hidden md:flex pl-3.5 border-l border-white/15" />
+          <KabulHeaderWidgets className="hidden md:flex ps-3.5 border-s border-white/15" />
         </div>
 
         {/* Desktop nav links */}
@@ -270,7 +270,7 @@ const Navbar = () => {
                       {active && (
                         <motion.span
                           layoutId="nav-indicator"
-                          className="absolute -bottom-1 left-3 right-3 h-[1.5px] bg-brand-gold rounded-full"
+                          className="absolute -bottom-1 start-3 end-3 h-[1.5px] bg-brand-gold rounded-full"
                           transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                         />
                       )}
@@ -289,7 +289,7 @@ const Navbar = () => {
                         }
                       }}
                       className={cn(
-                        'p-1 rounded-full transition-colors cursor-pointer -ml-1.5',
+                        'p-1 rounded-full transition-colors cursor-pointer -ms-1.5',
                         active ? 'text-brand-gold' : 'text-white/70 hover:text-white',
                       )}
                     >
@@ -308,7 +308,7 @@ const Navbar = () => {
                         exit={{ opacity: 0, y: 8 }}
                         transition={{ duration: 0.16 }}
                         data-testid="nav-about-dropdown"
-                        className="absolute top-full right-0 mt-2 w-52 rounded-xl bg-brand-navy/98 backdrop-blur-xl border border-white/15 shadow-2xl p-1.5 z-50"
+                        className="absolute top-full end-0 mt-2 w-52 rounded-xl bg-brand-navy/98 backdrop-blur-xl border border-white/15 shadow-2xl p-1.5 z-50"
                       >
                         {link.subLinks.map((sub) => {
                           const SubIcon = sub.icon;
@@ -349,7 +349,7 @@ const Navbar = () => {
                 {active && (
                   <motion.span
                     layoutId="nav-indicator"
-                    className="absolute -bottom-1 left-3 right-3 h-[1.5px] bg-brand-gold rounded-full"
+                    className="absolute -bottom-1 start-3 end-3 h-[1.5px] bg-brand-gold rounded-full"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -400,7 +400,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:hidden absolute top-full left-0 w-full bg-brand-navy/98 backdrop-blur-xl border-t border-white/10 shadow-2xl"
+            className="lg:hidden absolute top-full start-0 w-full bg-brand-navy/98 backdrop-blur-xl border-t border-white/10 shadow-2xl"
           >
             <div className="container-custom py-6 flex flex-col gap-1">
               <div className="pb-3 mb-2 border-b border-white/10">
@@ -431,7 +431,7 @@ const Navbar = () => {
                       </button>
                     </div>
                     {mobileAboutExpanded && (
-                      <div className="pb-3 pl-4 flex flex-col gap-1.5">
+                      <div className="pb-3 ps-4 flex flex-col gap-1.5">
                         {link.subLinks.map((sub) => (
                           <a
                             key={sub.href}

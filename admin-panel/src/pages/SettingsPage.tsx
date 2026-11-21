@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import LandingBackgroundSettings from '../components/visual/LandingBackgroundSettings';
 import LoginBackgroundSettings from '../components/visual/LoginBackgroundSettings';
 import { V1, V1_STYLES, v1BadgeStyle } from '../components/variant1';
+import { getAdminServerUrl, setAdminServerUrl, getApiBase } from '../api';
 
 const S = {
   page: { maxWidth: 640 } as const,
@@ -59,11 +60,18 @@ const S = {
 export default function SettingsPage() {
   const electron = window.electronAPI;
 
-  const [apiUrl, setApiUrl] = useState(import.meta.env.VITE_API_URL || '/api');
+  const [apiUrl, setApiUrl] = useState(() => {
+    const saved = localStorage.getItem('attaie_admin_server_url');
+    if (saved) return saved;
+    const base = getApiBase();
+    if (/^https?:\/\//i.test(base)) return base;
+    return getAdminServerUrl();
+  });
   const [testing, setTesting] = useState(false);
   const [connStatus, setConnStatus] = useState<boolean | null>(null);
   const [version, setVersion] = useState('—');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!electron) return;
@@ -73,8 +81,11 @@ export default function SettingsPage() {
   const testConnection = async () => {
     setTesting(true);
     setConnStatus(null);
+    setSaveError(null);
     try {
-      const res = await fetch(`${apiUrl}/admin/properties.php`, {
+      const base = apiUrl.trim().replace(/\/api\/?$/i, '').replace(/\/+$/, '');
+      const testUrl = base.startsWith('http') ? `${base}/api/admin/properties.php` : `${base}/admin/properties.php`;
+      const res = await fetch(testUrl, {
         credentials: 'include',
         signal: AbortSignal.timeout(5000),
       });
@@ -87,9 +98,16 @@ export default function SettingsPage() {
   };
 
   const saveSettings = () => {
-    setSaved(true);
-    electron?.notify('Settings', 'Settings saved successfully.');
-    setTimeout(() => setSaved(false), 2500);
+    setSaveError(null);
+    try {
+      const cleaned = setAdminServerUrl(apiUrl);
+      setApiUrl(cleaned);
+      setSaved(true);
+      electron?.notify('Settings', 'Settings saved successfully.');
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Failed to save settings.');
+    }
   };
 
   return (
@@ -121,12 +139,20 @@ export default function SettingsPage() {
             <button style={S.btnPrimary} onClick={testConnection} disabled={testing}>
               {testing ? 'Testing…' : 'Test Connection'}
             </button>
+            <button style={S.btnSecondary} onClick={saveSettings}>
+              {saved ? '✓ Saved' : 'Save URL'}
+            </button>
             {connStatus !== null && (
               <span style={S.badge(connStatus)}>
                 {connStatus ? '✓ Reachable' : '✕ Unreachable'}
               </span>
             )}
           </div>
+          {saveError && (
+            <p style={{ color: V1.danger, fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>
+              {saveError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -172,6 +198,11 @@ export default function SettingsPage() {
               Open Website
             </button>
           </div>
+          {saveError && (
+            <p style={{ color: V1.danger, fontSize: '0.8rem', marginTop: '0.5rem', fontWeight: 600 }}>
+              {saveError}
+            </p>
+          )}
         </div>
       </div>
     </div>

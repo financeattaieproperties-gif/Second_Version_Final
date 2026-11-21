@@ -4,6 +4,10 @@ require_once __DIR__ . '/../sitemap-helper.php';
 cors();
 require_admin();
 
+const ALLOWED_PROPERTY_STATUSES = ['available', 'pending', 'sold', 'rented'];
+const ALLOWED_PROPERTY_TYPES = ['Villa', 'Apartment', 'House', 'Commercial', 'Land'];
+const ALLOWED_LISTING_TYPES = ['sale', 'rent'];
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 function decode_gallery(?string $raw): array {
@@ -38,18 +42,30 @@ if ($method === 'GET') {
 
 if ($method === 'POST') {
     $b = body();
+    if (isset($b['name']) && !isset($b['title'])) {
+        $b['title'] = $b['name'];
+    }
     foreach (['serial_number', 'title', 'location', 'status', 'type', 'listing_type'] as $f) {
         if (!isset($b[$f]) || trim((string) $b[$f]) === '') json_out(['error' => "$f required"], 400);
     }
-    if (!isset($b['price']) || $b['price'] === '') {
-        json_out(['error' => 'price required'], 400);
+    if (!isset($b['price']) || $b['price'] === '' || !is_numeric($b['price']) || floatval($b['price']) < 0) {
+        json_out(['error' => 'Valid price required'], 400);
+    }
+    $status = trim((string) $b['status']);
+    $type   = trim((string) $b['type']);
+    $ltype  = trim((string) $b['listing_type']);
+    if (!in_array($status, ALLOWED_PROPERTY_STATUSES, true)) {
+        json_out(['error' => 'Invalid status. Allowed: ' . implode(', ', ALLOWED_PROPERTY_STATUSES)], 422);
+    }
+    if (!in_array($type, ALLOWED_PROPERTY_TYPES, true)) {
+        json_out(['error' => 'Invalid type. Allowed: ' . implode(', ', ALLOWED_PROPERTY_TYPES)], 422);
+    }
+    if (!in_array($ltype, ALLOWED_LISTING_TYPES, true)) {
+        json_out(['error' => 'Invalid listing_type. Allowed: ' . implode(', ', ALLOWED_LISTING_TYPES)], 422);
     }
     $serial  = trim((string) $b['serial_number']);
     $title   = trim((string) $b['title']);
     $loc     = trim((string) $b['location']);
-    $status  = trim((string) $b['status']);
-    $type    = trim((string) $b['type']);
-    $ltype   = trim((string) $b['listing_type']);
     $beds    = isset($b['beds'])  && $b['beds']  !== '' && $b['beds']  !== null ? intval($b['beds'])   : null;
     $baths   = isset($b['baths']) && $b['baths'] !== '' && $b['baths'] !== null ? intval($b['baths'])  : null;
     $area    = isset($b['area'])  && $b['area']  !== '' && $b['area']  !== null ? floatval($b['area']) : null;
@@ -92,17 +108,45 @@ if ($method === 'PUT') {
     if (!isset($b['serial_number']) || trim((string) $b['serial_number']) === '') {
         json_out(['error' => 'serial_number required'], 400);
     }
+    $title = trim((string) ($b['title'] ?? $b['name'] ?? ''));
+    if ($title === '') {
+        json_out(['error' => 'title required'], 400);
+    }
+    $loc = trim((string) ($b['location'] ?? ''));
+    if ($loc === '') {
+        json_out(['error' => 'location required'], 400);
+    }
+    if (!isset($b['status']) || trim((string) $b['status']) === '') {
+        json_out(['error' => 'status required'], 400);
+    }
+    $status = trim((string) $b['status']);
+    if (!in_array($status, ALLOWED_PROPERTY_STATUSES, true)) {
+        json_out(['error' => 'Invalid status. Allowed: ' . implode(', ', ALLOWED_PROPERTY_STATUSES)], 422);
+    }
+    if (!isset($b['type']) || trim((string) $b['type']) === '') {
+        json_out(['error' => 'type required'], 400);
+    }
+    $type = trim((string) $b['type']);
+    if (!in_array($type, ALLOWED_PROPERTY_TYPES, true)) {
+        json_out(['error' => 'Invalid type. Allowed: ' . implode(', ', ALLOWED_PROPERTY_TYPES)], 422);
+    }
+    if (!isset($b['listing_type']) || trim((string) $b['listing_type']) === '') {
+        json_out(['error' => 'listing_type required'], 400);
+    }
+    $ltype = trim((string) $b['listing_type']);
+    if (!in_array($ltype, ALLOWED_LISTING_TYPES, true)) {
+        json_out(['error' => 'Invalid listing_type. Allowed: ' . implode(', ', ALLOWED_LISTING_TYPES)], 422);
+    }
+    if (!isset($b['price']) || $b['price'] === '' || !is_numeric($b['price']) || floatval($b['price']) < 0) {
+        json_out(['error' => 'Valid price required'], 400);
+    }
+
     $serial  = trim((string) $b['serial_number']);
-    $title   = trim((string) ($b['title'] ?? ''));
-    $loc     = trim((string) ($b['location'] ?? ''));
-    $status  = trim((string) ($b['status'] ?? 'available'));
-    $type    = trim((string) ($b['type'] ?? 'Villa'));
-    $ltype   = trim((string) ($b['listing_type'] ?? 'sale'));
     $beds    = isset($b['beds'])  && $b['beds']  !== '' && $b['beds']  !== null ? intval($b['beds'])   : null;
     $baths   = isset($b['baths']) && $b['baths'] !== '' && $b['baths'] !== null ? intval($b['baths'])  : null;
     $area    = isset($b['area'])  && $b['area']  !== '' && $b['area']  !== null ? floatval($b['area']) : null;
     $floor   = isset($b['floor']) && $b['floor'] !== '' && $b['floor'] !== null ? intval($b['floor'])  : null;
-    $price   = floatval($b['price'] ?? 0);
+    $price   = floatval($b['price']);
     $img     = !empty($b['image_url'])   ? trim((string) $b['image_url'])   : null;
     $desc    = !empty($b['description']) ? trim((string) $b['description']) : null;
     $gallery = isset($b['gallery_images']) && is_array($b['gallery_images'])

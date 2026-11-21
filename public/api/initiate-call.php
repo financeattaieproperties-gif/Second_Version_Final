@@ -42,11 +42,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input          = body();
 $customerNumber = trim((string) ($input['customer_number'] ?? ''));
 
-// IP — prefer forwarded header when behind a proxy
-$ipAddress = filter_var(
-    explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')[0],
-    FILTER_VALIDATE_IP
-) ?: ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+// Safe client IP: use REMOTE_ADDR directly, or inspect X-Forwarded-For only if REMOTE_ADDR is a trusted local/proxy IP
+$remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+$trustedProxies = ['127.0.0.1', '::1'];
+$ipAddress = $remoteAddr;
+
+if (in_array($remoteAddr, $trustedProxies, true) && !empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+    $forwarded = trim(explode(',', (string) $_SERVER['HTTP_X_FORWARDED_FOR'])[0]);
+    if (filter_var($forwarded, FILTER_VALIDATE_IP)) {
+        $ipAddress = $forwarded;
+    }
+}
+if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+    $ipAddress = '0.0.0.0';
+}
 
 // ── 1. Validate Afghan mobile format ───────────────────────────────────────────
 $digitsOnly = preg_replace('/\D/', '', $customerNumber);

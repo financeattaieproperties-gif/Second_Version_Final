@@ -203,7 +203,20 @@ function attaie_ensure_schema(): void {
           stage         VARCHAR(50)  DEFAULT 'New',
           source        VARCHAR(50)  DEFAULT 'Website',
           status        VARCHAR(50)  DEFAULT 'Pending',
-          created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+          client_request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+          payload_hash  CHAR(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+          receipt_reference VARCHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
+          receipt_submitted_at DATETIME DEFAULT NULL,
+          followup_status ENUM('new','in_progress','resolved') NOT NULL DEFAULT 'new',
+          followup_notes TEXT DEFAULT NULL,
+          followup_at   DATETIME DEFAULT NULL,
+          version       INT UNSIGNED NOT NULL DEFAULT 1,
+          created_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY uq_inquiry_request (client_request_id),
+          UNIQUE KEY uq_inquiry_receipt (receipt_reference),
+          INDEX idx_leads_status_stage (status, stage),
+          INDEX idx_leads_property_id (property_id),
+          INDEX idx_leads_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
         "CREATE TABLE IF NOT EXISTS project_units (
@@ -219,6 +232,8 @@ function attaie_ensure_schema(): void {
           currency     CHAR(3) NOT NULL DEFAULT 'USD',
           status       ENUM('available','reserved','sold','rented') NOT NULL DEFAULT 'available',
           image_url    VARCHAR(500) DEFAULT NULL,
+          gallery_images TEXT DEFAULT NULL,
+          video_url    VARCHAR(1000) DEFAULT NULL,
           description  TEXT DEFAULT NULL,
           created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -373,6 +388,16 @@ function attaie_ensure_schema(): void {
         "ALTER TABLE projects ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         "ALTER TABLE projects MODIFY COLUMN status ENUM('Coming Soon','In Progress','Sold Out','Under Construction','Ready') NOT NULL DEFAULT 'Coming Soon'",
         "ALTER TABLE visit_requests ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL AFTER phone",
+        "ALTER TABLE project_units ADD COLUMN gallery_images TEXT DEFAULT NULL",
+        "ALTER TABLE project_units ADD COLUMN video_url VARCHAR(1000) DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN client_request_id CHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN payload_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN receipt_reference VARCHAR(36) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN receipt_submitted_at DATETIME DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN followup_status ENUM('new','in_progress','resolved') NOT NULL DEFAULT 'new'",
+        "ALTER TABLE leads ADD COLUMN followup_notes TEXT DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN followup_at DATETIME DEFAULT NULL",
+        "ALTER TABLE leads ADD COLUMN version INT UNSIGNED NOT NULL DEFAULT 1",
         "UPDATE seo_settings SET canonical_base_url = 'https://attaieproperties.com' WHERE canonical_base_url IN ('https://attaieproperties.af', 'https://website.attaieproperties.com')",
     ];
 

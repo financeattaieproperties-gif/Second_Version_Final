@@ -24,9 +24,17 @@ export default function Properties() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getProperties().then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+    setError(null);
+    api.getProperties()
+      .then(setItems)
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : 'Failed to load properties.');
+        setItems([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() => {
@@ -49,17 +57,25 @@ export default function Properties() {
 
   const remove = async (id: number, title: string) => {
     if (!confirm(`Delete "${title}"?`)) return;
-    await api.deleteProperty(id);
-    setItems((prev) => prev.filter((p) => p.id !== id));
+    setError(null);
+    try {
+      await api.deleteProperty(id);
+      setItems((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to delete property "${title}".`);
+    }
   };
 
   const cycleStatus = async (p: Property) => {
     const next = nextStatus(p.status);
     setToggling(p.id);
+    setError(null);
     try {
       const { id: _id, created_at: _ca, ...rest } = p;
       await api.updateProperty({ ...rest, id: p.id, status: next });
       setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, status: next } : x)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Failed to update status for "${p.title}".`);
     } finally {
       setToggling(null);
     }
@@ -78,6 +94,44 @@ export default function Properties() {
           + Add Property
         </button>
       </div>
+
+      {error && (
+        <div
+          role="alert"
+          style={{
+            background: V1.dangerSoft,
+            border: `1px solid ${V1.danger}40`,
+            color: V1.danger,
+            padding: '0.75rem 1rem',
+            borderRadius: 8,
+            marginBottom: '1rem',
+            fontWeight: 600,
+            fontSize: '0.84rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>✕ {error}</span>
+          <button
+            type="button"
+            aria-label="Dismiss error"
+            onClick={() => setError(null)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: V1.danger,
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '1rem',
+              lineHeight: 1,
+              padding: '0.2rem 0.4rem',
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div style={V1_STYLES.toolbar}>
         <div style={V1_STYLES.filterRow}>

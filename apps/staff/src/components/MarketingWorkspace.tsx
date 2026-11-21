@@ -30,6 +30,7 @@ export interface MarketingWorkspaceProps {
   ) => Promise<unknown>;
   onNotice: (msg: string) => void;
   onError: (err: string) => void;
+  t?: (s: string) => string;
 }
 
 const STAGE_LABELS: Record<MarketingProductionEntry['stage'], string> = {
@@ -121,6 +122,7 @@ export function MarketingWorkspace({
   onAdvanceEntry,
   onNotice,
   onError,
+  t = (s: string) => s,
 }: MarketingWorkspaceProps) {
   const [customerName, setCustomerName] = useState('');
   const [address, setAddress] = useState('');
@@ -139,6 +141,11 @@ export function MarketingWorkspace({
   >('Instagram');
   const [postPhotos, setPostPhotos] = useState<string[]>([]);
 
+  // Manager / Marketing Manager "Schedule Filming" inline state per entry
+  const [filmingDrafts, setFilmingDrafts] = useState<
+    Record<number, { filmingDate: string; videographerId: number }>
+  >({});
+
   const videographers = staffUsers.filter(
     (u) => u.role === 'videographer'
   );
@@ -146,7 +153,6 @@ export function MarketingWorkspace({
   const canScheduleFilming = [
     'marketing_manager',
     'manager',
-    'ceo',
   ].includes(actorRole);
   const canCompleteFilming = [
     'videographer',
@@ -202,7 +208,7 @@ export function MarketingWorkspace({
       await onCreateEntry({ customerName, address, propertyType });
       setCustomerName('');
       setAddress('');
-      onNotice('Property submitted to Marketing & Production queue.');
+      onNotice(t('Property submitted to Marketing & Production queue.'));
     } catch (err) {
       onError((err as Error).message);
     }
@@ -232,36 +238,36 @@ export function MarketingWorkspace({
 
   const kpiCards = [
     {
-      label: 'Submitted',
+      label: t('Submitted'),
       value: submittedCount,
-      delta: `${entries.length} total`,
+      delta: `${entries.length} ${t('total')}`,
       deltaBg: '#F1F5F9',
       deltaColor: '#818285',
       sparkColor: '#818285',
       points: [1, 2, 1, 3, Math.max(submittedCount, 1)],
     },
     {
-      label: 'Filming Scheduled',
+      label: t('Filming Scheduled'),
       value: filmingScheduledCount,
-      delta: `${entries.filter((e) => e.stage === 'filming_completed').length} filmed`,
+      delta: `${entries.filter((e) => e.stage === 'filming_completed').length} ${t('filmed')}`,
       deltaBg: '#E6F2FA',
       deltaColor: '#0072BC',
       sparkColor: '#0072BC',
       points: [1, 2, 3, 2, Math.max(filmingScheduledCount, 1)],
     },
     {
-      label: 'Editing Scheduled',
+      label: t('Editing Scheduled'),
       value: editingScheduledCount,
-      delta: `${entries.filter((e) => e.stage === 'ready_for_post').length} ready`,
+      delta: `${entries.filter((e) => e.stage === 'ready_for_post').length} ${t('ready')}`,
       deltaBg: '#E6F2FA',
       deltaColor: '#0072BC',
       sparkColor: '#0072BC',
       points: [0, 1, 2, 2, Math.max(editingScheduledCount, 1)],
     },
     {
-      label: 'Posted & Synced',
+      label: t('Posted & Synced'),
       value: postedCount,
-      delta: `${submissions.length} in DB`,
+      delta: `${submissions.length} ${t('in DB')}`,
       deltaBg: '#E8F7EE',
       deltaColor: '#14A850',
       sparkColor: '#14A850',
@@ -300,10 +306,10 @@ export function MarketingWorkspace({
             className="eyebrow"
             style={{ color: '#818285', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
           >
-            Marketing &amp; Media Production Department
+            {t('Marketing & Media Production Department')}
           </p>
           <h2 style={{ color: '#1E293B', fontSize: 20, fontWeight: 600, marginTop: 4 }}>
-            Filming, Editing &amp; Social Post Production Pipeline
+            {t('Filming, Editing & Social Post Production Pipeline')}
           </h2>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -319,7 +325,7 @@ export function MarketingWorkspace({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            Active Production: {entries.filter((e) => e.stage !== 'posted').length}
+            {t('Active Production')}: {entries.filter((e) => e.stage !== 'posted').length}
           </span>
           <span
             style={{
@@ -333,7 +339,7 @@ export function MarketingWorkspace({
               fontVariantNumeric: 'tabular-nums',
             }}
           >
-            Posted &amp; Sent to Submissions DB: {postedCount}
+            {t('Posted & Sent to Submissions DB')}: {postedCount}
           </span>
         </div>
       </div>
@@ -413,11 +419,11 @@ export function MarketingWorkspace({
         >
           <div>
             <h3 style={{ marginTop: 0, marginBottom: 12, fontSize: 15, fontWeight: 600, color: '#1E293B' }}>
-              Submit Property for Filming &amp; Media Production
+              {t('Submit Property for Filming & Media Production')}
             </h3>
             <div className="form-grid">
               <div className="field">
-                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Customer / Owner Name</label>
+                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Customer / Owner Name')}</label>
                 <input
                   required
                   value={customerName}
@@ -427,7 +433,7 @@ export function MarketingWorkspace({
                 />
               </div>
               <div className="field">
-                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Property Address</label>
+                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Property Address')}</label>
                 <input
                   required
                   value={address}
@@ -437,7 +443,7 @@ export function MarketingWorkspace({
                 />
               </div>
               <div className="field">
-                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Property Type</label>
+                <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Property Type')}</label>
                 <select
                   value={propertyType}
                   onChange={(e) =>
@@ -447,10 +453,10 @@ export function MarketingWorkspace({
                   }
                   style={{ border: '1px solid #E2E8F0', borderRadius: 8, background: '#FFFFFF', color: '#1E293B' }}
                 >
-                  <option value="Villa">Villa</option>
-                  <option value="Block">Block</option>
-                  <option value="Building">Building</option>
-                  <option value="Apartment">Apartment</option>
+                  <option value="Villa">{t('Villa')}</option>
+                  <option value="Block">{t('Block')}</option>
+                  <option value="Building">{t('Building')}</option>
+                  <option value="Apartment">{t('Apartment')}</option>
                 </select>
               </div>
             </div>
@@ -469,7 +475,7 @@ export function MarketingWorkspace({
                 fontWeight: 600,
               }}
             >
-              Submit Property to Marketing Queue
+              {t('Submit Property to Marketing Queue')}
             </button>
           </div>
         </form>
@@ -490,10 +496,10 @@ export function MarketingWorkspace({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Channel Distribution
+                {t('Channel Distribution')}
               </p>
               <h3 style={{ fontSize: 15, fontWeight: 600, color: '#1E293B', marginTop: 2 }}>
-                Published Social Mix
+                {t('Published Social Mix')}
               </h3>
             </div>
             <span
@@ -507,7 +513,7 @@ export function MarketingWorkspace({
                 fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {channelStats.total} posts
+              {channelStats.total} {t('posts')}
             </span>
           </div>
 
@@ -562,7 +568,7 @@ export function MarketingWorkspace({
                 fontSize="10"
                 fontWeight="600"
               >
-                CHANNELS
+                {t('CHANNELS')}
               </text>
             </svg>
 
@@ -628,12 +634,12 @@ export function MarketingWorkspace({
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {(
               [
-                ['all', 'All'],
-                ['submitted', 'Submitted'],
-                ['filming_scheduled', 'Filming'],
-                ['editing_scheduled', 'Editing'],
-                ['ready_for_post', 'Ready'],
-                ['posted', 'Posted'],
+                ['all', t('All')],
+                ['submitted', t('Submitted')],
+                ['filming_scheduled', t('Filming')],
+                ['editing_scheduled', t('Editing')],
+                ['ready_for_post', t('Ready')],
+                ['posted', t('Posted')],
               ] as const
             ).map(([key, label]) => {
               const active = stageFilter === key;
@@ -661,7 +667,7 @@ export function MarketingWorkspace({
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search owner, address, or serial..."
+            placeholder={t('Search owner, address, or serial...')}
             aria-label="Search marketing pipeline"
             style={{
               border: '1px solid #E2E8F0',
@@ -679,20 +685,20 @@ export function MarketingWorkspace({
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Property &amp; Owner</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Type</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Filming Schedule</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Editing &amp; Content Type</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Post Serial &amp; Platform</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Stage</th>
-                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Role Action</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Property & Owner')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Type')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Filming Schedule')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Editing & Content Type')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Post Serial & Platform')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Stage')}</th>
+                <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Role Action')}</th>
               </tr>
             </thead>
             <tbody>
               {filteredEntries.length === 0 ? (
                 <tr>
                   <td colSpan={7} style={{ padding: '20px 14px', color: '#818285', fontSize: 13, textAlign: 'center' }}>
-                    No marketing production entries match the current filter.
+                    {t('No marketing production entries match the current filter.')}
                   </td>
                 </tr>
               ) : (
@@ -711,30 +717,30 @@ export function MarketingWorkspace({
                       {entry.filmingDate ? (
                         <>
                           <strong style={{ color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{entry.filmingDate}</strong>
-                          <small style={{ color: '#818285' }}>Videographer: {entry.videographerName || 'Jawad Noori'}</small>
+                          <small style={{ color: '#818285' }}>{t('Videographer')}: {entry.videographerName || 'Jawad Noori'}</small>
                         </>
                       ) : (
-                        <small style={{ color: '#818285' }}>Unscheduled</small>
+                        <small style={{ color: '#818285' }}>{t('Unscheduled')}</small>
                       )}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
                       {entry.editingDeadlineAt ? (
                         <>
-                          <strong style={{ color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>Due: {entry.editingDeadlineAt}</strong>
-                          <small style={{ color: '#818285' }}>{entry.contentType || 'Editing in progress'}</small>
+                          <strong style={{ color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{t('Due')}: {entry.editingDeadlineAt}</strong>
+                          <small style={{ color: '#818285' }}>{entry.contentType || t('Editing in progress')}</small>
                         </>
                       ) : (
-                        <small style={{ color: '#818285' }}>Awaiting filming</small>
+                        <small style={{ color: '#818285' }}>{t('Awaiting filming')}</small>
                       )}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
                       {entry.serialNumber ? (
                         <>
                           <strong style={{ color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{entry.serialNumber}</strong>
-                          <small style={{ color: '#818285' }}>{entry.platform} ({entry.photos.length} photos)</small>
+                          <small style={{ color: '#818285' }}>{entry.platform} ({entry.photos.length} {t('photos')})</small>
                         </>
                       ) : (
-                        <small style={{ color: '#818285' }}>Not posted yet</small>
+                        <small style={{ color: '#818285' }}>{t('Not posted yet')}</small>
                       )}
                     </td>
                     <td style={{ padding: '12px 14px' }}>
@@ -749,30 +755,107 @@ export function MarketingWorkspace({
                           display: 'inline-block',
                         }}
                       >
-                        {STAGE_LABELS[entry.stage] || entry.stage}
+                        {t(STAGE_LABELS[entry.stage] || entry.stage)}
                       </span>
                     </td>
                     <td style={{ padding: '12px 14px' }}>
-                      {entry.stage === 'submitted' && canScheduleFilming && (
-                        <button
-                          type="button"
-                          className="button secondary"
-                          style={{ border: '1px solid #E2E8F0', background: '#FFFFFF', color: '#1E293B', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600 }}
-                          onClick={async () => {
-                            try {
-                              await onAdvanceEntry(entry.id, 'schedule_filming', {
-                                version: entry.version,
-                                filmingDate: window.prompt('Filming date (YYYY-MM-DD)') || '',
-                                videographerId: Number(window.prompt('Videographer staff ID: ' + videographers.map(u => `${u.id}: ${u.name}`).join(', ')) || 0),
-                              });
-                              onNotice(`Scheduled filming for ${entry.customerName}.`);
-                            } catch (err) {
-                              onError((err as Error).message);
-                            }
-                          }}
-                        >
-                          Schedule Filming
-                        </button>
+                      {entry.stage === 'submitted' && canScheduleFilming && (() => {
+                        const defaultVideographerId = videographers[0]?.id || 0;
+                        const draft = filmingDrafts[entry.id] || {
+                          filmingDate: new Date().toISOString().slice(0, 10),
+                          videographerId: defaultVideographerId,
+                        };
+                        return (
+                          <div
+                            data-testid={`schedule-filming-controls-${entry.id}`}
+                            style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 190 }}
+                          >
+                            <input
+                              type="date"
+                              aria-label={`Filming date for ${entry.customerName}`}
+                              value={draft.filmingDate}
+                              onChange={(e) =>
+                                setFilmingDrafts((prev) => ({
+                                   ...prev,
+                                  [entry.id]: { ...draft, filmingDate: e.target.value },
+                                }))
+                              }
+                              style={{
+                                border: '1px solid #E2E8F0',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                fontSize: 12,
+                                color: '#1E293B',
+                                background: '#FFFFFF',
+                              }}
+                            />
+                            <select
+                              aria-label={`Videographer for ${entry.customerName}`}
+                              value={draft.videographerId}
+                              onChange={(e) =>
+                                setFilmingDrafts((prev) => ({
+                                  ...prev,
+                                  [entry.id]: { ...draft, videographerId: Number(e.target.value) },
+                                }))
+                              }
+                              style={{
+                                border: '1px solid #E2E8F0',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                fontSize: 12,
+                                color: '#1E293B',
+                                background: '#FFFFFF',
+                              }}
+                            >
+                              {videographers.length === 0 ? (
+                                <option value={0}>{t('Select Videographer')}</option>
+                              ) : (
+                                videographers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                            <button
+                              type="button"
+                              className="button secondary"
+                              style={{ border: '1px solid #0072BC', background: '#E6F2FA', color: '#0072BC', borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 600 }}
+                              onClick={async () => {
+                                try {
+                                  const filmingDate =
+                                    draft.filmingDate ||
+                                    (typeof window !== 'undefined' && typeof window.prompt === 'function'
+                                      ? window.prompt('Filming date (YYYY-MM-DD)') || ''
+                                      : '');
+                                  const videographerId =
+                                    draft.videographerId ||
+                                    Number(
+                                      typeof window !== 'undefined' && typeof window.prompt === 'function'
+                                        ? window.prompt(
+                                            'Videographer staff ID: ' +
+                                              videographers.map((u) => `${u.id}: ${u.name}`).join(', ')
+                                          ) || 0
+                                        : 0
+                                    );
+                                  await onAdvanceEntry(entry.id, 'schedule_filming', {
+                                    version: entry.version,
+                                    filmingDate,
+                                    videographerId,
+                                  });
+                                  onNotice(`Scheduled filming for ${entry.customerName}.`);
+                                } catch (err) {
+                                  onError((err as Error).message);
+                                }
+                              }}
+                            >
+                              {t('Schedule Filming')}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                      {entry.stage === 'submitted' && !canScheduleFilming && (
+                        <small style={{ color: '#818285' }}>{t('Awaiting Manager filming schedule')}</small>
                       )}
                       {entry.stage === 'filming_scheduled' && canCompleteFilming && (
                         <button
@@ -788,7 +871,7 @@ export function MarketingWorkspace({
                             }
                           }}
                         >
-                          Mark Filming Completed
+                          {t('Mark Filming Completed')}
                         </button>
                       )}
                       {entry.stage === 'filming_completed' && isEditor && (
@@ -808,7 +891,7 @@ export function MarketingWorkspace({
                             }
                           }}
                         >
-                          Set Editing Date
+                          {t('Set Editing Date')}
                         </button>
                       )}
                       {entry.stage === 'editing_scheduled' && isEditor && (
@@ -828,7 +911,7 @@ export function MarketingWorkspace({
                             }
                           }}
                         >
-                          Mark Ready for Post
+                          {t('Mark Ready for Post')}
                         </button>
                       )}
                       {entry.stage === 'ready_for_post' && isEditor && (
@@ -839,7 +922,7 @@ export function MarketingWorkspace({
                           style={{ background: '#0072BC', color: '#FFFFFF', border: '1px solid #0072BC', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600 }}
                           onClick={() => { setPostingEntryId(entry.id); setPostSerial(''); setPostNote(''); setPostPhotos([]); }}
                         >
-                          Complete &amp; Mark Posted
+                          {t('Complete & Mark Posted')}
                         </button>
                       )}
                     </td>
@@ -882,10 +965,10 @@ export function MarketingWorkspace({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: 12, borderBottom: '1px solid #E2E8F0' }}>
                 <div>
                   <p style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Social Sync Drawer • Entry #{postingEntryId}
+                    {t('Social Sync Drawer')} • {t('Entry')} #{postingEntryId}
                   </p>
                   <h3 style={{ marginTop: 4, fontSize: 17, fontWeight: 600, color: '#1E293B' }}>
-                    Complete &amp; Mark Posted
+                    {t('Complete & Mark Posted')}
                   </h3>
                 </div>
                 <button
@@ -901,13 +984,13 @@ export function MarketingWorkspace({
                     fontWeight: 600,
                   }}
                 >
-                  Close
+                  {t('Close')}
                 </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 16 }}>
                 <div className="field">
-                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Post Serial Number (Format: AP - 1765)</label>
+                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Post Serial Number (Format: AP - 1765)')}</label>
                   <input
                     value={postSerial}
                     onChange={(e) => setPostSerial(e.target.value)}
@@ -917,7 +1000,7 @@ export function MarketingWorkspace({
                 </div>
 
                 <div className="field">
-                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Social Platform</label>
+                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Social Platform')}</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {(['Facebook', 'YouTube', 'Instagram'] as const).map((plat) => {
                       const active = postPlatform === plat;
@@ -944,7 +1027,7 @@ export function MarketingWorkspace({
                 </div>
 
                 <div className="field">
-                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Property Information Note (Pasted for Admin Website Publishing)</label>
+                  <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Property Information Note (Pasted for Admin Website Publishing)')}</label>
                   <textarea
                     rows={3}
                     value={postNote}
@@ -955,9 +1038,9 @@ export function MarketingWorkspace({
 
                 <div className="field">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Five Property Photos (Exactly 5 Required)</label>
+                    <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Five Property Photos (Exactly 5 Required)')}</label>
                     <small style={{ color: postPhotos.length === 5 ? '#14A850' : '#818285', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                      {postPhotos.length} / 5 photos uploaded
+                      {postPhotos.length} / 5 {t('photos uploaded')}
                     </small>
                   </div>
                   <input
@@ -1042,7 +1125,7 @@ export function MarketingWorkspace({
                   fontWeight: 600,
                 }}
               >
-                Cancel
+                {t('Cancel')}
               </button>
               <button
                 type="button"
@@ -1059,7 +1142,7 @@ export function MarketingWorkspace({
                   fontWeight: 600,
                 }}
               >
-                Mark Posted &amp; Submit 5 Photos to Submission DB
+                {t('Mark Posted & Submit 5 Photos to Submission DB')}
               </button>
             </div>
           </aside>
@@ -1068,7 +1151,7 @@ export function MarketingWorkspace({
 
       {/* Read-Only Submission DB Status Preview inside Marketing */}
       <div style={{ marginTop: 20 }}>
-        <SubmissionsStatusView submissions={submissions} />
+        <SubmissionsStatusView submissions={submissions} t={t} />
       </div>
     </section>
   );
@@ -1076,8 +1159,10 @@ export function MarketingWorkspace({
 
 export function SubmissionsStatusView({
   submissions,
+  t = (s: string) => s,
 }: {
   submissions: SubmissionPost[];
+  t?: (s: string) => string;
 }) {
   return (
     <section
@@ -1103,10 +1188,10 @@ export function SubmissionsStatusView({
       >
         <div>
           <p className="eyebrow" style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Isolated Third Database (Submission DB — Read-Only for Internal Staff)
+            {t('Isolated Third Database (Submission DB — Read-Only for Internal Staff)')}
           </p>
           <h2 style={{ color: '#1E293B', fontSize: 16, fontWeight: 600, marginTop: 2 }}>
-            Website Publishing Submissions Status
+            {t('Website Publishing Submissions Status')}
           </h2>
         </div>
         <span
@@ -1121,19 +1206,19 @@ export function SubmissionsStatusView({
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {submissions.length} Submissions
+          {submissions.length} {t('Submissions')}
         </span>
       </div>
       <div className="table-scroll">
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Post Serial</th>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Customer &amp; Address</th>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Type &amp; Platform</th>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Property Info Note</th>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Photos</th>
-              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Publish Status</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Post Serial')}</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Customer & Address')}</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Type & Platform')}</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Property Info Note')}</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Photos')}</th>
+              <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Publish Status')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1145,7 +1230,7 @@ export function SubmissionsStatusView({
               >
                 <td style={{ padding: '12px 14px' }}>
                   <strong style={{ color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{sub.serialNumber}</strong>
-                  <small style={{ color: '#818285' }}>By {sub.submittedBy}</small>
+                  <small style={{ color: '#818285' }}>{t('By')} {sub.submittedBy}</small>
                 </td>
                 <td style={{ padding: '12px 14px' }}>
                   <strong style={{ color: '#1E293B' }}>{sub.customerName}</strong>
@@ -1158,7 +1243,7 @@ export function SubmissionsStatusView({
                 <td style={{ padding: '12px 14px' }}>
                   <small style={{ color: '#818285' }}>{sub.propertyInfoNote}</small>
                 </td>
-                <td style={{ padding: '12px 14px', color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{sub.photos.length} Photos</td>
+                <td style={{ padding: '12px 14px', color: '#1E293B', fontVariantNumeric: 'tabular-nums' }}>{sub.photos.length} {t('Photos')}</td>
                 <td style={{ padding: '12px 14px' }}>
                   <span
                     className={`badge ${sub.publishStatus}`}
@@ -1171,7 +1256,7 @@ export function SubmissionsStatusView({
                       display: 'inline-block',
                     }}
                   >
-                    {sub.publishStatus}
+                    {t(sub.publishStatus)}
                   </span>
                 </td>
               </tr>

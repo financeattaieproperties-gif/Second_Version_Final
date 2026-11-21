@@ -68,6 +68,7 @@ import type {
 } from "../../../packages/staff-contracts/types";
 import {
   canAccessDatabase,
+  canAssignTask,
   feedbackDeadline,
   followupState,
   formatLeadsToCsv,
@@ -124,6 +125,10 @@ import {
   SubmissionsStatusView,
 } from "./components/MarketingWorkspace";
 import { EngineeringWorkspace } from "./components/EngineeringWorkspace";
+import {
+  DepartmentRosterStrip,
+  getDepartmentStaffForPage,
+} from "./components/DepartmentRosterStrip";
 import {
   MobileFollowupCardList,
   MobileLeadCardList,
@@ -728,10 +733,8 @@ function App() {
   ].includes(activeRole);
   const hasMarketingAccess = [
     "marketing_manager",
-    "production_manager",
     "editor",
     "videographer",
-    "photographer",
     "sales",
     "sales_leader",
     "callcenter",
@@ -746,6 +749,7 @@ function App() {
     "ceo",
   ].includes(activeRole);
   const hasSubmissionsReadAccess =
+    (activeRole === "ceo" || activeRole === "editor") &&
     canAccessDatabase(activeRole, "submissions") !== false;
 
   const isExecOrBranchManager = activeRole === "ceo" || activeRole === "manager";
@@ -1223,44 +1227,115 @@ function App() {
 
           <div className="sub-drawer-scroll">
             <nav aria-label={t(activePillar?.label || "Workspace")}>
-              {(activePillar?.items || []).map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={`nav-item ${page === id ? "selected" : ""}`}
-                  onClick={() => navigate(id)}
-                >
-                  <Icon size={16} />
-                  <span>{t(label)}</span>
-                  {id === "followups" && (data?.counts.overtime || 0) > 0 && (
-                    <span className="nav-count">{data!.counts.overtime}</span>
-                  )}
-                </button>
-              ))}
+              {(activePillar?.items || []).map(({ id, label, icon: Icon }) => {
+                const isDeptTab = [
+                  "deliverables",
+                  "submissions",
+                  "finance",
+                  "marketing",
+                  "leads",
+                  "contracts",
+                  "projects",
+                  "team",
+                ].includes(id);
+                const deptCount =
+                  isDeptTab && (data?.assignees?.length || 0) > 0
+                    ? getDepartmentStaffForPage(
+                        id,
+                        data?.assignees || [],
+                        data?.branches || [],
+                      ).count
+                    : 0;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`nav-item ${page === id ? "selected" : ""}`}
+                    onClick={() => navigate(id)}
+                  >
+                    <Icon size={16} />
+                    <span>{t(label)}</span>
+                    {id === "followups" && (data?.counts.overtime || 0) > 0 && (
+                      <span className="nav-count">{data!.counts.overtime}</span>
+                    )}
+                    {isDeptTab && deptCount > 0 && (
+                      <span
+                        className="nav-dept-staff-pill"
+                        title={`${deptCount} ${t("Employees")}`}
+                        style={{
+                          marginInlineStart: "auto",
+                          padding: "1px 7px",
+                          borderRadius: 999,
+                          background: page === id ? "#FFFFFF" : "#E6F2FA",
+                          color: "#0072BC",
+                          fontSize: 10.5,
+                          fontWeight: 700,
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {deptCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
 
             <div className="sub-drawer-all">
               <p className="nav-caption">{t("All Modules")}</p>
               <nav aria-label={t("All Modules")}>
-                {tabs.map(({ id, label, icon: Icon }) => (
-                  <button
-                    key={`quick-${id}`}
-                    type="button"
-                    data-testid={`nav-tab-${id}`}
-                    className={`nav-item quick-jump-item ${page === id ? "selected" : ""}`}
-                    onClick={() => navigate(id)}
-                  >
-                    <Icon size={14} />
-                    <span>{t(label)}</span>
-                    {id === "followups" && (data?.counts.overtime || 0) > 0 ? (
-                      <span className="nav-count">{data!.counts.overtime}</span>
-                    ) : (
-                      <span className="quick-jump-tag">
-                        {shortTagForPage(id)}
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {tabs.map(({ id, label, icon: Icon }) => {
+                  const isDeptTab = [
+                    "deliverables",
+                    "submissions",
+                    "finance",
+                    "marketing",
+                    "leads",
+                    "contracts",
+                    "projects",
+                    "team",
+                  ].includes(id);
+                  const deptCount =
+                    isDeptTab && (data?.assignees?.length || 0) > 0
+                      ? getDepartmentStaffForPage(
+                          id,
+                          data?.assignees || [],
+                          data?.branches || [],
+                        ).count
+                      : 0;
+                  return (
+                    <button
+                      key={`quick-${id}`}
+                      type="button"
+                      data-testid={`nav-tab-${id}`}
+                      className={`nav-item quick-jump-item ${page === id ? "selected" : ""}`}
+                      onClick={() => navigate(id)}
+                    >
+                      <Icon size={14} />
+                      <span>{t(label)}</span>
+                      {id === "followups" && (data?.counts.overtime || 0) > 0 ? (
+                        <span className="nav-count">{data!.counts.overtime}</span>
+                      ) : isDeptTab && deptCount > 0 ? (
+                        <span
+                          className="quick-jump-tag"
+                          title={`${deptCount} ${t("Employees")}`}
+                          style={{
+                            background: "#E6F2FA",
+                            color: "#0072BC",
+                            fontWeight: 700,
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {deptCount} · {shortTagForPage(id)}
+                        </span>
+                      ) : (
+                        <span className="quick-jump-tag">
+                          {shortTagForPage(id)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </nav>
             </div>
           </div>
@@ -1271,7 +1346,7 @@ function App() {
               className="account"
               onClick={() => navigate("profile")}
             >
-              <span className="avatar gold">{initials(session.user.name)}</span>
+              <span className="avatar neutral">{initials(session.user.name)}</span>
               <span>
                 <strong>{session.user.name}</strong>
                 <small>{t(roleLabel)}</small>
@@ -1482,7 +1557,20 @@ function App() {
               >
                 <RefreshCw className={loading ? "spinning" : ""} size={18} />
               </button>
-              {(activeRole === "callcenter" || activeRole === "sales") && (
+              {canAssignTasks &&
+                (page === "team" || page === "tasks" || page === "overview") && (
+                  <button
+                    className="button"
+                    data-testid="assign-task-btn"
+                    onClick={() => setModal({ kind: "assign" })}
+                  >
+                    <Plus size={17} />
+                    {t("Assign task")}
+                  </button>
+                )}
+              {(activeRole === "callcenter" ||
+                activeRole === "sales" ||
+                activeRole === "ceo") && (
                 <button
                   className="button"
                   data-testid="new-entry-btn"
@@ -1610,6 +1698,27 @@ function App() {
                 <X size={15} />
               </button>
             </div>
+          )}
+
+          {[
+            "overview",
+            "projects",
+            "contracts",
+            "finance",
+            "marketing",
+            "submissions",
+            "deliverables",
+            "leads",
+            "followups",
+            "customers",
+            "team",
+          ].includes(page) && (
+            <DepartmentRosterStrip
+              page={page}
+              users={data?.assignees || []}
+              branches={data?.branches || []}
+              t={t}
+            />
           )}
 
           {page === "overview" && (
@@ -1869,6 +1978,7 @@ function App() {
           {/* Phase 5: Marketing & Media Production Pipeline */}
           {page === "marketing" && (
             <MarketingWorkspace
+              t={t}
               onUpload={client.upload}
               entries={data?.marketingEntries || []}
               submissions={data?.submissions || []}
@@ -1889,12 +1999,13 @@ function App() {
 
           {/* Phase 5: Read-Only Submissions Status View */}
           {page === "submissions" && (
-            <SubmissionsStatusView submissions={data?.submissions || []} />
+            <SubmissionsStatusView submissions={data?.submissions || []} t={t} />
           )}
 
           {/* Phase 6: Engineering Project Tasks & Versioned Deliverables */}
           {page === "deliverables" && (
             <EngineeringWorkspace
+              t={t}
               onUpload={client.upload}
               deliverables={data?.engineeringDeliverables || []}
               projects={data?.projects || []}
@@ -1966,6 +2077,7 @@ function App() {
                                         await client.resolveCustomerReview(
                                           req.id,
                                           "approved_shared",
+                                          req.version ?? 1,
                                         );
                                         setNotice(
                                           `Granted shared customer access to ${req.requestingAgentName}.`,
@@ -1982,6 +2094,7 @@ function App() {
                                         await client.resolveCustomerReview(
                                           req.id,
                                           "rejected",
+                                          req.version ?? 1,
                                         );
                                         setNotice("Rejected duplicate request.");
                                         await refresh();
@@ -2455,27 +2568,36 @@ function App() {
                 {(page === "tasks" || page === "team") &&
                   (data?.tasks.length ? (
                     <div className="task-list">
-                      {data.tasks.map((task) => (
-                        <button
-                          className="task-row"
-                          key={task.id}
-                          onClick={() => setModal({ kind: "task", item: task })}
-                        >
-                          <span className="task-check">
-                            <ClipboardList size={17} />
-                          </span>
-                          <span className="task-row-title">
-                            <strong>{task.title}</strong>
-                            <small>
-                              {task.assignedBy} · {format(task.deadlineAt)}
-                              {task.projectName ? ` · ${task.projectName}` : ""}
-                            </small>
-                          </span>
-                          {badge(task.priority)}
-                          {badge(taskState(task, data.serverTime))}
-                          <ArrowUpRight size={17} />
-                        </button>
-                      ))}
+                      {data.tasks.map((task) => {
+                        const assigneeName =
+                          task.assigneeName ||
+                          data.assignees?.find((u) => u.id === task.assigneeId)
+                            ?.name;
+                        return (
+                          <button
+                            className="task-row"
+                            key={task.id}
+                            onClick={() => setModal({ kind: "task", item: task })}
+                          >
+                            <span className="task-check">
+                              <ClipboardList size={17} />
+                            </span>
+                            <span className="task-row-title">
+                              <strong>{task.title}</strong>
+                              <small>
+                                {page === "team" && assigneeName
+                                  ? `${t("Assigned to")}: ${assigneeName} · ${t("Assigned by")}: ${task.assignedBy}`
+                                  : task.assignedBy}{" "}
+                                · {format(task.deadlineAt)}
+                                {task.projectName ? ` · ${task.projectName}` : ""}
+                              </small>
+                            </span>
+                            {badge(task.priority)}
+                            {badge(taskState(task, data.serverTime))}
+                            <ArrowUpRight size={17} />
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
                     <Empty
@@ -2526,24 +2648,38 @@ function App() {
                   {t("Late feedback remains in the activity history.")}
                 </p>
               )}
-              {page === "team" && manager && (
+              {page === "team" && (canAssignTasks || manager) && (
                 <div className="team-action" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    className="button secondary"
-                    data-testid="create-department-btn"
-                    onClick={() => setModal({ kind: "department" })}
-                  >
-                    <Building2 size={17} />
-                    {t("Create department")}
-                  </button>
-                  <button
-                    className="button secondary"
-                    data-testid="create-agent-btn"
-                    onClick={() => setModal({ kind: "staff" })}
-                  >
-                    <UserRound size={17} />
-                    {t("Create agent")}
-                  </button>
+                  {canAssignTasks && (
+                    <button
+                      className="button"
+                      data-testid="team-assign-task-btn"
+                      onClick={() => setModal({ kind: "assign" })}
+                    >
+                      <Plus size={17} />
+                      {t("Assign task")}
+                    </button>
+                  )}
+                  {manager && (
+                    <>
+                      <button
+                        className="button secondary"
+                        data-testid="create-department-btn"
+                        onClick={() => setModal({ kind: "department" })}
+                      >
+                        <Building2 size={17} />
+                        {t("Create department")}
+                      </button>
+                      <button
+                        className="button secondary"
+                        data-testid="create-agent-btn"
+                        onClick={() => setModal({ kind: "staff" })}
+                      >
+                        <UserRound size={17} />
+                        {t("Create agent")}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </>
@@ -3072,7 +3208,11 @@ function Agents({
               u.id === self.id ||
               (self.role === "callcenter"
                 ? u.role === "sales"
-                : u.role === "callcenter" || u.role === "sales"),
+                : self.role === "ceo"
+                  ? u.role === "callcenter" ||
+                    u.role === "sales" ||
+                    u.role === "sales_leader"
+                  : u.role === "callcenter" || u.role === "sales"),
           )
           .map((u) => (
             <option key={u.id} value={u.id}>
@@ -3160,12 +3300,14 @@ function EntryForm({
       onSubmit={(e) => {
         e.preventDefault();
         const f = new FormData(e.currentTarget);
+        const projectIdVal = f.get("projectId") ? Number(f.get("projectId")) : undefined;
         const body = {
           customerName: String(f.get("customerName")),
           requirements: String(f.get("requirements")),
           nextScheduledAt: toUtc(f.get("nextScheduledAt")),
           nextAssigneeId: Number(f.get("nextAssigneeId")),
-          projectId: f.get("projectId") ? Number(f.get("projectId")) : undefined,
+          projectId: projectIdVal,
+          ...(projectIdVal ? { property: { kind: "project" as const, id: projectIdVal } } : {}),
         };
         pendingOfflineEntryRef.current = {
           draft: {
@@ -3584,6 +3726,8 @@ function AssignForm({
     onQueueOffline?.();
     return true;
   });
+  const assignableUsers = users.filter((u) => canAssignTask(self, u));
+  const targetOptions = assignableUsers.length > 0 ? assignableUsers : users;
   return (
     <form
       onSubmit={(e) => {
@@ -3611,7 +3755,7 @@ function AssignForm({
         <Field label={t("Assign to")}>
           <select name="assigneeId" required>
             <option value="">{t("Select an agent")}</option>
-            {users.map((u) => (
+            {targetOptions.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name} ({ROLE_LABELS[u.role] || u.role})
               </option>
@@ -3698,6 +3842,12 @@ function TaskDetail({
       <h3>{task.title}</h3>
       <p className="preserve-lines">{task.instructions}</p>
       <dl>
+        {task.assigneeName && (
+          <div>
+            <dt>{t("Assigned to")}</dt>
+            <dd>{task.assigneeName}</dd>
+          </div>
+        )}
         <div>
           <dt>{t("Assigned by")}</dt>
           <dd>{task.assignedBy}</dd>
@@ -4250,10 +4400,51 @@ function Login({
   const [bioStatus, setBioStatus] = useState(() => getBiometricStatus());
   const [now, setNow] = useState(() => new Date());
   const [bgUrl, setBgUrl] = useState<string | null>(null);
+  const [desktopServerUrl, setDesktopServerUrl] = useState<string>("");
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const bridge = (
+      window as unknown as {
+        attaieDesktop?: {
+          getStatus?: () => Promise<{ serverUrl?: string; backendOrigin?: string }>;
+          openServerConfig?: () => Promise<void>;
+        };
+        callcenterDesktop?: {
+          getStatus?: () => Promise<{ serverUrl?: string; backendOrigin?: string }>;
+          openServerConfig?: () => Promise<void>;
+        };
+      }
+    ).attaieDesktop ||
+      (
+        window as unknown as {
+          callcenterDesktop?: {
+            getStatus?: () => Promise<{ serverUrl?: string; backendOrigin?: string }>;
+            openServerConfig?: () => Promise<void>;
+          };
+        }
+      ).callcenterDesktop;
+    if (!bridge?.getStatus) return;
+    let active = true;
+    const refreshStatus = () => {
+      bridge
+        .getStatus!()
+        .then((info) => {
+          if (!active || !info) return;
+          setDesktopServerUrl(info.backendOrigin || info.serverUrl || "");
+        })
+        .catch(() => {});
+    };
+    refreshStatus();
+    window.addEventListener("focus", refreshStatus);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", refreshStatus);
+    };
   }, []);
 
   useEffect(() => {
@@ -4413,6 +4604,46 @@ function Login({
           <Clock3 size={13} color="#14A850" />
           <span>{timeLabel}</span>
         </span>
+        {desktopServerUrl && (
+          <>
+            <span style={{ color: "#CBD5E1" }}>•</span>
+            <button
+              type="button"
+              onClick={() => {
+                const bridge =
+                  (
+                    window as unknown as {
+                      attaieDesktop?: { openServerConfig?: () => Promise<void> };
+                      callcenterDesktop?: { openServerConfig?: () => Promise<void> };
+                    }
+                  ).attaieDesktop ||
+                  (
+                    window as unknown as {
+                      callcenterDesktop?: { openServerConfig?: () => Promise<void> };
+                    }
+                  ).callcenterDesktop;
+                void bridge?.openServerConfig?.();
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "2px 8px",
+                borderRadius: 999,
+                background: "#E6F2FA",
+                border: "1px solid #BAE6FD",
+                color: "#0072BC",
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              title="Switch Backend Server URL"
+            >
+              <Globe size={12} color="#0072BC" />
+              <span>{desktopServerUrl.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}</span>
+            </button>
+          </>
+        )}
       </div>
       <main className="login-card">
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 14 }}>

@@ -51,7 +51,7 @@ html[data-staff-role] :is(.avatar, .avatar.gold, .workspace-icon, .login-icon, .
   background: var(--secondary);
   color: var(--primary);
 }
-html[data-staff-role] :is(.nav-item.selected, .filter-bar button.active) {
+html[data-staff-role] :is(.nav-item.selected, .filter-bar > button.active) {
   background: var(--secondary);
   color: var(--primary);
 }
@@ -80,7 +80,7 @@ html[data-staff-role] .customer-card:hover {
   border-color: #CBD5E1;
   box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
-html[data-staff-role] :is(.brand > span, .workspace-tag small, .nav-caption, .nav-item, .help-card, .help-card p, .help-card small, .breadcrumbs, .timezone, .eyebrow, .icon-button, .stat-top, .stat-note, .panel-heading p, .panel-heading > svg, th, td, .task-mini small, .task-footer, .page-footer, .list-note, .filter-bar button, .empty, .empty h3, .pagination, .pagination-note, .customer-top, .customer-card .phone, .customer-requirements small, .customer-requirements p, .customer-footer, .task-row-title small, .profile-card p, .field > label, .form-description, .form-note, .detail p, .detail dt, .detail dd, .timeline small, .timeline p, .login-brand > span, .login-card > p, .login-private, .login-screen footer, .muted) {
+html[data-staff-role] :is(.brand > span, .workspace-tag small, .nav-caption, .nav-item, .help-card, .help-card p, .help-card small, .breadcrumbs, .timezone, .eyebrow, .icon-button, .stat-top, .stat-note, .panel-heading p, .panel-heading > svg, th, td, .task-mini small, .task-footer, .page-footer, .list-note, .filter-bar > button, .empty, .empty h3, .pagination, .pagination-note, .customer-top, .customer-card .phone, .customer-requirements small, .customer-requirements p, .customer-footer, .task-row-title small, .profile-card p, .field > label, .form-description, .form-note, .detail p, .detail dt, .detail dd, .timeline small, .timeline p, .login-brand > span, .login-card > p, .login-private, .login-screen footer, .muted) {
   color: var(--muted);
 }
 html[data-staff-role] :is(.eyebrow, .breadcrumbs strong, td strong, .task-mini strong, .text-button, .preview-link, .customer-footer strong, .task-row-title strong, .field > label, .stat-number, .panel-heading h2, .page-heading h1) {

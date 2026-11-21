@@ -28,6 +28,7 @@ export interface EngineeringWorkspaceProps {
   ) => Promise<unknown>;
   onNotice: (msg: string) => void;
   onError: (err: string) => void;
+  t?: (s: string) => string;
 }
 
 type DeliverableFilterStatus = 'all' | 'submitted' | 'approved' | 'revision_requested' | 'awaiting_v1';
@@ -66,11 +67,14 @@ function getVersionBadgeStyle(status: EngineeringDeliverableVersion['status'] | 
   };
 }
 
-function formatStatusLabel(status: EngineeringDeliverableVersion['status'] | 'awaiting_v1'): string {
-  if (status === 'approved') return 'Approved';
-  if (status === 'revision_requested') return 'Revision Requested';
-  if (status === 'submitted') return 'Pending CEO Review';
-  return 'Awaiting v1';
+function formatStatusLabel(
+  status: EngineeringDeliverableVersion['status'] | 'awaiting_v1',
+  t: (s: string) => string = (s) => s
+): string {
+  if (status === 'approved') return t('Approved');
+  if (status === 'revision_requested') return t('Revision Requested');
+  if (status === 'submitted') return t('Pending CEO Review');
+  return t('Awaiting v1');
 }
 
 function MiniSparkline({ points, stroke }: { points: number[]; stroke: string }) {
@@ -108,6 +112,7 @@ export function EngineeringWorkspace({
   onReviewVersion,
   onNotice,
   onError,
+  t = (s: string) => s,
 }: EngineeringWorkspaceProps) {
   const canReview = isManagerRole(actorRole);
   const canUpload = [
@@ -177,7 +182,7 @@ export function EngineeringWorkspace({
     e.preventDefault();
     if (uploadingId === null) return;
     try {
-      if (!fileUrl || uploadingFile) throw new Error('Select and upload a deliverable file first.');
+      if (!fileUrl || uploadingFile) throw new Error(t('Choose a file'));
       await onUploadVersion(uploadingId, {
         fileUrl,
         fileName,
@@ -194,36 +199,36 @@ export function EngineeringWorkspace({
 
   const kpiCards = [
     {
-      label: 'Assigned',
+      label: t('Assigned'),
       value: assignedCount,
-      delta: `${projects.length || visibleDeliverables.length} linked`,
+      delta: `${projects.length || visibleDeliverables.length} ${t('linked')}`,
       deltaBg: '#F1F5F9',
       deltaColor: '#818285',
       sparkColor: '#818285',
       points: [1, 2, 2, 3, Math.max(assignedCount, 1)],
     },
     {
-      label: 'Pending CEO Review',
+      label: t('Pending CEO Review'),
       value: pendingReviewCount,
-      delta: 'In queue',
+      delta: t('In queue'),
       deltaBg: '#E6F2FA',
       deltaColor: '#0072BC',
       sparkColor: '#0072BC',
       points: [1, 3, 2, 2, Math.max(pendingReviewCount, 1)],
     },
     {
-      label: 'Approved',
+      label: t('Approved'),
       value: approvedCount,
-      delta: assignedCount > 0 ? `${Math.round((approvedCount / assignedCount) * 100)}% rate` : '0% rate',
+      delta: assignedCount > 0 ? `${Math.round((approvedCount / assignedCount) * 100)}% ${t('rate')}` : `0% ${t('rate')}`,
       deltaBg: '#E8F7EE',
       deltaColor: '#14A850',
       sparkColor: '#14A850',
       points: [0, 1, 2, 3, Math.max(approvedCount, 1)],
     },
     {
-      label: 'Revision Requested',
+      label: t('Revision Requested'),
       value: revisionCount,
-      delta: revisionCount > 0 ? 'Action needed' : 'Clear',
+      delta: revisionCount > 0 ? t('Action needed') : t('Clear'),
       deltaBg: revisionCount > 0 ? '#FEF2F2' : '#E8F7EE',
       deltaColor: revisionCount > 0 ? '#B91C1C' : '#14A850',
       sparkColor: revisionCount > 0 ? '#B91C1C' : '#14A850',
@@ -262,10 +267,10 @@ export function EngineeringWorkspace({
             className="eyebrow"
             style={{ color: '#818285', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}
           >
-            Engineering &amp; Graphic Department • {canReview ? 'Manager Deliverable Review' : `Role: ${actorRole.replace(/_/g, ' ')}`}
+            {t('Engineering & Graphic Department')} • {canReview ? t('Manager Deliverable Review') : `Role: ${actorRole.replace(/_/g, ' ')}`}
           </p>
           <h2 style={{ color: '#1E293B', fontSize: 20, fontWeight: 600, marginTop: 4 }}>
-            Project-Linked Tasks &amp; Versioned Deliverables
+            {t('Project-Linked Tasks & Versioned Deliverables')}
           </h2>
         </div>
         <span
@@ -280,7 +285,7 @@ export function EngineeringWorkspace({
             fontVariantNumeric: 'tabular-nums',
           }}
         >
-          {visibleDeliverables.length} Deliverable Packages
+          {visibleDeliverables.length} {t('Deliverable Packages')}
         </span>
       </div>
 
@@ -349,15 +354,15 @@ export function EngineeringWorkspace({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#1E293B' }}>
-              Upload New Deliverable Version (Preserves All Prior Versions)
+              {t('Upload New Deliverable Version (Preserves All Prior Versions)')}
             </h3>
             <span style={{ color: '#0072BC', fontSize: 12, fontWeight: 600 }}>
-              Package #{uploadingId}
+              {t('Package')} #{uploadingId}
             </span>
           </div>
           <div className="form-grid">
             <div className="field">
-              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Deliverable File Name</label>
+              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Deliverable File Name')}</label>
               <input
                 required
                 value={fileName}
@@ -366,19 +371,19 @@ export function EngineeringWorkspace({
               />
             </div>
             <div className="field">
-              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Deliverable Format / Asset Type</label>
+              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Deliverable Format / Asset Type')}</label>
               <select
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
                 style={{ border: '1px solid #E2E8F0', borderRadius: 8 }}
               >
-                <option value="2D Floor Plan (CAD/PDF)">2D Floor Plan (CAD/PDF)</option>
-                <option value="Brochure / Print Asset">Brochure / Print Asset</option>
-                <option value="3D Exterior / Interior Render">3D Exterior / Interior Render</option>
+                <option value="2D Floor Plan (CAD/PDF)">{t('2D Floor Plan (CAD/PDF)')}</option>
+                <option value="Brochure / Print Asset">{t('Brochure / Print Asset')}</option>
+                <option value="3D Exterior / Interior Render">{t('3D Exterior / Interior Render')}</option>
               </select>
             </div>
             <div className="field">
-              <label htmlFor="engineering-file" style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Deliverable file</label>
+              <label htmlFor="engineering-file" style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Deliverable file')}</label>
               <input id="engineering-file" type="file" required disabled={uploadingFile} onChange={async e => {
                 const file = e.target.files?.[0]; if (!file) return;
                 setUploadingFile(true); setFileUrl('');
@@ -387,11 +392,11 @@ export function EngineeringWorkspace({
                 finally { setUploadingFile(false); }
               }} />
               <small style={{ color: fileUrl ? '#14A850' : '#818285', fontWeight: 600 }}>
-                {uploadingFile ? 'Uploading...' : fileUrl ? 'File ready' : 'Choose a file'}
+                {uploadingFile ? t('Uploading...') : fileUrl ? t('File ready') : t('Choose a file')}
               </small>
             </div>
             <div className="field">
-              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>Revision &amp; Technical Notes</label>
+              <label style={{ color: '#818285', fontSize: 12, fontWeight: 600 }}>{t('Revision & Technical Notes')}</label>
               <input
                 required
                 value={notes}
@@ -407,7 +412,7 @@ export function EngineeringWorkspace({
               onClick={() => setUploadingId(null)}
               style={{ background: '#FFFFFF', color: '#818285', border: '1px solid #E2E8F0', borderRadius: 8, padding: '8px 14px', fontWeight: 600 }}
             >
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="submit"
@@ -415,7 +420,7 @@ export function EngineeringWorkspace({
               data-testid="submit-deliverable-version-btn"
               style={{ background: '#0072BC', color: '#FFFFFF', border: '1px solid #0072BC', borderRadius: 8, padding: '8px 16px', fontWeight: 600 }}
             >
-              Submit Version to Manager Review
+              {t('Submit Version to Manager Review')}
             </button>
           </div>
         </form>
@@ -454,11 +459,11 @@ export function EngineeringWorkspace({
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {(
                 [
-                  ['all', 'All'],
-                  ['submitted', 'Pending Review'],
-                  ['approved', 'Approved'],
-                  ['revision_requested', 'Revision'],
-                  ['awaiting_v1', 'Awaiting v1'],
+                  ['all', t('All')],
+                  ['submitted', t('Pending Review')],
+                  ['approved', t('Approved')],
+                  ['revision_requested', t('Revision')],
+                  ['awaiting_v1', t('Awaiting v1')],
                 ] as const
               ).map(([key, label]) => {
                 const active = statusFilter === key;
@@ -486,7 +491,7 @@ export function EngineeringWorkspace({
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter deliverables..."
+              placeholder={t('Filter deliverables...')}
               aria-label="Filter engineering deliverables"
               style={{
                 border: '1px solid #E2E8F0',
@@ -504,19 +509,19 @@ export function EngineeringWorkspace({
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Project &amp; Unit</th>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Deliverable</th>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Assignee</th>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Latest</th>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'left' }}>Status</th>
-                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'right' }}>Action</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Project & Unit')}</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Deliverable')}</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Assignee')}</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Latest')}</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'start' }}>{t('Status')}</th>
+                  <th style={{ color: '#818285', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '10px 14px', textAlign: 'end' }}>{t('Action')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDeliverables.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ padding: '24px 14px', color: '#818285', fontSize: 13, textAlign: 'center' }}>
-                      No deliverables match the current filter.
+                      {t('No deliverables match the current filter.')}
                     </td>
                   </tr>
                 ) : (
@@ -581,10 +586,10 @@ export function EngineeringWorkspace({
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {formatStatusLabel(latestStatus)}
+                            {formatStatusLabel(latestStatus, t)}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                        <td style={{ padding: '12px 14px', textAlign: 'end' }}>
                           {canUpload && deliv.role === actorRole ? (
                             <button
                               type="button"
@@ -609,7 +614,7 @@ export function EngineeringWorkspace({
                                 setNotes('');
                               }}
                             >
-                              + Upload v{deliv.versions.length + 1}
+                              + {t('Upload')} v{deliv.versions.length + 1}
                             </button>
                           ) : (
                             <button
@@ -628,7 +633,7 @@ export function EngineeringWorkspace({
                                 fontWeight: 600,
                               }}
                             >
-                              Inspect ({deliv.versions.length})
+                              {t('Inspect')} ({deliv.versions.length})
                             </button>
                           )}
                         </td>
@@ -655,7 +660,7 @@ export function EngineeringWorkspace({
         >
           {!activeDeliverable ? (
             <div style={{ padding: '24px 8px', textAlign: 'center', color: '#818285', fontSize: 13 }}>
-              Select a deliverable row to inspect its version history (v1, v2, v3).
+              {t('Select a deliverable row to inspect its version history (v1, v2, v3).')}
             </div>
           ) : (
             <div>
@@ -675,7 +680,7 @@ export function EngineeringWorkspace({
                       fontVariantNumeric: 'tabular-nums',
                     }}
                   >
-                    {activeDeliverable.versions.length} {activeDeliverable.versions.length === 1 ? 'version' : 'versions'}
+                    {activeDeliverable.versions.length} {activeDeliverable.versions.length === 1 ? t('version') : t('versions')}
                   </span>
                 </div>
                 <h3 style={{ margin: '6px 0 4px', fontSize: 16, fontWeight: 600, color: '#1E293B' }}>
@@ -704,7 +709,7 @@ export function EngineeringWorkspace({
                       textAlign: 'center',
                     }}
                   >
-                    No versions uploaded yet. Waiting for v1 upload.
+                    {t('No versions uploaded yet. Waiting for v1 upload.')}
                   </div>
                 ) : (
                   activeDeliverable.versions.map((ver) => {
@@ -746,12 +751,12 @@ export function EngineeringWorkspace({
                               fontWeight: 600,
                             }}
                           >
-                            {ver.status}
+                            {t(ver.status)}
                           </span>
                         </div>
 
                         <small style={{ color: '#818285', marginTop: 6 }}>
-                          {ver.format} • By <strong style={{ color: '#1E293B' }}>{ver.submittedBy}</strong>
+                          {ver.format} • {t('By')} <strong style={{ color: '#1E293B' }}>{ver.submittedBy}</strong>
                         </small>
                         {ver.notes && (
                           <p style={{ marginTop: 6, fontSize: 12, color: '#1E293B', lineHeight: 1.45 }}>
@@ -769,14 +774,14 @@ export function EngineeringWorkspace({
                               color: '#1E293B',
                             }}
                           >
-                            <span style={{ color: '#818285', fontWeight: 600 }}>Manager:</span> {ver.reviewerComment}
+                            <span style={{ color: '#818285', fontWeight: 600 }}>{t('Manager')}:</span> {ver.reviewerComment}
                           </div>
                         )}
 
                         {canReview && (
                           <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #F1F5F9', display: 'flex', flexDirection: 'column', gap: 8 }}>
                             <input
-                              placeholder="Manager review note..."
+                              placeholder={t('Manager review note...')}
                               value={reviewComments[key] || ''}
                               onChange={(e) =>
                                 setReviewComments((prev) => ({
@@ -827,7 +832,7 @@ export function EngineeringWorkspace({
                                   }
                                 }}
                               >
-                                Approve v{ver.versionNumber}
+                                {t('Approve')} v{ver.versionNumber}
                               </button>
                               <button
                                 type="button"
@@ -861,7 +866,7 @@ export function EngineeringWorkspace({
                                   }
                                 }}
                               >
-                                Request Revision
+                                {t('Request Revision')}
                               </button>
                             </div>
                           </div>

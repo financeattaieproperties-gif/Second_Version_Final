@@ -94,6 +94,7 @@ if ($method === 'PUT' || $method === 'POST') {
     $stmt->execute();
     $current = $stmt->get_result()->fetch_assoc();
     if (!$current) {
+        $sdb->rollback();
         json_out(['error' => 'Submission not found'], 404);
     }
 
@@ -104,6 +105,7 @@ if ($method === 'PUT' || $method === 'POST') {
 
     if ($action === 'approve') {
         if ($prevStatus !== 'Submitted') {
+            $sdb->rollback();
             json_out(['error' => 'Only Submitted entries can be approved'], 409);
         }
         $nextStatus = 'Approved';
@@ -112,6 +114,7 @@ if ($method === 'PUT' || $method === 'POST') {
         $upd->execute();
     } elseif ($action === 'reject') {
         if ($prevStatus === 'Published') {
+            $sdb->rollback();
             json_out(['error' => 'Published entries cannot be rejected'], 409);
         }
         $reason = trim((string) ($b['reason'] ?? 'Rejected by Admin'));
@@ -122,6 +125,7 @@ if ($method === 'PUT' || $method === 'POST') {
     } else {
         // action === 'publish'
         if ($prevStatus !== 'Approved') {
+            $sdb->rollback();
             json_out(['error' => 'Submission must be Approved before publishing to website'], 409);
         }
         $nextStatus = 'Published';

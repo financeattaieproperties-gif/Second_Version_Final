@@ -187,9 +187,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         {/* Real-time Search Input */}
         <div className="flex-1 relative flex items-center bg-neutral-50 rounded-xl px-4">
           {isSerialLike ? (
-            <Hash size={19} className="text-brand-gold absolute left-4 pointer-events-none" />
+            <Hash size={19} className="text-brand-gold absolute start-4 pointer-events-none" />
           ) : (
-            <MapPin size={20} className="text-neutral-400 absolute left-4 pointer-events-none" />
+            <MapPin size={20} className="text-neutral-400 absolute start-4 pointer-events-none" />
           )}
           <input
             type="text"
@@ -205,9 +205,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             }}
             onKeyDown={handleKeyDown}
             onChange={(e) => handleInputChange(e.target.value)}
-            className="w-full bg-transparent border-none py-3 pl-8 pr-14 text-brand-navy focus:outline-none focus:ring-0 placeholder:text-neutral-400"
+            className="w-full bg-transparent border-none py-3 ps-8 pe-14 text-brand-navy focus:outline-none focus:ring-0 placeholder:text-neutral-400"
           />
-          <div className="absolute right-3 flex items-center gap-1">
+          <div className="absolute end-3 flex items-center gap-1">
             {loading && (
               <Loader2
                 size={16}
@@ -243,7 +243,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div
           id="global-property-search-results"
           role="listbox"
-          className="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-neutral-200/90 overflow-hidden z-50 text-left"
+          className="absolute start-0 end-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-neutral-200/90 overflow-hidden z-50 text-start"
         >
           <div className="px-4 py-2.5 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between text-xs font-semibold text-neutral-500">
             <span>
@@ -324,7 +324,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 pl-2">
+                    <div className="text-end shrink-0 ps-2">
                       <p className="text-sm font-extrabold text-brand-gold whitespace-nowrap">
                         ${Number(item.price).toLocaleString()}
                         {item.listing_type === 'rent' ? '/mo' : ''}

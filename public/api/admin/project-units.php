@@ -107,20 +107,32 @@ if ($method === 'POST' || $method === 'PUT') {
         $descToStore = ($descToStore ? $descToStore . "\n" : '') . "[VIDEO: $videoUrl]";
     }
 
-    // Check if columns exist
+    // Check if columns exist in INFORMATION_SCHEMA.COLUMNS (standard MySQL 8.0 & MariaDB compatible)
     $hasGalleryCol = false;
     $hasVideoCol = false;
-    $checkCols = $db->query("SHOW COLUMNS FROM project_units LIKE 'gallery_images'");
-    if ($checkCols && $checkCols->num_rows > 0) $hasGalleryCol = true;
-    $checkCols2 = $db->query("SHOW COLUMNS FROM project_units LIKE 'video_url'");
-    if ($checkCols2 && $checkCols2->num_rows > 0) $hasVideoCol = true;
+    $colStmt = $db->prepare("
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'project_units' AND COLUMN_NAME IN ('gallery_images', 'video_url')
+    ");
+    if ($colStmt) {
+        $colStmt->execute();
+        $colRes = $colStmt->get_result();
+        while ($colRow = $colRes->fetch_assoc()) {
+            if ($colRow['COLUMN_NAME'] === 'gallery_images') $hasGalleryCol = true;
+            if ($colRow['COLUMN_NAME'] === 'video_url') $hasVideoCol = true;
+        }
+        $colStmt->close();
+    }
 
-    if (!$hasGalleryCol || !$hasVideoCol) {
-        @$db->query("ALTER TABLE project_units ADD COLUMN IF NOT EXISTS gallery_images TEXT DEFAULT NULL, ADD COLUMN IF NOT EXISTS video_url VARCHAR(1000) DEFAULT NULL");
-        $checkCols = $db->query("SHOW COLUMNS FROM project_units LIKE 'gallery_images'");
-        if ($checkCols && $checkCols->num_rows > 0) $hasGalleryCol = true;
-        $checkCols2 = $db->query("SHOW COLUMNS FROM project_units LIKE 'video_url'");
-        if ($checkCols2 && $checkCols2->num_rows > 0) $hasVideoCol = true;
+    if (!$hasGalleryCol) {
+        if (@$db->query("ALTER TABLE project_units ADD COLUMN gallery_images TEXT DEFAULT NULL")) {
+            $hasGalleryCol = true;
+        }
+    }
+    if (!$hasVideoCol) {
+        if (@$db->query("ALTER TABLE project_units ADD COLUMN video_url VARCHAR(1000) DEFAULT NULL")) {
+            $hasVideoCol = true;
+        }
     }
 
     if ($method === 'POST') {

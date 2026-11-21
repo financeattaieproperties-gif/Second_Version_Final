@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Call Center Server URL</title>
+    <title>Call Center Backend Server Settings</title>
     <style>
       body {
         margin: 0;
-        background: #F7F8FA;
-        color: #0F172A;
+        background: #F8FAFC;
+        color: #1E293B;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         padding: 20px;
         box-sizing: border-box;
@@ -19,9 +19,17 @@
         border-radius: 14px;
         padding: 20px;
       }
-      h2 { font-size: 16px; margin: 0 0 6px; }
+      .eyebrow {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #0072BC;
+        margin-bottom: 4px;
+      }
+      h2 { font-size: 16px; margin: 0 0 6px; color: #1E293B; }
       p { font-size: 12px; color: #64748B; margin: 0 0 14px; line-height: 1.5; }
-      label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+      label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: #1E293B; }
       input {
         width: 100%;
         height: 38px;
@@ -32,75 +40,130 @@
         box-sizing: border-box;
         margin-bottom: 10px;
       }
-      .presets { display: flex; gap: 8px; margin-bottom: 14px; }
+      .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
       .preset {
         font-size: 11px;
+        font-weight: 600;
         padding: 5px 10px;
         border-radius: 6px;
         border: 1px solid #E2E8F0;
         background: #F1F5F9;
-        color: #0F172A;
+        color: #1E293B;
         cursor: pointer;
       }
-      .err { font-size: 12px; color: #B91C1C; margin-bottom: 10px; display: none; }
-      .actions { display: flex; justify-content: flex-end; gap: 8px; }
+      .preset:hover {
+        background: #E6F2FA;
+        border-color: #0072BC;
+        color: #0072BC;
+      }
+      .status-box {
+        font-size: 12px;
+        padding: 9px 11px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        display: none;
+        line-height: 1.45;
+      }
+      .status-box.ok {
+        display: block;
+        background: #E8F7EE;
+        border: 1px solid #86EFAC;
+        color: #14532D;
+      }
+      .status-box.err {
+        display: block;
+        background: #FEF2F2;
+        border: 1px solid #FECACA;
+        color: #991B1B;
+      }
+      .actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+      .right-actions { display: flex; gap: 8px; }
       button.action {
         height: 36px;
         padding: 0 14px;
         border-radius: 8px;
         border: 1px solid #E2E8F0;
         background: #FFFFFF;
-        color: #0F172A;
+        color: #1E293B;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
       }
       button.primary {
-        background: #0F172A;
-        border-color: #0F172A;
+        background: #0072BC;
+        border-color: #0072BC;
         color: #FFFFFF;
+      }
+      button.primary:hover {
+        background: #005E9B;
       }
     </style>
   </head>
   <body>
     <form class="card" id="server-form">
-      <h2>Connect Call Center Workspace</h2>
-      <p>Choose the main domain host (or alternate host) for this desktop app.</p>
-      <label for="url-input">Call Center URL</label>
-      <input id="url-input" type="url" required placeholder="https://attaieproperties.com/callcenter/" />
+      <div class="eyebrow">Attaie Call Center · PC App</div>
+      <h2>Backend Server Connection</h2>
+      <p>Select the backend host for Call Center API sync (`/staff-api/v1`). The workspace UI is bundled locally for instant launch.</p>
+      <label for="url-input">Backend Server URL</label>
+      <input id="url-input" type="url" required placeholder="https://attaieproperties.com" />
       <div class="presets">
-        <button type="button" class="preset" data-url="https://attaieproperties.com/callcenter/">Main Domain</button>
-        <button type="button" class="preset" data-url="https://www.attaieproperties.com/callcenter/">WWW Host</button>
+        <button type="button" class="preset" data-url="https://attaieproperties.com">Main Domain (attaieproperties.com)</button>
+        <button type="button" class="preset" data-url="https://website.attaieproperties.com">V2 Testing (website.attaieproperties.com)</button>
+        <button type="button" class="preset" data-url="https://www.attaieproperties.com">WWW Host</button>
+        <button type="button" class="preset" data-url="http://127.0.0.1:8891">Local Dev (:8891)</button>
       </div>
-      <div class="err" id="err-msg"></div>
+      <div class="status-box" id="status-msg"></div>
       <div class="actions">
-        <button type="button" class="action" id="cancel-btn">Cancel</button>
-        <button type="submit" class="action primary">Save &amp; Connect</button>
+        <button type="button" class="action" id="test-btn">Test Connection</button>
+        <div class="right-actions">
+          <button type="button" class="action" id="cancel-btn">Cancel</button>
+          <button type="submit" class="action primary">Save &amp; Connect</button>
+        </div>
       </div>
     </form>
     <script>
       (async () => {
-        const api = window.callcenterDesktop;
+        const api = window.attaieDesktop || window.callcenterDesktop;
         const input = document.getElementById('url-input');
-        const err = document.getElementById('err-msg');
+        const statusMsg = document.getElementById('status-msg');
+        const testBtn = document.getElementById('test-btn');
+
+        const showStatus = (ok, text) => {
+          statusMsg.className = 'status-box ' + (ok ? 'ok' : 'err');
+          statusMsg.textContent = text;
+        };
+
         if (api) {
           const info = await api.getStatus();
-          input.value = info.serverUrl;
+          input.value = info.backendOrigin || info.serverUrl || 'https://attaieproperties.com';
         }
         document.querySelectorAll('.preset').forEach((btn) => {
           btn.addEventListener('click', () => {
             input.value = btn.getAttribute('data-url');
+            statusMsg.style.display = 'none';
           });
+        });
+        testBtn.addEventListener('click', async () => {
+          if (!api || !api.testConnection) return;
+          testBtn.disabled = true;
+          testBtn.textContent = 'Testing…';
+          try {
+            const res = await api.testConnection(input.value);
+            showStatus(res.ok, res.message);
+          } catch (ex) {
+            showStatus(false, ex.message || 'Connection test failed.');
+          } finally {
+            testBtn.disabled = false;
+            testBtn.textContent = 'Test Connection';
+          }
         });
         document.getElementById('cancel-btn').addEventListener('click', () => api && api.closeConfig());
         document.getElementById('server-form').addEventListener('submit', async (e) => {
           e.preventDefault();
-          err.style.display = 'none';
           try {
             await api.setServerUrl(input.value);
           } catch (ex) {
-            err.textContent = ex.message || 'Invalid URL';
-            err.style.display = 'block';
+            showStatus(false, ex.message || 'Invalid URL');
           }
         });
       })();

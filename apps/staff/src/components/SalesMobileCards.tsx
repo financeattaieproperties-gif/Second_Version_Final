@@ -225,7 +225,7 @@ export function MobileFollowupCardList({
         const dotColor = STATUS_DOT_COLOR[state] || "#818285";
         const contact = formatMobileContactLinks(item.phone);
         const isDone = Boolean(item.completedAt);
-        const isClosedState = state === "closed" || state === "completed";
+        const isClosedState = (state as string) === "closed" || state === "completed" || state === "completed_late";
         return (
           <article
             key={item.id}

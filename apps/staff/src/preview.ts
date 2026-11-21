@@ -115,6 +115,7 @@ const initialReviewRequests: CustomerReviewRequest[] = [
     submittedRequirements: "Customer walked into Sales office asking about available properties.",
     status: "pending_review",
     createdAt: iso(-5),
+    version: 1,
   },
 ];
 
@@ -254,7 +255,10 @@ export function previewClient(management: boolean, initialRoleOverride?: Role) {
       result.tasks = result.tasks
         .filter(
           (t) =>
-            (isManagerRole(activeUser.role) || t.assigneeId === activeUser.id) &&
+            (isManagerRole(activeUser.role) ||
+              activeUser.role === "manager" ||
+              t.assigneeId === activeUser.id ||
+              (_view === "team" && t.assignedBy === activeUser.name)) &&
             t.title.toLowerCase().includes(search),
         )
         .slice(page * 25, (page + 1) * 25);
@@ -345,7 +349,7 @@ export function previewClient(management: boolean, initialRoleOverride?: Role) {
         data.customers.unshift(reg.customer);
       } else if (reg.outcome === "duplicate_conflict" && reg.reviewRequest) {
         data.customerReviewRequests = [
-          { id: ++next, ...reg.reviewRequest, status: "pending_review" },
+          { id: ++next, version: 1, ...reg.reviewRequest, status: "pending_review" },
           ...(data.customerReviewRequests || []),
         ];
       }
@@ -478,6 +482,8 @@ export function previewClient(management: boolean, initialRoleOverride?: Role) {
         ...input,
         id: ++next,
         status: "todo",
+        assigneeId: Number(input.assigneeId),
+        assigneeName: targetUser?.name,
         assignedBy: activeUser.name,
         projectId: proj?.id || null,
         projectName: proj?.name || null,
@@ -592,13 +598,17 @@ export function previewClient(management: boolean, initialRoleOverride?: Role) {
       project.version++;
       return project;
     },
-    async resolveCustomerReview(reviewId: number, decision: "approved_shared" | "rejected") {
+    async resolveCustomerReview(reviewId: number, decision: "approved_shared" | "rejected", version?: number) {
       if (!isManagerRole(activeUser.role)) {
         throw new Error("Only Manager can resolve customer duplicate review requests.");
       }
       const req = data.customerReviewRequests?.find((r) => r.id === reviewId);
       if (!req) throw new Error("Review request not found.");
+      if (typeof version === "number" && req.version !== version) {
+        throw new Error("Review request changed. Refresh and try again.");
+      }
       req.status = decision;
+      req.version = (req.version || 1) + 1;
       if (decision === "approved_shared") {
         const cust = data.customers.find((c) => c.id === req.customerId);
         if (cust) {
